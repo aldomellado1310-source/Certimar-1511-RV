@@ -695,4 +695,3 @@ function _plantillaEmail(datos, urlCert) {
 </body>
 </html>`;
 }
-}
