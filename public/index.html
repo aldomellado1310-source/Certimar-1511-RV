@@ -1,0 +1,3432 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Registro de Visita – Certimar</title>
+<!-- jsPDF + html2canvas para generar PDF en el cliente -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<!-- Chart.js para gráficos del dashboard -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<!-- Firebase SDK (compat v9) -->
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-functions-compat.js"></script>
+<!-- Configuración Firebase del proyecto -->
+<script src="firebaseConfig.js"></script>
+<style>
+/* ===================== TEMA: VARIABLES CSS ===================== */
+:root {
+  --bg:           #f8fafc;
+  --surface:      #ffffff;
+  --surface-2:    #f1f5f9;
+  --surface-3:    #e2e8f0;
+  --text-pri:     #1e293b;
+  --text-sec:     #64748b;
+  --text-muted:   #94a3b8;
+  --border:       #e2e8f0;
+  --border-2:     #cbd5e1;
+  --brand:        #003366;
+  --brand-mid:    #0055a4;
+  --brand-light:  #eff6ff;
+  --accent:       #0099CC;
+  --accent-light: #e0f2fe;
+  --success:      #16a34a;
+  --success-bg:   #dcfce7;
+  --error:        #dc2626;
+  --error-bg:     #fef2f2;
+  --warn:         #d97706;
+  --warn-bg:      #fef3c7;
+  --shadow-sm:    0 1px 4px rgba(0,0,0,.08);
+  --shadow-md:    0 4px 12px rgba(0,0,0,.10);
+  --shadow-lg:    0 8px 24px rgba(0,0,0,.13);
+  --nav-h:        64px;
+  --radius:       10px;
+  --transition:   .2s ease;
+}
+
+[data-theme="dark"] {
+  --bg:           #0f172a;
+  --surface:      #1e293b;
+  --surface-2:    #263448;
+  --surface-3:    #334155;
+  --text-pri:     #f1f5f9;
+  --text-sec:     #94a3b8;
+  --text-muted:   #64748b;
+  --border:       #334155;
+  --border-2:     #475569;
+  --brand:        #4db8ff;
+  --brand-mid:    #38a9f4;
+  --brand-light:  #0f2a4a;
+  --accent:       #38bdf8;
+  --accent-light: #0c2f44;
+  --success:      #22c55e;
+  --success-bg:   #052e16;
+  --error:        #f87171;
+  --error-bg:     #2d0a0a;
+  --warn:         #fbbf24;
+  --warn-bg:      #2d1d02;
+  --shadow-sm:    0 1px 4px rgba(0,0,0,.3);
+  --shadow-md:    0 4px 12px rgba(0,0,0,.4);
+  --shadow-lg:    0 8px 24px rgba(0,0,0,.5);
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--text-pri);min-height:100vh;transition:background .3s,color .3s}
+button{cursor:pointer;font-family:inherit}
+input,textarea,select{font-family:inherit;background:var(--surface);color:var(--text-pri)}
+input::placeholder,textarea::placeholder{color:var(--text-muted)}
+
+/* ===================== UTILIDADES ===================== */
+.hidden{display:none!important}
+.flex{display:flex}
+.flex-col{flex-direction:column}
+.items-center{align-items:center}
+.justify-between{justify-content:space-between}
+.gap-2{gap:8px}
+.gap-3{gap:12px}
+.gap-4{gap:16px}
+.w-full{width:100%}
+.text-center{text-align:center}
+.text-sm{font-size:13px}
+.text-xs{font-size:11px}
+.font-bold{font-weight:700}
+.font-semibold{font-weight:600}
+.rounded{border-radius:6px}
+.rounded-lg{border-radius:10px}
+.rounded-xl{border-radius:14px}
+.rounded-full{border-radius:9999px}
+.shadow{box-shadow:0 1px 4px rgba(0,0,0,.1)}
+.shadow-md{box-shadow:0 4px 12px rgba(0,0,0,.12)}
+.shadow-lg{box-shadow:0 8px 24px rgba(0,0,0,.15)}
+.p-3{padding:12px}
+.p-4{padding:16px}
+.p-6{padding:24px}
+.px-4{padding-left:16px;padding-right:16px}
+.py-2{padding-top:8px;padding-bottom:8px}
+.py-3{padding-top:12px;padding-bottom:12px}
+.mt-2{margin-top:8px}
+.mt-4{margin-top:16px}
+.mt-6{margin-top:24px}
+.mb-4{margin-bottom:16px}
+.mb-6{margin-bottom:24px}
+
+/* ===================== LOGO SVG ===================== */
+.logo-svg{width:160px;height:40px}
+
+/* ===================== NAV ===================== */
+#nav{background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;padding:0 20px;transition:background .3s,border-color .3s}
+.nav-inner{max-width:1200px;margin:0 auto;height:64px;display:flex;align-items:center;justify-content:space-between}
+.nav-brand{display:flex;align-items:center;gap:16px;cursor:pointer}
+.nav-links{display:flex;gap:4px}
+.nav-btn{background:none;border:none;padding:8px 14px;border-radius:8px;font-size:14px;font-weight:500;color:var(--text-sec);transition:.2s;display:flex;align-items:center;gap:6px}
+.nav-btn:hover{background:var(--surface-2);color:var(--text-pri)}
+.nav-btn.active{color:var(--brand);background:var(--brand-light);font-weight:600}
+.nav-btn.admin-btn{color:#7c3aed}
+.nav-btn.admin-btn.active{color:#7c3aed;background:#f5f3ff}
+[data-theme="dark"] .nav-btn.admin-btn.active{background:#1e1340}
+.btn-nueva{background:var(--brand);color:white;border:none;padding:8px 18px;border-radius:8px;font-size:14px;font-weight:600;display:flex;align-items:center;gap:6px;transition:.2s}
+.btn-nueva:hover{opacity:.88}
+/* Theme toggle */
+.btn-theme{background:var(--surface-2);border:1px solid var(--border);color:var(--text-sec);border-radius:8px;padding:7px 10px;font-size:16px;display:flex;align-items:center;transition:.2s;margin-left:8px}
+.btn-theme:hover{background:var(--surface-3);color:var(--text-pri)}
+.nav-right{display:flex;align-items:center;gap:8px}
+.user-chip{display:flex;align-items:center;gap:8px;background:var(--surface-2);border:1px solid var(--border);border-radius:20px;padding:4px 12px 4px 4px;font-size:12px;color:var(--text-sec)}
+.user-avatar{width:26px;height:26px;border-radius:50%;background:var(--brand);color:white;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center}
+
+/* ===================== SPLASH ===================== */
+#view-splash{position:fixed;inset:0;background:linear-gradient(160deg,#001f4d 0%,#003366 50%,#004080 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999;transition:opacity .6s;overflow:hidden}
+.splash-content{position:relative;z-index:10;text-align:center;display:flex;flex-direction:column;align-items:center}
+.splash-logo{animation:splashPulse 2.5s ease-in-out infinite;filter:drop-shadow(0 12px 40px rgba(0,153,204,.5))}
+@keyframes splashPulse{0%,100%{transform:scale(1) translateY(0)}50%{transform:scale(1.04) translateY(-8px)}}
+/* Partículas flotantes */
+.splash-particles{position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:1}
+.particle{position:absolute;border-radius:50%;animation:floatUp linear infinite;opacity:0}
+@keyframes floatUp{0%{transform:translateY(110vh) scale(0);opacity:0}15%{opacity:.6}85%{opacity:.3}100%{transform:translateY(-80px) scale(1.8);opacity:0}}
+/* Olas animadas en capas */
+.splash-waves{position:absolute;bottom:0;left:0;width:100%;z-index:2;overflow:hidden}
+.waves-container{position:relative;height:160px;width:100%}
+.wave-layer{position:absolute;bottom:0;left:0;width:200%;height:100%}
+.wave-layer svg{width:50%;height:100%;float:left}
+.wave1{animation:waveScroll 7s linear infinite}
+.wave2{animation:waveScroll 11s linear infinite reverse;opacity:.6}
+.wave3{animation:waveScroll 15s linear infinite;opacity:.35}
+@keyframes waveScroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+/* Barra de carga */
+.splash-bar{width:240px;height:3px;background:rgba(255,255,255,.12);border-radius:2px;overflow:hidden;margin-top:40px;position:relative}
+.splash-fill{height:100%;background:linear-gradient(90deg,#0099CC,#66d9ff,#0099CC);background-size:200%;border-radius:2px;animation:fill 2.8s ease-out forwards,shimmer 1.5s linear infinite}
+@keyframes fill{from{width:0}to{width:100%}}
+@keyframes shimmer{0%{background-position:200% center}100%{background-position:-200% center}}
+
+/* ===================== DOC WAVES ===================== */
+.doc-watermark{position:absolute;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+.doc-waves-wrap{position:absolute;bottom:0;left:0;width:100%;height:55%}
+.doc-wave-layer{position:absolute;bottom:0;left:0;width:200%;height:100%}
+.doc-wave-layer svg{width:50%;height:100%;float:left}
+.doc-wave-a{animation:docWave 14s linear infinite}
+.doc-wave-b{animation:docWave 20s linear infinite reverse;opacity:.8}
+.doc-wave-c{animation:docWave 26s linear infinite;opacity:.7}
+@keyframes docWave{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+
+/* ===================== CAMERA BTNS ===================== */
+.camera-btns-row{display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;margin-top:4px}
+.btn-divider{font-size:12px;color:#94a3b8;font-weight:600;padding:0 4px}
+.btn-adjuntar{background:#475569;color:white;border:none;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;display:inline-flex;align-items:center;gap:8px;cursor:pointer;transition:.2s;font-family:inherit}
+.btn-adjuntar:hover{background:#334155}
+
+/* ===================== LOGIN ===================== */
+#view-login{min-height:100vh;background:#FAF8F3;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;overflow:hidden}
+.login-bg{position:absolute;inset:0;pointer-events:none}
+.login-card{background:white;padding:48px 40px;border-radius:24px;box-shadow:0 8px 40px rgba(0,0,0,.12);max-width:420px;width:100%;margin:20px;display:flex;flex-direction:column;align-items:center;text-align:center}
+.login-card h1{font-size:26px;font-weight:700;color:#1e293b;margin:24px 0 8px}
+.login-card p{color:#64748b;font-size:14px;margin-bottom:32px}
+.btn-google{width:100%;display:flex;align-items:center;justify-content:center;gap:12px;background:white;border:1px solid #d1d5db;color:#374151;padding:12px 24px;border-radius:9999px;font-size:15px;font-weight:500;transition:.2s;cursor:pointer}
+.btn-google:hover{background:#f9fafb;box-shadow:0 2px 8px rgba(0,0,0,.1)}
+.login-footer{position:absolute;bottom:24px;font-size:12px;color:#94a3b8}
+
+/* ===================== SIDEBAR NOTIFICATIONS ===================== */
+#notif-sidebar{position:fixed;top:80px;right:0;width:300px;z-index:800;display:flex;flex-direction:column;gap:8px;padding:0 12px;pointer-events:none}
+.notif-card{background:white;border-left:4px solid #003366;border-radius:0 10px 10px 0;box-shadow:0 4px 20px rgba(0,0,0,.13);padding:12px 14px;font-size:12px;color:#1e293b;pointer-events:all;transform:translateX(110%);transition:transform .35s cubic-bezier(.34,1.2,.64,1);position:relative;min-width:260px}
+.notif-card.show{transform:translateX(0)}
+.notif-card.success{border-color:#16a34a}
+.notif-card.error{border-color:#dc2626}
+.notif-card.warn{border-color:#d97706}
+.notif-card.info{border-color:#0099CC}
+.notif-title{font-weight:700;font-size:12px;margin-bottom:3px;display:flex;align-items:center;gap:6px}
+.notif-body{color:#64748b;font-size:11px;line-height:1.4}
+.notif-steps{margin-top:6px;display:flex;flex-direction:column;gap:3px}
+.notif-step{display:flex;align-items:center;gap:6px;font-size:11px;color:#64748b}
+.notif-step.done{color:#16a34a;font-weight:600}
+.notif-step.active{color:#0099CC;font-weight:600}
+.notif-step.fail{color:#dc2626}
+.notif-step .step-dot{width:14px;height:14px;border-radius:50%;background:#e2e8f0;display:flex;align-items:center;justify-content:center;font-size:9px;flex-shrink:0}
+.notif-step.done .step-dot{background:#dcfce7;color:#16a34a}
+.notif-step.active .step-dot{background:#e0f2fe;color:#0099CC;animation:stepPulse .8s ease-in-out infinite}
+.notif-step.fail .step-dot{background:#fef2f2;color:#dc2626}
+@keyframes stepPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.25)}}
+.notif-progress{height:2px;background:#e2e8f0;border-radius:2px;margin-top:8px;overflow:hidden}
+.notif-progress-fill{height:100%;background:linear-gradient(90deg,#003366,#0099CC);border-radius:2px;transition:width .4s ease;width:0%}
+.notif-close{position:absolute;top:6px;right:8px;background:none;border:none;color:#94a3b8;cursor:pointer;font-size:14px;padding:0;line-height:1}
+.notif-close:hover{color:#374151}
+/* ===================== COMPLETION DIALOG ===================== */
+#completion-dialog{position:fixed;inset:0;background:rgba(0,0,20,.55);z-index:900;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(3px);opacity:0;transition:opacity .3s;pointer-events:none}
+#completion-dialog.show{opacity:1;pointer-events:all}
+.completion-box{background:white;border-radius:20px;padding:36px 32px;max-width:460px;width:100%;box-shadow:0 24px 60px rgba(0,0,0,.2);text-align:center;transform:translateY(24px);transition:transform .35s cubic-bezier(.34,1.2,.64,1)}
+#completion-dialog.show .completion-box{transform:translateY(0)}
+.completion-icon{font-size:52px;margin-bottom:12px;display:block}
+.completion-title{font-size:20px;font-weight:800;color:#003366;margin-bottom:6px}
+.completion-sub{font-size:13px;color:#64748b;margin-bottom:24px;line-height:1.5}
+.completion-nro{display:inline-block;background:#eff6ff;color:#003366;font-size:13px;font-weight:700;padding:5px 14px;border-radius:8px;margin-bottom:20px;border:1px solid #bfdbfe}
+.completion-actions{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.completion-btn{padding:12px 22px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;border:2px solid;transition:.2s;display:flex;align-items:center;gap:8px;white-space:nowrap}
+.completion-btn.primary{background:#003366;color:white;border-color:#003366}
+.completion-btn.primary:hover{background:#002244}
+.completion-btn.secondary{background:white;color:#003366;border-color:#003366}
+.completion-btn.secondary:hover{background:#eff6ff}
+.completion-btn.ghost{background:white;color:#64748b;border-color:#e2e8f0;font-size:12px;padding:8px 16px}
+.completion-btn.ghost:hover{background:#f8fafc}
+.completion-email-row{display:flex;gap:8px;margin-bottom:16px;align-items:center}
+.completion-email-input{flex:1;padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;outline:none;font-family:inherit}
+.completion-email-input:focus{border-color:#0099CC}
+.completion-send-btn{background:#0369a1;color:white;border:none;padding:9px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap}
+.completion-send-btn:hover{background:#025585}
+.completion-send-btn:disabled{opacity:.5;cursor:not-allowed}
+/* ===================== FORM LOCK STATE ===================== */
+.form-locked .doc-input{pointer-events:none;color:#374151;background:transparent}
+.form-locked input[type=checkbox]{pointer-events:none}
+.form-locked input[type=radio]{pointer-events:none}
+.form-locked .obs-textarea{pointer-events:none;background:#f8fafc}
+.form-locked .firma-canvas{pointer-events:none}
+.lock-overlay-banner{background:linear-gradient(90deg,#003366,#0055a4);color:white;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;gap:12px}
+.lock-overlay-banner.sent{background:linear-gradient(90deg,#15803d,#16a34a)}
+.btn-archive{background:#f59e0b;color:white;border:none;padding:8px 18px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;white-space:nowrap}
+.btn-archive:hover{background:#d97706}
+/* Modal archivar */
+.modal-archive-body{padding:20px 24px}
+.archive-reason-input{width:100%;padding:10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;resize:none;font-family:inherit;outline:none;margin-top:8px}
+.archive-reason-input:focus{border-color:#f59e0b;box-shadow:0 0 0 3px rgba(245,158,11,.12)}
+
+/* ===================== AUTOCOMPLETE CONCESIONES ===================== */
+.autocomplete-wrap{position:relative}
+.autocomplete-dropdown{position:fixed;min-width:320px;max-width:480px;background:white;border:1.5px solid #0099CC;border-radius:8px;box-shadow:0 8px 28px rgba(0,0,0,.18);z-index:9999;max-height:240px;overflow-y:auto;font-size:12px}
+.ac-item{padding:9px 14px;cursor:pointer;border-bottom:1px solid #f1f5f9;display:flex;gap:10px;align-items:flex-start}
+.ac-item:last-child{border-bottom:none}
+.ac-item:hover{background:#eff6ff}
+.ac-item.ac-new{background:#fffbeb;border-left:3px solid #f59e0b}
+.ac-item.ac-new:hover{background:#fef3c7}
+.ac-code{font-weight:700;color:#003366;min-width:62px;font-size:12px;padding-top:1px}
+.ac-name{color:#374151;font-size:11px;line-height:1.4}
+.ac-titular{color:#64748b;font-size:10px;margin-top:1px}
+.ac-filled{background:#f0fdf4;border-radius:4px;transition:background .4s}
+.ac-badge{display:inline-flex;align-items:center;gap:4px;background:#dcfce7;color:#15803d;font-size:10px;font-weight:700;padding:2px 7px;border-radius:9999px;margin-left:6px;vertical-align:middle}
+.ac-badge.custom{background:#fef3c7;color:#92400e}
+
+/* ===================== DARK MODE OVERRIDES ===================== */
+[data-theme="dark"] .doc-paper{background:var(--surface);border-color:var(--border)}
+[data-theme="dark"] .filtros-card,[data-theme="dark"] .stat-card{background:var(--surface);border-color:var(--border)}
+[data-theme="dark"] .hist-table-wrap{background:var(--surface);border-color:var(--border)}
+[data-theme="dark"] .hist-table th{background:var(--surface-2);color:var(--text-sec);border-color:var(--border)}
+[data-theme="dark"] .hist-table td{border-color:var(--border)}
+[data-theme="dark"] .hist-table tr:hover td{background:var(--surface-2)}
+[data-theme="dark"] .modal-box{background:var(--surface);border-color:var(--border)}
+[data-theme="dark"] .modal-header{border-color:var(--border)}
+[data-theme="dark"] .modal-footer{background:var(--surface-2);border-color:var(--border)}
+[data-theme="dark"] .email-preview{background:var(--surface-2);border-color:var(--border)}
+[data-theme="dark"] .filtro-input{background:var(--surface-2);border-color:var(--border);color:var(--text-pri)}
+[data-theme="dark"] .doc-input{background:transparent;color:var(--text-pri)}
+[data-theme="dark"] .doc-table td{border-color:var(--border-2)}
+[data-theme="dark"] .doc-table .label-cell{background:var(--surface-2);color:var(--text-sec)}
+[data-theme="dark"] .doc-watermark{opacity:.03}
+[data-theme="dark"] .notif-card{background:var(--surface);border-color:var(--border)}
+[data-theme="dark"] .completion-box{background:var(--surface)}
+[data-theme="dark"] .completion-nro{background:var(--surface-2);color:var(--brand)}
+[data-theme="dark"] .completion-btn.secondary{background:var(--surface);color:var(--brand)}
+[data-theme="dark"] .lock-overlay-banner{opacity:.9}
+[data-theme="dark"] #view-historico,[data-theme="dark"] #view-dashboard{background:var(--bg)}
+[data-theme="dark"] .dash-header h1,[data-theme="dark"] .dash-header p{color:var(--text-pri)}
+[data-theme="dark"] .chart-card{background:var(--surface)}
+[data-theme="dark"] .firma-canvas{border-color:var(--border)}
+[data-theme="dark"] .obs-textarea{background:var(--surface-2);color:var(--text-pri)}
+[data-theme="dark"] .badge{opacity:.9}
+[data-theme="dark"] #view-registro{background:var(--bg)}
+[data-theme="dark"] .autocomplete-dropdown{background:var(--surface);border-color:var(--accent)}
+[data-theme="dark"] .ac-item{border-color:var(--border)}
+[data-theme="dark"] .ac-item:hover{background:var(--surface-2)}
+[data-theme="dark"] .view-container{background:var(--bg)}
+
+/* ===================== ADMIN VIEW ===================== */
+#view-admin{background:var(--bg);min-height:calc(100vh - 64px)}
+.admin-header{max-width:1200px;margin:0 auto;padding:28px 24px 0;display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
+.admin-header h1{font-size:24px;font-weight:800;color:var(--text-pri)}
+.admin-header p{font-size:13px;color:var(--text-sec);margin-top:4px}
+.admin-badge{background:#7c3aed;color:white;font-size:10px;font-weight:700;padding:2px 8px;border-radius:9999px;text-transform:uppercase;letter-spacing:.5px;vertical-align:middle;margin-left:8px}
+.admin-stats{max-width:1200px;margin:20px auto 0;padding:0 24px;display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px}
+.admin-stat{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 18px;box-shadow:var(--shadow-sm)}
+.admin-stat-val{font-size:28px;font-weight:800;color:var(--brand)}
+.admin-stat-lbl{font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-top:2px}
+.admin-filters{max-width:1200px;margin:16px auto 0;padding:0 24px;background:var(--surface);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.admin-filters-inner{padding:14px 0;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.admin-table-wrap{max-width:1200px;margin:20px auto 40px;padding:0 24px}
+.admin-table-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;box-shadow:var(--shadow-sm)}
+.admin-table{width:100%;border-collapse:collapse;font-size:12px}
+.admin-table th{background:var(--surface-2);color:var(--text-sec);font-size:10px;text-transform:uppercase;letter-spacing:.6px;padding:10px 12px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap;font-weight:700}
+.admin-table td{padding:11px 12px;border-bottom:1px solid var(--border);color:var(--text-pri);vertical-align:middle}
+.admin-table tr:last-child td{border-bottom:none}
+.admin-table tr:hover td{background:var(--surface-2)}
+.admin-cert-chip{display:flex;align-items:center;gap:6px}
+.admin-cert-avatar{width:22px;height:22px;border-radius:50%;background:var(--brand);color:white;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.admin-action-btn{background:none;border:1px solid var(--border);color:var(--text-sec);border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer;transition:.15s;display:inline-flex;align-items:center;gap:4px}
+.admin-action-btn:hover{background:var(--surface-2);color:var(--text-pri)}
+.admin-action-btn.danger:hover{background:var(--error-bg);color:var(--error);border-color:var(--error)}
+.admin-empty{text-align:center;padding:48px;color:var(--text-muted);font-size:14px}
+.admin-footer{padding:12px 16px;background:var(--surface-2);border-top:1px solid var(--border);font-size:12px;color:var(--text-muted);display:flex;justify-content:space-between;align-items:center}
+
+/* ===================== DASHBOARD OCEAN ===================== */
+#dash-ocean{position:fixed;bottom:0;left:0;width:100%;height:220px;pointer-events:none;z-index:0;overflow:hidden}
+.dash-wave-layer{position:absolute;bottom:0;left:0;width:200%;height:100%}
+.dash-wave-layer svg{width:50%;height:100%;float:left}
+.dw1{animation:dwScroll 8s linear infinite}
+.dw2{animation:dwScroll 13s linear infinite reverse;opacity:.75}
+.dw3{animation:dwScroll 18s linear infinite;opacity:.55}
+.dw4{animation:dwScroll 24s linear infinite reverse;opacity:.4}
+@keyframes dwScroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+/* Peces */
+.fish{position:absolute;animation:fishSwim linear infinite}
+.fish svg{display:block}
+@keyframes fishSwim{0%{transform:translateX(0)}100%{transform:translateX(var(--fish-travel))}}
+@keyframes fishSwimRev{0%{transform:translateX(0) scaleX(-1)}100%{transform:translateX(var(--fish-travel)) scaleX(-1)}}
+.fish.rev{animation-name:fishSwimRev}
+/* Dashboard content above ocean */
+#view-dashboard{position:relative;z-index:1}
+
+/* ===================== DASHBOARD ===================== */
+#view-dashboard{padding:28px 20px 240px;max-width:1100px;margin:0 auto}
+.dash-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px;flex-wrap:wrap;gap:12px}
+.dash-header h1{font-size:26px;font-weight:700;color:#003366}
+.dash-header p{font-size:13px;color:#64748b;margin-top:4px}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:24px}
+.stat-card{background:white;border:1px solid #e2e8f0;border-radius:12px;padding:20px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.stat-card.primary{background:linear-gradient(135deg,#003366,#004d99);color:white;border:none}
+.stat-card.primary p{color:rgba(255,255,255,.7)}
+.stat-card .stat-label{font-size:12px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+.stat-card.primary .stat-label{color:rgba(255,255,255,.7)}
+.stat-card .stat-value{font-size:32px;font-weight:700;color:#003366}
+.stat-card.primary .stat-value{color:white}
+.stat-card .stat-sub{font-size:12px;color:#22c55e;margin-top:6px;font-weight:600}
+.charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px}
+@media(max-width:700px){.charts-grid{grid-template-columns:1fr}}
+.chart-card{background:white;border:1px solid #e2e8f0;border-radius:12px;padding:20px}
+.chart-card h3{font-size:15px;font-weight:700;color:#003366;margin-bottom:16px}
+.vencer-table{width:100%;border-collapse:collapse;font-size:13px}
+.vencer-table th{background:#f8fafc;font-weight:600;color:#64748b;text-align:left;padding:10px 14px;font-size:11px;text-transform:uppercase;letter-spacing:.5px}
+.vencer-table td{padding:10px 14px;border-bottom:1px solid #f1f5f9}
+.vencer-table tr:hover td{background:#f8fafc}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:9999px;font-size:11px;font-weight:700}
+.badge-warn{background:#fffbeb;color:#d97706;border:1px solid #fde68a}
+.badge-ok{background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0}
+.badge-blue{background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe}
+.badge-red{background:#fef2f2;color:#dc2626;border:1px solid #fecaca}
+
+/* ===================== FILTROS ===================== */
+.filtros-card{background:white;border:1px solid #e2e8f0;border-radius:12px;padding:20px;margin-bottom:20px}
+.filtros-card h2{font-size:14px;font-weight:700;color:#003366;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.filtros-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+.filtro-input{width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;background:#f8fafc;outline:none;transition:.2s}
+.filtro-input:focus{border-color:#0099CC;background:white;box-shadow:0 0 0 3px rgba(0,153,204,.12)}
+label.filtro-label{font-size:11px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px}
+
+/* ===================== FORMULARIO REGISTRO ===================== */
+#view-registro{max-width:800px;margin:0 auto;padding:20px}
+.doc-paper{background:white;border:1px solid #d1d5db;border-radius:4px;padding:32px;box-shadow:0 2px 8px rgba(0,0,0,.08);position:relative;overflow:hidden}
+.doc-watermark{position:absolute;inset:0;pointer-events:none;z-index:0}
+.doc-content{position:relative;z-index:1}
+.doc-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
+.doc-title h1{font-size:24px;font-weight:900;letter-spacing:2px;color:black;white-space:nowrap}
+.doc-title p{font-style:italic;color:#64748b;font-size:13px;margin-top:2px}
+.doc-meta{text-align:right}
+.doc-meta-row{display:flex;align-items:center;justify-content:flex-end;gap:8px;margin-bottom:4px}
+.doc-meta-label{font-size:12px;font-weight:700;color:#B91C1C}
+.doc-border-thick{border-top:3px solid black;margin-bottom:2px}
+.doc-border-thin{border-top:1px solid black;margin-bottom:20px}
+.doc-table{width:100%;border-collapse:collapse;margin-bottom:20px;font-size:13px}
+.doc-table td{border:1px solid #94a3b8;padding:6px 10px;vertical-align:middle}
+.doc-table .label-cell{background:#e2e8f0;font-weight:700;font-size:11px;color:#374151;width:25%}
+.doc-input{width:100%;border:none;background:transparent;outline:none;font-size:13px;padding:2px 4px;font-family:inherit}
+.doc-input:hover{border-bottom:1px dashed #93c5fd}
+.doc-input:focus{border-bottom:1px solid #3b82f6}
+.res-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:20px}
+.res-label{display:flex;align-items:center;gap:8px;font-size:11px;font-weight:600;cursor:pointer;color:#374151}
+.res-label input{accent-color:#1e3a5f}
+.section-title{font-size:11px;font-weight:700;color:#374151;margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px}
+.coord-table{width:100%;border-collapse:collapse;margin-bottom:20px}
+.coord-table th{background:#1e3a5f;color:white;text-align:center;font-size:10px;font-weight:600;padding:6px;text-transform:uppercase;letter-spacing:.5px}
+.coord-table .sub-th{background:#f1f5f9;font-size:10px;font-weight:600;text-align:center;padding:4px;color:#374151}
+.coord-table td{border:1px solid #94a3b8;padding:6px;text-align:center}
+.obs-table{width:100%;border-collapse:collapse;margin-bottom:20px}
+.obs-table .obs-header{background:#e2e8f0;font-size:11px;font-weight:700;text-align:center;padding:6px;border:1px solid #94a3b8}
+.obs-table .obs-si-no{background:#e2e8f0;border:1px solid #94a3b8;padding:6px 12px}
+.obs-radio-group{display:flex;justify-content:flex-end;gap:16px;padding-right:8px}
+.obs-radio{display:flex;align-items:center;gap:4px;font-size:11px;font-weight:700;cursor:pointer}
+.obs-textarea{width:100%;min-height:160px;height:auto;padding:12px;border:none;outline:none;font-size:13px;font-family:inherit;resize:vertical;line-height:1.8;box-sizing:border-box;display:block}
+.tipo-obs-row{display:flex;gap:20px;padding:10px 16px;border-top:1px solid #94a3b8}
+.tipo-obs-label{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.5px}
+.firma-section{display:flex;border-top:3px solid #94a3b8;padding-top:16px;margin-top:24px}
+.firma-col{width:50%;display:flex;flex-direction:column;align-items:center;padding:0 16px}
+.firma-col:first-child{border-right:1px solid #94a3b8}
+.firma-canvas{border:1px solid transparent;border-radius:4px;cursor:crosshair;touch-action:none}
+.firma-canvas:hover{border-color:#d1d5db}
+.firma-line{width:80%;border-top:1px solid black;margin:6px 0}
+.firma-input-name{font-weight:700;font-size:13px;text-align:center;border:none;background:transparent;outline:none;width:100%}
+.firma-input-name:hover{border-bottom:1px dashed #93c5fd}
+.firma-role{font-size:11px;font-weight:700;color:#374151;text-align:center}
+/* Checklist */
+.checklist-card{background:#fffbeb;border:2px solid #fbbf24;border-radius:14px;padding:24px;margin-top:24px}
+.checklist-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+.checklist-header h2{font-size:16px;font-weight:700;color:#1e3a5f}
+.lock-badge{padding:6px 14px;border-radius:9999px;font-size:11px;font-weight:700;display:flex;align-items:center;gap:6px}
+.lock-badge.locked{background:#fef3c7;color:#d97706}
+.lock-badge.unlocked{background:#dcfce7;color:#15803d}
+.check-item{display:flex;align-items:center;justify-content:space-between;padding:12px;border-radius:8px;border:1px solid #e2e8f0;background:white;margin-bottom:8px;cursor:pointer;transition:.2s}
+.check-item.done{background:#ecfdf5;border-color:#a7f3d0}
+.check-item.auto{cursor:default}
+.check-dot{width:20px;height:20px;border-radius:50%;border:2px solid #d1d5db;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:12px;margin-right:12px;transition:.2s}
+.check-dot.done{background:#10b981;border-color:#10b981;color:white}
+.check-text{font-size:13px;color:#374151;flex:1}
+.check-text.done{color:#065f46;font-weight:600}
+.alert-icon{color:#ef4444;font-size:16px;margin-left:8px}
+/* Acciones */
+.actions-bar{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:24px}
+.btn-action{display:flex;align-items:center;gap:8px;padding:10px 20px;border-radius:8px;font-size:14px;font-weight:600;border:2px solid;transition:.2s}
+.btn-save{border-color:#374151;color:#374151;background:white}
+.btn-save:hover{background:#f8fafc}
+.btn-save.saved{border-color:#16a34a;color:#15803d;background:#dcfce7}
+.btn-pdf{border-color:#1e3a5f;color:#1e3a5f;background:white}
+.btn-pdf:hover:not(:disabled){background:#1e3a5f;color:white}
+.btn-sync{border-color:#059669;color:#059669;background:white}
+.btn-sync:hover:not(:disabled){background:#059669;color:white}
+.btn-mail{border-color:#0369a1;color:#0369a1;background:white}
+.btn-mail:hover:not(:disabled){background:#0369a1;color:white}
+.btn-mail.sent{border-color:#16a34a;color:#15803d;background:#dcfce7}
+button:disabled{opacity:.45;cursor:not-allowed!important}
+.warn-msg{display:flex;align-items:center;gap:8px;color:#d97706;font-size:13px;font-weight:600;justify-content:center;margin-top:12px}
+/* Cámara */
+.camera-card{background:white;border:2px solid #e2e8f0;border-radius:14px;padding:24px;margin-top:24px}
+.camera-card h2{font-size:15px;font-weight:700;color:#1e3a5f;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.camera-placeholder{border:2px dashed #d1d5db;border-radius:8px;padding:40px;text-align:center;background:#f8fafc}
+.camera-placeholder p{color:#94a3b8;font-size:13px;margin-bottom:16px}
+.btn-camera{background:#1e3a5f;color:white;border:none;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;display:inline-flex;align-items:center;gap:8px}
+.btn-camera:hover{background:#162d4a}
+video{width:100%;border-radius:8px;background:black}
+.photo-preview img{width:100%;max-width:500px;border:4px solid white;box-shadow:0 4px 12px rgba(0,0,0,.15);border-radius:8px;display:block;margin:0 auto}
+.btn-danger{background:#fef2f2;color:#dc2626;border:1px solid #fecaca;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;display:inline-flex;align-items:center;gap:6px}
+.btn-danger:hover{background:#fee2e2}
+.btn-success{background:#10b981;color:white;border:none;padding:8px 20px;border-radius:8px;font-size:13px;font-weight:600;display:inline-flex;align-items:center;gap:6px}
+.btn-success:hover{background:#059669}
+/* Histórico */
+#view-historico{max-width:1100px;margin:0 auto;padding:28px 20px}
+.hist-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px;flex-wrap:wrap;gap:12px}
+.hist-header h1{font-size:26px;font-weight:700;color:#003366}
+.hist-table-wrap{background:white;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden}
+.hist-search-bar{padding:14px 16px;border-bottom:1px solid #f1f5f9;display:flex;justify-content:space-between;align-items:center;background:#f8fafc;gap:12px;flex-wrap:wrap}
+.hist-search{padding:8px 12px 8px 36px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;background:white url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%2394a3b8' stroke-width='2' viewBox='0 0 24 24'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E") no-repeat 10px center;outline:none;width:280px;transition:.2s}
+.hist-search:focus{border-color:#0099CC;box-shadow:0 0 0 3px rgba(0,153,204,.12)}
+.hist-table{width:100%;border-collapse:collapse;font-size:13px}
+.hist-table th{background:#f8fafc;font-weight:600;color:#64748b;text-align:left;padding:11px 14px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid #e2e8f0}
+.hist-table td{padding:11px 14px;border-bottom:1px solid #f1f5f9}
+.hist-table tr:hover td{background:#f8fafc}
+.hist-table .link-cert{color:#0099CC;text-decoration:none;font-weight:600;font-size:12px}
+.hist-table .link-cert:hover{text-decoration:underline}
+.hist-empty{text-align:center;padding:48px;color:#94a3b8;font-size:14px}
+.hist-footer{padding:12px 16px;border-top:1px solid #f1f5f9;background:#f8fafc;font-size:12px;color:#64748b}
+/* Modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;display:flex;align-items:center;justify-content:center;padding:16px}
+.modal-box{background:white;border-radius:16px;max-width:520px;width:100%;max-height:90vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.2)}
+.modal-header{display:flex;justify-content:space-between;align-items:center;padding:18px 24px;border-bottom:1px solid #f1f5f9}
+.modal-header h2{font-size:16px;font-weight:700;color:#1e293b}
+.modal-close{background:none;border:none;font-size:20px;color:#94a3b8;cursor:pointer;padding:4px;border-radius:6px;line-height:1}
+.modal-close:hover{background:#f1f5f9;color:#374151}
+.modal-body{flex:1;overflow-y:auto;padding:20px 24px}
+.modal-footer{padding:14px 24px;border-top:1px solid #f1f5f9;background:#f8fafc;display:flex;justify-content:flex-end;gap:12px}
+.email-preview{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:16px;font-family:monospace;font-size:12px;color:#374151;margin-bottom:16px}
+.email-row{display:grid;grid-template-columns:56px 1fr;gap:8px;align-items:center;margin-bottom:8px}
+.email-label{color:#94a3b8;font-size:12px}
+.email-to-input{border:1px solid #e2e8f0;border-radius:4px;padding:5px 8px;font-size:12px;font-family:monospace;width:100%;outline:none;background:white}
+.email-to-input:focus{border-color:#3b82f6}
+.email-body{white-space:pre-wrap;border-top:1px solid #e2e8f0;padding-top:12px;margin-top:4px;color:#4b5563;font-size:12px;font-family:monospace}
+/* Spinner */
+.spinner{width:18px;height:18px;border:2px solid rgba(255,255,255,.3);border-top:2px solid white;border-radius:50%;animation:spin .7s linear infinite;display:inline-block}
+.spinner.dark{border-color:rgba(0,0,0,.2);border-top-color:#374151}
+@keyframes spin{to{transform:rotate(360deg)}}
+/* Toast */
+#toast{position:fixed;bottom:24px;right:24px;background:#1e293b;color:white;padding:12px 20px;border-radius:10px;font-size:13px;font-weight:600;z-index:500;box-shadow:0 4px 16px rgba(0,0,0,.2);opacity:0;transition:opacity .3s;pointer-events:none;max-width:320px}
+#toast.show{opacity:1}
+#toast.error{background:#dc2626}
+#toast.success{background:#16a34a}
+/* Print */
+@media print{
+  #nav,.checklist-card,.camera-card,.actions-bar,.warn-msg{display:none!important}
+  .doc-paper{border:none;box-shadow:none;padding:0}
+  #view-registro{padding:0;max-width:100%}
+}
+@media(max-width:600px){
+  /* --- Documento (no tocar layout interno) --- */
+  .doc-header{flex-direction:column;gap:12px}
+  .firma-section{flex-direction:column}
+  .firma-col{width:100%;border-right:none!important;border-bottom:1px solid #94a3b8;padding-bottom:16px;margin-bottom:16px}
+  .tipo-obs-row{flex-wrap:wrap;gap:12px}
+  .res-grid{grid-template-columns:1fr 1fr}
+
+  /* --- Nav móvil --- */
+  .nav-links{display:none}
+  .nav-inner{padding:0 12px}
+  .btn-nueva span{display:none}
+  .btn-nueva{padding:8px 12px}
+  .user-chip{display:none}
+
+  /* --- Vista registro --- */
+  #view-registro{padding:10px}
+  .doc-paper{padding:16px}
+  .actions-bar{gap:8px;padding:0 4px}
+  .btn-action{padding:9px 12px;font-size:13px}
+  .checklist-card{padding:16px}
+  .camera-card{padding:16px}
+
+  /* --- Dashboard --- */
+  #view-dashboard{padding:16px 12px 200px}
+  .dash-header{flex-direction:column;gap:8px}
+  .dash-header h1{font-size:20px}
+  .stats-grid{grid-template-columns:1fr 1fr;gap:10px}
+  .stat-card{padding:14px}
+  .stat-card .stat-value{font-size:26px}
+  .charts-grid{grid-template-columns:1fr}
+  .filtros-grid{grid-template-columns:1fr 1fr}
+
+  /* --- Histórico --- */
+  #view-historico{padding:16px 12px}
+  .hist-header h1{font-size:20px}
+  .hist-search-bar{flex-direction:column;align-items:stretch}
+  .hist-search{width:100%}
+  #hist-desde,#hist-hasta{width:100%}
+
+  /* --- Admin --- */
+  .admin-header{padding:16px 12px 0;flex-direction:column}
+  .admin-stats{padding:0 12px}
+  .admin-table-wrap{padding:0 12px}
+
+  /* --- Modales --- */
+  .modal-box{border-radius:12px 12px 0 0;position:fixed;bottom:0;left:0;right:0;max-height:90vh;max-width:100%}
+  .modal-overlay{align-items:flex-end;padding:0}
+  .completion-box{border-radius:16px;padding:24px 20px}
+  .completion-actions{flex-direction:column}
+  .completion-btn{justify-content:center}
+
+  /* --- Notif sidebar --- */
+  #notif-sidebar{width:calc(100% - 16px);right:0;padding:0 8px}
+  .notif-card{min-width:unset;width:100%;border-radius:10px;transform:translateY(-110%)}
+  .notif-card.show{transform:translateY(0)}
+
+  /* --- Toast --- */
+  #toast{left:12px;right:12px;bottom:16px;max-width:100%}
+
+  /* --- Lock banner --- */
+  .lock-overlay-banner{flex-direction:column;gap:8px;align-items:flex-start}
+  .btn-archive{align-self:flex-end}
+}
+</style>
+<script src="concesiones.js"></script>
+</head>
+<body>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<!-- SIDEBAR NOTIFICATIONS -->
+<div id="notif-sidebar"></div>
+
+<!-- COMPLETION DIALOG -->
+<div id="completion-dialog">
+  <div class="completion-box">
+    <span class="completion-icon" id="cd-icon">✅</span>
+    <div class="completion-title" id="cd-title">Registro Guardado</div>
+    <div class="completion-nro" id="cd-nro">RV-2026-0001</div>
+    <div class="completion-sub" id="cd-sub">El registro fue guardado exitosamente en Drive y Google Sheets.</div>
+    <div id="cd-email-section" style="margin-bottom:16px">
+      <div style="font-size:12px;font-weight:700;color:#374151;text-align:left;margin-bottom:6px">Notificar responsable del centro:</div>
+      <div class="completion-email-row">
+        <input type="email" id="cd-email-input" class="completion-email-input" placeholder="responsable@empresa.cl">
+        <button class="completion-send-btn" id="cd-send-btn" onclick="handleCompletionEnviar()">✉️ Enviar</button>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:6px">
+        <input type="text" id="cd-cc-input" class="completion-email-input" placeholder="CC (opcional)" style="font-size:11px;padding:6px 10px">
+        <input type="text" id="cd-cco-input" class="completion-email-input" placeholder="CCO (oculto)" style="font-size:11px;padding:6px 10px">
+      </div>
+    </div>
+    <div class="completion-actions">
+      <button class="completion-btn primary" onclick="completionGo('dashboard')">
+        🏠 Ir al Dashboard
+      </button>
+      <button class="completion-btn secondary" onclick="completionGo('historico')">
+        📋 Ver Histórico
+      </button>
+      <button class="completion-btn ghost" onclick="closeCompletionDialog()">
+        Continuar editando
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== SPLASH ===================== -->
+<div id="view-splash">
+  <!-- Partículas flotantes -->
+  <div class="splash-particles" id="splash-particles"></div>
+
+  <!-- Contenido central -->
+  <div class="splash-content">
+    <!-- Logo grande -->
+    <svg class="splash-logo" style="width:320px;height:82px" viewBox="0 0 280 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <g>
+        <rect x="2" y="2" width="56" height="56" rx="8" fill="white" stroke="white" stroke-width="3"/>
+        <path d="M20 2V40M40 2V40M2 20H58M2 40H58" stroke="#003366" stroke-width="2"/>
+        <path d="M8 12C10 10 14 10 16 12C14 14 10 14 8 12Z" fill="white" stroke="#003366" stroke-width="1.5"/>
+        <path d="M8 12L5 10V14L8 12Z" fill="white" stroke="#003366" stroke-width="1.5"/>
+        <path d="M28 12C30 10 34 10 36 12C34 14 30 14 28 12Z" fill="white" stroke="#003366" stroke-width="1.5"/>
+        <path d="M28 12L25 10V14L28 12Z" fill="white" stroke="#003366" stroke-width="1.5"/>
+        <path d="M8 30C10 28 14 28 16 30C14 32 10 32 8 30Z" fill="white" stroke="#003366" stroke-width="1.5"/>
+        <path d="M8 30L5 28V32L8 30Z" fill="white" stroke="#003366" stroke-width="1.5"/>
+        <path d="M2 45Q16 35 30 45T58 45V50Q44 40 30 50T2 50V45Z" fill="#0099CC"/>
+        <path d="M2 50Q16 40 30 50T58 50V58C58 59.1 57.1 60 56 60H4C2.9 60 2 59.1 2 58V50Z" fill="#0099CC"/>
+        <path d="M25 35L35 45L55 15" stroke="white" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+      </g>
+      <text x="70" y="42" font-family="sans-serif" font-size="34" font-weight="900" fill="white" letter-spacing="2">CERTIMAR</text>
+    </svg>
+
+    <p style="color:rgba(255,255,255,.55);margin-top:16px;font-size:13px;letter-spacing:3px;text-transform:uppercase;font-weight:500">Sistema de Certificación</p>
+    <div class="splash-bar"><div class="splash-fill"></div></div>
+    <p style="color:rgba(255,255,255,.25);margin-top:16px;font-size:11px;letter-spacing:1px">Cargando...</p>
+  </div>
+
+  <!-- Olas animadas en capas -->
+  <div class="splash-waves">
+    <div class="waves-container">
+      <!-- Ola 3 (fondo, más suave) -->
+      <div class="wave-layer wave3">
+        <svg viewBox="0 0 1440 160" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M0,60 C240,120 480,0 720,60 C960,120 1200,0 1440,60 L1440,160 L0,160 Z" fill="#0099CC" opacity=".2"/>
+        </svg>
+        <svg viewBox="0 0 1440 160" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M0,60 C240,120 480,0 720,60 C960,120 1200,0 1440,60 L1440,160 L0,160 Z" fill="#0099CC" opacity=".2"/>
+        </svg>
+      </div>
+      <!-- Ola 2 (media) -->
+      <div class="wave-layer wave2">
+        <svg viewBox="0 0 1440 160" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M0,80 C180,20 360,140 540,80 C720,20 900,140 1080,80 C1260,20 1350,100 1440,80 L1440,160 L0,160 Z" fill="#0077aa" opacity=".35"/>
+        </svg>
+        <svg viewBox="0 0 1440 160" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M0,80 C180,20 360,140 540,80 C720,20 900,140 1080,80 C1260,20 1350,100 1440,80 L1440,160 L0,160 Z" fill="#0077aa" opacity=".35"/>
+        </svg>
+      </div>
+      <!-- Ola 1 (frente, más opaca) -->
+      <div class="wave-layer wave1">
+        <svg viewBox="0 0 1440 160" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M0,100 C200,40 400,130 600,90 C800,50 1000,130 1200,90 C1320,70 1380,110 1440,100 L1440,160 L0,160 Z" fill="#002a5c" opacity=".8"/>
+        </svg>
+        <svg viewBox="0 0 1440 160" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M0,100 C200,40 400,130 600,90 C800,50 1000,130 1200,90 C1320,70 1380,110 1440,100 L1440,160 L0,160 Z" fill="#002a5c" opacity=".8"/>
+        </svg>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== LOGIN ===================== -->
+<div id="view-login" class="hidden">
+  <div class="login-bg">
+    <div style="position:absolute;inset:0;background:linear-gradient(135deg,rgba(0,153,204,.05),rgba(0,51,102,.05))"></div>
+  </div>
+  <div class="login-card">
+    <svg style="width:180px;height:46px" viewBox="0 0 280 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <g><rect x="2" y="2" width="56" height="56" rx="8" fill="white" stroke="#003366" stroke-width="4"/>
+      <path d="M20 2V40M40 2V40M2 20H58M2 40H58" stroke="#003366" stroke-width="2"/>
+      <path d="M8 12C10 10 14 10 16 12C14 14 10 14 8 12Z" fill="white" stroke="#003366" stroke-width="1.5"/>
+      <path d="M8 12L5 10V14L8 12Z" fill="white" stroke="#003366" stroke-width="1.5"/>
+      <path d="M28 12C30 10 34 10 36 12C34 14 30 14 28 12Z" fill="white" stroke="#003366" stroke-width="1.5"/>
+      <path d="M28 12L25 10V14L28 12Z" fill="white" stroke="#003366" stroke-width="1.5"/>
+      <path d="M8 30C10 28 14 28 16 30C14 32 10 32 8 30Z" fill="white" stroke="#003366" stroke-width="1.5"/>
+      <path d="M8 30L5 28V32L8 30Z" fill="white" stroke="#003366" stroke-width="1.5"/>
+      <path d="M2 45Q16 35 30 45T58 45V50Q44 40 30 50T2 50V45Z" fill="#0099CC"/>
+      <path d="M2 50Q16 40 30 50T58 50V58C58 59.1 57.1 60 56 60H4C2.9 60 2 59.1 2 58V50Z" fill="#003366"/>
+      <path d="M25 35L35 45L55 15" stroke="#003366" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/></g>
+      <text x="70" y="42" font-family="sans-serif" font-size="34" font-weight="900" fill="#003366" letter-spacing="2">CERTIMAR</text>
+    </svg>
+    <h1>Bienvenido</h1>
+    <p>Inicia sesión para acceder al sistema de certificación</p>
+    <button class="btn-google" onclick="loginGoogle()">
+      <svg width="20" height="20" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+        <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+        <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+        <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+      </svg>
+      Continuar con Google
+    </button>
+  </div>
+  <div class="login-footer">© <span id="login-year"></span> Certimar SpA. Todos los derechos reservados.</div>
+</div>
+
+<!-- ===================== MAIN APP ===================== -->
+<div id="app" class="hidden">
+
+  <!-- NAV -->
+  <nav id="nav">
+    <div class="nav-inner">
+      <div class="nav-brand" onclick="showView('dashboard')">
+        <svg style="width:130px;height:33px" viewBox="0 0 280 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <g><rect x="2" y="2" width="56" height="56" rx="8" fill="white" stroke="#003366" stroke-width="4"/>
+          <path d="M20 2V40M40 2V40M2 20H58M2 40H58" stroke="#003366" stroke-width="2"/>
+          <path d="M2 45Q16 35 30 45T58 45V50Q44 40 30 50T2 50V45Z" fill="#0099CC"/>
+          <path d="M2 50Q16 40 30 50T58 50V58C58 59.1 57.1 60 56 60H4C2.9 60 2 59.1 2 58V50Z" fill="#003366"/>
+          <path d="M25 35L35 45L55 15" stroke="#003366" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/></g>
+          <text x="70" y="42" font-family="sans-serif" font-size="34" font-weight="900" fill="#003366" letter-spacing="2">CERTIMAR</text>
+        </svg>
+      </div>
+      <div class="nav-links">
+        <button class="nav-btn active" id="nav-dashboard" onclick="showView('dashboard')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          Dashboard
+        </button>
+        <button class="nav-btn" id="nav-historico" onclick="showView('historico')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>
+          Histórico
+        </button>
+        <button class="nav-btn admin-btn hidden" id="nav-admin" onclick="showView('admin')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          Admin
+        </button>
+      </div>
+      <div class="nav-right">
+        <button class="btn-theme" onclick="toggleTheme()" id="btn-theme" title="Cambiar tema">🌙</button>
+        <div class="user-chip hidden" id="user-chip">
+          <div class="user-avatar" id="user-avatar">U</div>
+          <span id="user-name-chip">Usuario</span>
+        </div>
+        <button class="btn-nueva" onclick="showView('registro')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+          <span>Nueva Visita</span>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ============== DASHBOARD VIEW ============== -->
+  <div id="view-dashboard">
+    <div class="dash-header">
+      <div>
+        <h1>Dashboard de Inspecciones</h1>
+        <p>Visión general y métricas de certificaciones</p>
+      </div>
+      <button class="btn-nueva" onclick="showView('registro')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+        Nueva Visita
+      </button>
+    </div>
+
+    <!-- Filtros -->
+    <div class="filtros-card">
+      <h2>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#003366" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        Filtros de Búsqueda
+      </h2>
+      <div class="filtros-grid">
+        <div><label class="filtro-label">Fecha desde</label><input type="date" id="f-desde" class="filtro-input" onchange="filtrarDashboard()"></div>
+        <div><label class="filtro-label">Fecha hasta</label><input type="date" id="f-hasta" class="filtro-input" onchange="filtrarDashboard()"></div>
+        <div><label class="filtro-label">Centro</label><input type="text" id="f-centro" placeholder="Nombre del centro" class="filtro-input" oninput="filtrarDashboard()"></div>
+        <div><label class="filtro-label">N° Registro</label><input type="text" id="f-nreg" placeholder="Ej: RV-2026-0001" class="filtro-input" oninput="filtrarDashboard()"></div>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-grid">
+      <div class="stat-card primary">
+        <div class="stat-label">Última Inspección</div>
+        <div style="font-size:16px;font-weight:700;margin-bottom:4px" id="dash-ultima-centro">—</div>
+        <div style="font-size:13px;opacity:.7" id="dash-ultima-info">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Inspecciones del Mes</div>
+        <div class="stat-value" id="dash-total-mes">0</div>
+        <div class="stat-sub" id="dash-sub-mes">Cargando...</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Centros Únicos</div>
+        <div class="stat-value" id="dash-centros">0</div>
+        <div class="stat-sub" style="color:#64748b" id="dash-sub-anio">Total año</div>
+      </div>
+    </div>
+
+    <!-- Charts -->
+    <div class="charts-grid">
+      <div class="chart-card">
+        <h3>Inspecciones por Mes</h3>
+        <canvas id="chart-mes" height="200"></canvas>
+      </div>
+      <div class="chart-card">
+        <h3>Distribución por Resolución</h3>
+        <canvas id="chart-res" height="200"></canvas>
+      </div>
+    </div>
+
+    <!-- Próximos vencer (estático por ahora) -->
+    <div class="chart-card">
+      <h3 style="color:#d97706;display:flex;align-items:center;gap:8px">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        Certificaciones Próximas a Vencer
+      </h3>
+      <div style="overflow-x:auto;margin-top:16px">
+        <table class="vencer-table">
+          <thead>
+            <tr><th>Centro</th><th>Resolución</th><th>Tipo</th><th>Última Inspección</th><th>Vencimiento</th><th>Estado</th></tr>
+          </thead>
+          <tbody id="vencer-tbody">
+            <tr><td colspan="6" style="text-align:center;padding:24px;color:#94a3b8;font-size:13px">Cargando datos...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div><!-- /view-dashboard -->
+
+  <!-- OCEAN ANIMATION (dashboard background) -->
+  <div id="dash-ocean" class="hidden">
+    <!-- Wave 4 – fondo turquesa muy suave -->
+    <div class="dash-wave-layer dw4">
+      <svg viewBox="0 0 1440 220" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M0,80 C360,160 720,0 1080,80 C1260,120 1350,60 1440,80 L1440,220 L0,220 Z" fill="#00bcd4" opacity=".18"/>
+      </svg><svg viewBox="0 0 1440 220" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M0,80 C360,160 720,0 1080,80 C1260,120 1350,60 1440,80 L1440,220 L0,220 Z" fill="#00bcd4" opacity=".18"/>
+      </svg>
+    </div>
+    <!-- Wave 3 – azul medio -->
+    <div class="dash-wave-layer dw3">
+      <svg viewBox="0 0 1440 220" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M0,110 C200,50 400,170 600,110 C800,50 1000,160 1200,110 C1320,80 1390,140 1440,110 L1440,220 L0,220 Z" fill="#0077aa" opacity=".22"/>
+      </svg><svg viewBox="0 0 1440 220" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M0,110 C200,50 400,170 600,110 C800,50 1000,160 1200,110 C1320,80 1390,140 1440,110 L1440,220 L0,220 Z" fill="#0077aa" opacity=".22"/>
+      </svg>
+    </div>
+    <!-- Wave 2 – turquesa brillante -->
+    <div class="dash-wave-layer dw2">
+      <svg viewBox="0 0 1440 220" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M0,140 C180,80 360,180 540,130 C720,80 900,170 1080,130 C1260,90 1360,160 1440,140 L1440,220 L0,220 Z" fill="#00acc1" opacity=".35"/>
+      </svg><svg viewBox="0 0 1440 220" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M0,140 C180,80 360,180 540,130 C720,80 900,170 1080,130 C1260,90 1360,160 1440,140 L1440,220 L0,220 Z" fill="#00acc1" opacity=".35"/>
+      </svg>
+    </div>
+    <!-- Wave 1 – azul oscuro frente -->
+    <div class="dash-wave-layer dw1">
+      <svg viewBox="0 0 1440 220" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M0,165 C200,110 400,200 600,160 C800,120 1000,195 1200,160 C1320,140 1390,175 1440,165 L1440,220 L0,220 Z" fill="#003366" opacity=".7"/>
+      </svg><svg viewBox="0 0 1440 220" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M0,165 C200,110 400,200 600,160 C800,120 1000,195 1200,160 C1320,140 1390,175 1440,165 L1440,220 L0,220 Z" fill="#003366" opacity=".7"/>
+      </svg>
+    </div>
+    <!-- Fish container -->
+    <div id="fish-container"></div>
+  </div>
+
+  <!-- ============== REGISTRO VIEW ============== -->
+  <div id="view-registro" class="hidden">
+    <!-- DOCUMENTO -->
+    <div class="doc-paper" id="registro-documento">
+      <!-- Olas animadas en el documento -->
+      <div class="doc-watermark">
+        <div class="doc-waves-wrap">
+          <div class="doc-wave-layer doc-wave-a">
+            <svg viewBox="0 0 1440 320" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M0,180 C240,260 480,80 720,160 C960,240 1200,100 1440,180 L1440,320 L0,320 Z" fill="#e0f2fe" opacity=".6"/>
+            </svg>
+            <svg viewBox="0 0 1440 320" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M0,180 C240,260 480,80 720,160 C960,240 1200,100 1440,180 L1440,320 L0,320 Z" fill="#e0f2fe" opacity=".6"/>
+            </svg>
+          </div>
+          <div class="doc-wave-layer doc-wave-b">
+            <svg viewBox="0 0 1440 320" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M0,220 C180,120 360,280 540,200 C720,120 900,260 1080,200 C1260,140 1360,240 1440,200 L1440,320 L0,320 Z" fill="#bae6fd" opacity=".5"/>
+            </svg>
+            <svg viewBox="0 0 1440 320" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M0,220 C180,120 360,280 540,200 C720,120 900,260 1080,200 C1260,140 1360,240 1440,200 L1440,320 L0,320 Z" fill="#bae6fd" opacity=".5"/>
+            </svg>
+          </div>
+          <div class="doc-wave-layer doc-wave-c">
+            <svg viewBox="0 0 1440 320" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M0,260 C200,180 400,300 600,250 C800,200 1000,300 1200,250 C1320,220 1390,270 1440,260 L1440,320 L0,320 Z" fill="#7dd3fc" opacity=".25"/>
+            </svg>
+            <svg viewBox="0 0 1440 320" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M0,260 C200,180 400,300 600,250 C800,200 1000,300 1200,250 C1320,220 1390,270 1440,260 L1440,320 L0,320 Z" fill="#7dd3fc" opacity=".25"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+      <div class="doc-content">
+        <!-- HEADER -->
+        <div class="doc-header">
+          <div style="display:flex;align-items:center;gap:20px">
+            <svg style="width:160px;height:40px" viewBox="0 0 280 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <g><rect x="2" y="2" width="56" height="56" rx="8" fill="white" stroke="#003366" stroke-width="4"/>
+              <path d="M20 2V40M40 2V40M2 20H58M2 40H58" stroke="#003366" stroke-width="2"/>
+              <path d="M8 12C10 10 14 10 16 12C14 14 10 14 8 12Z" fill="white" stroke="#003366" stroke-width="1.5"/>
+              <path d="M8 12L5 10V14L8 12Z" fill="white" stroke="#003366" stroke-width="1.5"/>
+              <path d="M28 12C30 10 34 10 36 12C34 14 30 14 28 12Z" fill="white" stroke="#003366" stroke-width="1.5"/>
+              <path d="M28 12L25 10V14L28 12Z" fill="white" stroke="#003366" stroke-width="1.5"/>
+              <path d="M8 30C10 28 14 28 16 30C14 32 10 32 8 30Z" fill="white" stroke="#003366" stroke-width="1.5"/>
+              <path d="M8 30L5 28V32L8 30Z" fill="white" stroke="#003366" stroke-width="1.5"/>
+              <path d="M2 45Q16 35 30 45T58 45V50Q44 40 30 50T2 50V45Z" fill="#0099CC"/>
+              <path d="M2 50Q16 40 30 50T58 50V58C58 59.1 57.1 60 56 60H4C2.9 60 2 59.1 2 58V50Z" fill="#003366"/>
+              <path d="M25 35L35 45L55 15" stroke="#003366" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/></g>
+              <text x="70" y="42" font-family="sans-serif" font-size="34" font-weight="900" fill="#003366" letter-spacing="2">CERTIMAR</text>
+            </svg>
+            <div>
+              <h1 class="doc-title" style="font-size:22px;font-weight:900;letter-spacing:2px;color:black">REGISTRO DE VISITA</h1>
+              <p style="font-style:italic;color:#64748b;font-size:12px;margin-top:2px">Auditoría Técnica en Terreno</p>
+            </div>
+          </div>
+          <div class="doc-meta">
+            <div class="doc-meta-row">
+              <span class="doc-meta-label">FECHA:</span>
+              <input type="text" id="r-fecha" class="doc-input" style="width:90px;text-align:right;font-weight:700">
+            </div>
+            <div class="doc-meta-row">
+              <span class="doc-meta-label">N° REGISTRO:</span>
+              <input type="text" id="r-nroRegistro" class="doc-input" style="width:110px;text-align:right;font-weight:700;color:#B91C1C;font-size:16px">
+            </div>
+          </div>
+        </div>
+        <div class="doc-border-thick"></div>
+        <div class="doc-border-thin"></div>
+
+        <!-- DATOS CENTRO -->
+        <table class="doc-table">
+          <tbody>
+            <tr>
+              <td class="label-cell">Centro de Cultivo</td>
+              <td style="width:50%"><input type="text" id="r-centroCultivo" class="doc-input" placeholder="—"></td>
+              <td class="label-cell" style="width:15%">N° de Centro</td>
+              <td style="position:relative">
+                <input type="text" id="r-nroCentro" class="doc-input" placeholder="—" oninput="onNroCentroInput(this.value)" onblur="setTimeout(closeAcDropdown,200)">
+              </td>
+            </tr>
+            <tr>
+              <td class="label-cell">A.C.S.</td>
+              <td colspan="3"><input type="text" id="r-acs" class="doc-input" placeholder="—"></td>
+            </tr>
+            <tr>
+              <td class="label-cell">Titular Centro de<br>Cultivo</td>
+              <td colspan="3"><input type="text" id="r-titular" class="doc-input" placeholder="—"></td>
+            </tr>
+            <tr>
+              <td class="label-cell">Ubicación</td>
+              <td colspan="3"><input type="text" id="r-ubicacion" class="doc-input" placeholder="—"></td>
+            </tr>
+            <tr>
+              <td class="label-cell">Fecha última siembra</td>
+              <td colspan="3"><input type="text" id="r-fechaSiembra" class="doc-input" placeholder="—" oninput="checkChecklist()"></td>
+            </tr>
+            <tr>
+              <td class="label-cell">Tamaño peces</td>
+              <td colspan="3"><input type="text" id="r-tamanoPeces" class="doc-input" placeholder="—" oninput="checkChecklist()"></td>
+            </tr>
+          </tbody>
+        </table>
+
+        <!-- RESOLUCIONES -->
+        <div class="section-title">Norma aplicable:</div>
+        <div class="res-grid">
+          <label class="res-label"><input type="checkbox" id="r-cicE2"> 1821 – CIC E2</label>
+          <label class="res-label"><input type="checkbox" id="r-ca"> 1821 – CA</label>
+          <label class="res-label"><input type="checkbox" id="r-vs"> 1821 – VS</label>
+          <label class="res-label"><input type="checkbox" id="r-res1511"> 1511</label>
+          <label class="res-label"><input type="checkbox" id="r-desinfeccion"> DESINFECCIÓN</label>
+        </div>
+
+        <!-- COORDENADAS -->
+        <table class="coord-table" style="margin-bottom:20px">
+          <thead>
+            <tr><th colspan="4">COORDENADAS GEOGRÁFICAS CONCESIÓN</th></tr>
+            <tr>
+              <td class="sub-th">LATITUD S</td>
+              <td class="sub-th">LONGITUD W</td>
+              <td class="sub-th">NORTE</td>
+              <td class="sub-th">ESTE</td>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><input type="text" id="r-latitud" class="doc-input" style="text-align:center;color:#1d4ed8" placeholder="—"></td>
+              <td><input type="text" id="r-longitud" class="doc-input" style="text-align:center;color:#1d4ed8" placeholder="—"></td>
+              <td><input type="text" id="r-norte" class="doc-input" style="text-align:center;color:#1d4ed8" placeholder="—"></td>
+              <td><input type="text" id="r-este" class="doc-input" style="text-align:center;color:#1d4ed8" placeholder="—"></td>
+            </tr>
+          </tbody>
+        </table>
+
+        <!-- OBSERVACIONES -->
+        <table class="obs-table">
+          <tbody>
+            <tr>
+              <td class="obs-header" style="width:50%">OBSERVACIÓN</td>
+              <td class="obs-si-no">
+                <div class="obs-radio-group">
+                  <label class="obs-radio"><input type="radio" name="hasObs" id="r-obs-si" value="si" checked onchange="toggleTipoObs(); checkChecklist()"> SI</label>
+                  <label class="obs-radio"><input type="radio" name="hasObs" id="r-obs-no" value="no" onchange="toggleTipoObs(); checkChecklist()"> NO</label>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td colspan="2" style="padding:0;border:1px solid #94a3b8;overflow:visible">
+                <textarea id="r-observaciones" class="obs-textarea" placeholder="• Ingrese observaciones técnicas..." oninput="checkChecklist()"></textarea>
+              </td>
+            </tr>
+            <tr id="r-tipo-row">
+              <td colspan="2" style="padding:0;border:1px solid #94a3b8">
+                <div style="font-size:11px;font-weight:700;padding:6px 12px;border-bottom:1px solid #94a3b8">TIPO OBSERVACIÓN (MARQUE UNA):</div>
+                <div class="tipo-obs-row">
+                  <label class="tipo-obs-label"><input type="radio" name="tipoObs" value="EXTRACCION" onchange="checkChecklist()"> EXTRACCION</label>
+                  <label class="tipo-obs-label"><input type="radio" name="tipoObs" value="DESNATURALIZACION" onchange="checkChecklist()"> DESNATURALIZACION</label>
+                  <label class="tipo-obs-label"><input type="radio" name="tipoObs" value="ALMACENAMIENTO" onchange="checkChecklist()"> ALMACENAMIENTO</label>
+                  <label class="tipo-obs-label"><input type="radio" name="tipoObs" value="OTRO" onchange="checkChecklist()"> OTRO</label>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <!-- FIRMAS -->
+        <div class="firma-section">
+          <!-- Certificador -->
+          <div class="firma-col">
+            <canvas id="firma-certificador" width="280" height="90" class="firma-canvas" style="cursor:default"></canvas>
+            <div class="firma-line"></div>
+            <input type="text" id="r-nombreCertificador" class="firma-input-name" value="Engelbert Flores Carrio">
+            <div class="firma-role">CERTIFICADOR</div>
+            <input type="text" id="r-rutCertificador" class="doc-input" style="text-align:center;font-size:11px" value="13.968.696-9">
+          </div>
+          <!-- Cliente -->
+          <div class="firma-col" style="position:relative">
+            <button onclick="clearFirmaCliente()" style="position:absolute;top:0;right:4px;background:none;border:none;color:#ef4444;padding:4px;border-radius:4px;cursor:pointer;font-size:16px" title="Borrar firma">✕</button>
+            <div style="position:relative">
+              <div id="firma-placeholder" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;opacity:.2;pointer-events:none">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <path d="M12 2a3 3 0 00-3 3v7a3 3 0 006 0V5a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/>
+                  <line x1="12" y1="19" x2="12" y2="22"/>
+                </svg>
+              </div>
+              <canvas id="firma-cliente" width="280" height="90" class="firma-canvas"></canvas>
+            </div>
+            <div class="firma-line"></div>
+            <input type="text" id="r-nombreResponsable" class="firma-input-name" placeholder="Nombre Responsable" oninput="checkChecklist()">
+            <div class="firma-role">Firma Responsable Centro de Cultivo</div>
+            <input type="email" id="r-emailResponsable" class="doc-input" style="text-align:center;font-size:11px;margin-top:4px;border-bottom:1px dashed #93c5fd" placeholder="correo@empresa.cl">
+          </div>
+        </div>
+      </div><!-- /doc-content -->
+    </div><!-- /doc-paper -->
+
+    <!-- CÁMARA + ADJUNTO -->
+    <div class="camera-card">
+      <h2>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+        Evidencia Fotográfica (Página 2)
+        <span id="foto-badge" class="badge badge-ok hidden">✓ Capturada</span>
+      </h2>
+
+      <!-- Placeholder con 2 opciones -->
+      <div id="camera-placeholder" class="camera-placeholder">
+        <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.2" style="margin:0 auto 14px;display:block"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+        <p>Adjunte una fotografía como evidencia para el registro de visita.</p>
+        <div class="camera-btns-row">
+          <button class="btn-camera" onclick="startCamera()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+            Abrir Cámara
+          </button>
+          <div class="btn-divider">o</div>
+          <label class="btn-adjuntar" for="file-upload">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
+            Adjuntar Archivo
+          </label>
+          <input type="file" id="file-upload" accept="image/*,application/pdf" style="display:none" onchange="handleFileUpload(event)">
+        </div>
+      </div>
+
+      <!-- Vista cámara live -->
+      <div id="camera-live" class="hidden" style="text-align:center">
+        <video id="camera-video" autoplay playsinline style="max-width:480px;width:100%;margin-bottom:12px;border-radius:10px"></video>
+        <div style="display:flex;justify-content:center;gap:12px">
+          <button class="btn-danger" onclick="stopCamera()">✕ Cancelar</button>
+          <button class="btn-camera" onclick="capturePhoto()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/></svg>
+            Capturar Foto
+          </button>
+        </div>
+        <canvas id="photo-canvas" style="display:none"></canvas>
+      </div>
+
+      <!-- Preview foto/archivo -->
+      <div id="photo-preview" class="photo-preview hidden">
+        <div id="photo-preview-inner" style="text-align:center">
+          <img id="photo-img" src="" alt="Evidencia" style="max-width:480px;width:100%;border-radius:10px;border:3px solid white;box-shadow:0 4px 16px rgba(0,0,0,.15);display:none">
+          <div id="pdf-preview" class="hidden" style="display:flex;align-items:center;justify-content:center;gap:12px;background:#f8fafc;border:2px solid #e2e8f0;border-radius:10px;padding:24px;max-width:480px;margin:0 auto">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10,9 9,9 8,9"/></svg>
+            <div style="text-align:left"><div style="font-weight:700;color:#003366" id="pdf-filename">archivo.pdf</div><div style="font-size:12px;color:#64748b">PDF adjunto</div></div>
+          </div>
+        </div>
+        <div style="display:flex;justify-content:center;gap:12px;margin-top:16px">
+          <button class="btn-danger" onclick="clearPhoto()">✕ Borrar</button>
+          <button class="btn-success" onclick="toast('Evidencia guardada ✓','success')">✓ Confirmar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- CHECKLIST -->
+    <div class="checklist-card">
+      <div class="checklist-header">
+        <h2>Checklist de Bloqueo: Registro de Visita</h2>
+        <div class="lock-badge locked" id="lock-badge">🔒 BLOQUEO ACTIVO</div>
+      </div>
+      <div id="checklist-items">
+        <!-- generado dinámicamente -->
+      </div>
+    </div>
+
+    <!-- ACCIONES -->
+    <div class="actions-bar">
+      <button class="btn-action btn-save" id="btn-guardar" onclick="handleGuardar()">Guardar Cambios</button>
+      <button class="btn-action btn-pdf" id="btn-pdf" onclick="handleDescargarPDF()" disabled>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7,10 12,15 17,10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Descargar PDF
+      </button>
+      <button class="btn-action btn-sync" id="btn-sync" onclick="handleSyncGoogle()" disabled>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+        Guardar en Drive + Sheets
+      </button>
+      <button class="btn-action btn-mail" id="btn-mail" onclick="openModalMail()" disabled>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+        Notificar Cliente
+      </button>
+    </div>
+    <p class="warn-msg hidden" id="warn-checklist">
+      ⚠️ Complete el checklist de bloqueo para habilitar las acciones.
+    </p>
+  </div><!-- /view-registro -->
+
+  <!-- ============== HISTÓRICO VIEW ============== -->
+  <div id="view-historico" class="hidden">
+    <div class="hist-header">
+      <div>
+        <h1>Histórico de Registros</h1>
+        <p style="font-size:13px;color:#64748b;margin-top:4px">Revise y administre los registros de visita anteriores</p>
+      </div>
+    </div>
+    <div class="hist-table-wrap">
+      <div class="hist-search-bar">
+        <input type="text" id="hist-search" class="hist-search" placeholder="Buscar por centro, titular o ID..." oninput="filtrarHistorico()">
+        <div style="display:flex;gap:8px">
+          <input type="date" id="hist-desde" class="filtro-input" style="width:140px" onchange="filtrarHistorico()">
+          <input type="date" id="hist-hasta" class="filtro-input" style="width:140px" onchange="filtrarHistorico()">
+        </div>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="hist-table">
+          <thead>
+            <tr>
+              <th>ID Registro</th><th>Fecha</th><th>Centro</th><th>Titular</th>
+              <th>Res. Ext.</th><th>Tipo Obs.</th><th>Responsable</th><th>Estado</th><th>Certificado</th>
+            </tr>
+          </thead>
+          <tbody id="hist-tbody">
+            <tr><td colspan="8" class="hist-empty">
+              <div class="spinner dark" style="margin:0 auto 8px"></div>
+              Cargando registros...
+            </td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="hist-footer" id="hist-footer">Cargando...</div>
+    </div>
+  </div><!-- /view-historico -->
+
+  <!-- ============== ADMIN VIEW ============== -->
+  <div id="view-admin" class="hidden">
+    <div class="admin-header">
+      <div>
+        <h1>Panel de Administración <span class="admin-badge">ADMIN</span></h1>
+        <p id="admin-header-sub">Gestión global de todos los registros de visita</p>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <button class="btn-action" style="border-color:var(--border);color:var(--text-sec);font-size:12px;padding:7px 14px" onclick="exportarCSV()">
+          ⬇️ Exportar CSV
+        </button>
+        <button class="btn-nueva" onclick="showView('registro')">+ Nueva Visita</button>
+      </div>
+    </div>
+
+    <!-- Stats globales -->
+    <div class="admin-stats" id="admin-stats-grid">
+      <div class="admin-stat">
+        <div class="admin-stat-val" id="adm-total">—</div>
+        <div class="admin-stat-lbl">Total Registros</div>
+      </div>
+      <div class="admin-stat">
+        <div class="admin-stat-val" id="adm-mes">—</div>
+        <div class="admin-stat-lbl">Este Mes</div>
+      </div>
+      <div class="admin-stat">
+        <div class="admin-stat-val" id="adm-cert">—</div>
+        <div class="admin-stat-lbl">Certificadores Activos</div>
+      </div>
+      <div class="admin-stat">
+        <div class="admin-stat-val" id="adm-enviados">—</div>
+        <div class="admin-stat-lbl">Notificados</div>
+      </div>
+      <div class="admin-stat">
+        <div class="admin-stat-val" id="adm-pendientes">—</div>
+        <div class="admin-stat-lbl">Sin Notificar</div>
+      </div>
+    </div>
+
+    <!-- Filtros admin -->
+    <div style="max-width:1200px;margin:16px auto 0;padding:0 24px">
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 18px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+        <input type="text" id="adm-search" class="filtro-input" placeholder="🔍  Buscar por centro, titular, N° registro, certificador..." style="flex:1;min-width:220px" oninput="filtrarAdmin()">
+        <input type="date" id="adm-desde" class="filtro-input" style="width:145px" onchange="filtrarAdmin()">
+        <input type="date" id="adm-hasta" class="filtro-input" style="width:145px" onchange="filtrarAdmin()">
+        <select id="adm-estado" class="filtro-input" style="width:140px" onchange="filtrarAdmin()">
+          <option value="">Todos los estados</option>
+          <option value="GUARDADO">💾 Guardado</option>
+          <option value="ENVIADO">✉️ Enviado</option>
+          <option value="ARCHIVADO">📁 Archivado</option>
+        </select>
+        <select id="adm-cert-filter" class="filtro-input" style="width:160px" onchange="filtrarAdmin()">
+          <option value="">Todos los cert.</option>
+        </select>
+        <button class="btn-action" style="border-color:var(--border);color:var(--text-sec);font-size:12px;padding:7px 12px;white-space:nowrap" onclick="limpiarFiltrosAdmin()">✕ Limpiar</button>
+      </div>
+    </div>
+
+    <!-- Tabla admin -->
+    <div class="admin-table-wrap">
+      <div class="admin-table-card">
+        <div style="overflow-x:auto">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>N° Registro</th>
+                <th>Fecha</th>
+                <th>Centro de Cultivo</th>
+                <th>N° Centro</th>
+                <th>Titular</th>
+                <th>ACS</th>
+                <th>Resoluciones</th>
+                <th>Responsable</th>
+                <th>Estado</th>
+                <th>Certificador</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="adm-tbody">
+              <tr><td colspan="11" class="admin-empty">
+                <div style="font-size:32px;margin-bottom:10px">🔄</div>
+                Cargando registros…
+              </td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="admin-footer">
+          <span id="adm-footer-count">—</span>
+          <div style="display:flex;gap:8px;align-items:center">
+            <button class="admin-action-btn" id="adm-prev" onclick="admPagina(-1)">← Anterior</button>
+            <span id="adm-pag-info" style="font-size:11px;color:var(--text-muted)">Pág 1</span>
+            <button class="admin-action-btn" id="adm-next" onclick="admPagina(1)">Siguiente →</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div><!-- /view-admin -->
+
+</div><!-- /app -->
+
+<!-- ===================== MODAL ARCHIVAR SIN ENVIAR ===================== -->
+<div class="modal-overlay hidden" id="modal-archive">
+  <div class="modal-box" style="max-width:440px">
+    <div class="modal-header">
+      <h2>📁 Archivar sin notificar</h2>
+      <button class="modal-close" onclick="closeModalArchive()">×</button>
+    </div>
+    <div class="modal-archive-body">
+      <p style="font-size:13px;color:#374151;margin-bottom:12px">
+        El registro <strong id="archive-nro"></strong> quedará archivado sin que el responsable del centro sea notificado.<br><br>
+        Por razones legales, el N° de registro se mantiene y el registro queda visible en el histórico con estado <span style="color:#d97706;font-weight:700">ARCHIVADO</span>.
+      </p>
+      <label style="font-size:12px;font-weight:700;color:#374151;text-transform:uppercase;letter-spacing:.5px">Motivo de archivo <span style="color:#dc2626">*</span></label>
+      <textarea id="archive-motivo" class="archive-reason-input" rows="3" placeholder="Ej: Visita interna sin notificación requerida, cliente solicitó no ser notificado, etc."></textarea>
+      <p id="archive-motivo-error" style="color:#dc2626;font-size:11px;margin-top:4px;display:none">Por favor ingrese el motivo de archivo.</p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-action btn-save" onclick="closeModalArchive()" style="border-color:#d1d5db;color:#374151">Cancelar</button>
+      <button class="btn-archive" id="btn-confirmar-archive" onclick="handleConfirmarArchive()">
+        📁 Confirmar Archivo
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== MODAL EMAIL ===================== -->
+<div class="modal-overlay hidden" id="modal-mail">
+  <div class="modal-box" style="max-width:580px">
+    <div class="modal-header">
+      <h2>✉️ Notificar Responsable del Centro</h2>
+      <button class="modal-close" onclick="closeModalMail()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="email-preview">
+        <div class="email-row">
+          <span class="email-label">De:</span>
+          <span style="color:#64748b;font-size:12px">operaciones@certimar.cl</span>
+        </div>
+        <div class="email-row" style="align-items:flex-start">
+          <span class="email-label">Para: <span style="color:#dc2626">*</span></span>
+          <div style="flex:1">
+            <input type="email" id="modal-email" class="email-to-input" placeholder="responsable@empresa.cl" style="width:100%">
+          </div>
+        </div>
+        <div class="email-row" style="align-items:flex-start">
+          <span class="email-label" style="color:#94a3b8">CC:</span>
+          <div style="flex:1">
+            <input type="text" id="modal-cc" class="email-to-input" placeholder="opcional@empresa.cl, otro@empresa.cl" style="width:100%;border-color:#e2e8f0;color:#64748b">
+            <div style="font-size:10px;color:#94a3b8;margin-top:3px">Copia visible — puede ser más de uno separado por comas</div>
+          </div>
+        </div>
+        <div class="email-row" style="align-items:flex-start">
+          <span class="email-label" style="color:#94a3b8">CCO:</span>
+          <div style="flex:1">
+            <input type="text" id="modal-cco" class="email-to-input" placeholder="auditor@empresa.cl" style="width:100%;border-color:#e2e8f0;color:#64748b">
+            <div style="font-size:10px;color:#94a3b8;margin-top:3px">Copia oculta — los otros destinatarios no la verán</div>
+          </div>
+        </div>
+        <div class="email-row">
+          <span class="email-label">Asunto:</span>
+          <span id="modal-asunto" style="font-size:12px;font-weight:700;color:#1e293b"></span>
+        </div>
+        <div class="email-body" id="modal-body-preview" style="max-height:180px;overflow-y:auto"></div>
+      </div>
+      <div style="margin-top:12px">
+        <label class="filtro-label">Nota adicional (opcional):</label>
+        <textarea id="modal-nota" rows="2" class="filtro-input" style="resize:none;margin-top:4px;width:100%" placeholder="Comentarios adicionales para incluir en el correo..."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer" style="justify-content:space-between;align-items:center">
+      <div style="font-size:11px;color:#94a3b8">📎 PDF adjunto automáticamente</div>
+      <div style="display:flex;gap:10px">
+        <button class="btn-action btn-save" onclick="closeModalMail()" style="border-color:#d1d5db;color:#374151">Cancelar</button>
+        <button class="btn-action btn-mail" id="btn-enviar-mail" onclick="handleEnviarMail()">
+          ✉️ Enviar Notificación
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// =====================================================================
+//  ESTADO GLOBAL
+// =====================================================================
+var appState = { saved: false, sent: false, pdfB64: null, fotoB64: null };
+var chartMes = null, chartRes = null;
+var historicData = [];
+var localRecords = [];
+var isFirmaDrawing = false;
+var firmaClienteHasData = false;
+var cameraStream = null;
+var currentUser  = null;   // { email, name, isAdmin }
+var _db = null;            // instancia Firestore
+
+// =====================================================================
+//  FIREBASE — INIT
+// =====================================================================
+function initFirebase() {
+  if (_db) return _db;
+  try {
+    if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+    _db = firebase.firestore();
+    _db.settings({ merge: true });
+    console.log('[Firebase] Firestore conectado ✓');
+    return _db;
+  } catch(e) {
+    console.error('[Firebase] Error init:', e);
+    return null;
+  }
+}
+
+// Referencia a colección de registros
+function dbCol() {
+  return initFirebase().collection('registros_visita');
+}
+
+// =====================================================================
+//  FIREBASE — GUARDAR REGISTRO
+// =====================================================================
+async function fbGuardarRegistro(datos, urlCertificado, urlFoto) {
+  var db = initFirebase();
+  if (!db) throw new Error('Firebase no disponible');
+
+  var resArray = [];
+  if (datos.resoluciones) {
+    if (datos.resoluciones.cicE2)        resArray.push('1821-CIC E2');
+    if (datos.resoluciones.ca)           resArray.push('1821-CA');
+    if (datos.resoluciones.vs)           resArray.push('1821-VS');
+    if (datos.resoluciones.res1511)      resArray.push('1511');
+    if (datos.resoluciones.desinfeccion) resArray.push('DESINFECCIÓN');
+  }
+
+  var docData = {
+    nroRegistro      : datos.nroRegistro,
+    fecha            : datos.fecha,
+    centroCultivo    : datos.centroCultivo,
+    nroCentro        : datos.nroCentro,
+    acs              : datos.acs,
+    titular          : datos.titular,
+    ubicacion        : datos.ubicacion    || '',
+    fechaSiembra     : datos.fechaSiembra || '',
+    tamanoPeces      : datos.tamanoPeces  || '',
+    latitud          : datos.latitud      || '',
+    longitud         : datos.longitud     || '',
+    norte            : datos.norte        || '',
+    este             : datos.este         || '',
+    resoluciones     : resArray.join(', '),
+    observaciones    : datos.observaciones  || '',
+    tipoObservacion  : datos.tipoObservacion|| '',
+    nombreResponsable: datos.nombreResponsable || '',
+    emailResponsable : datos.emailDestinatario || '',
+    nombreCertificador: datos.nombreCertificador || '',
+    urlCertificado   : urlCertificado || '',
+    urlFoto          : urlFoto        || '',
+    estado           : 'GUARDADO',
+    creadoPor        : currentUser ? currentUser.email : '',
+    certNombre       : currentUser ? currentUser.name  : '',
+    creadoEn         : firebase.firestore.FieldValue.serverTimestamp()
+  };
+
+  // Usar nroRegistro como document ID para idempotencia
+  await db.collection('registros_visita').doc(datos.nroRegistro).set(docData);
+  return docData;
+}
+
+// =====================================================================
+//  FIREBASE — ACTUALIZAR ESTADO
+// =====================================================================
+async function fbActualizarEstado(nroRegistro, nuevoEstado, extraData) {
+  var db = initFirebase();
+  if (!db) throw new Error('Firebase no disponible');
+  var update = Object.assign({ estado: nuevoEstado }, extraData || {});
+  await db.collection('registros_visita').doc(nroRegistro).update(update);
+}
+
+// =====================================================================
+//  FIREBASE — OBTENER REGISTROS (del usuario actual)
+// =====================================================================
+async function fbObtenerRegistros(filtros) {
+  var db = initFirebase();
+  if (!db) return [];
+  var q = db.collection('registros_visita');
+  if (currentUser && !currentUser.isAdmin) {
+    q = q.where('creadoPor', '==', currentUser.email);
+  }
+  q = q.orderBy('creadoEn', 'desc').limit(200);
+  var snap = await q.get();
+  var docs = [];
+  snap.forEach(function(d) { docs.push(Object.assign({ id: d.id }, d.data())); });
+  return docs;
+}
+
+// =====================================================================
+//  FIREBASE — OBTENER TODOS LOS REGISTROS (admin)
+// =====================================================================
+async function fbObtenerTodos(filtros) {
+  var db = initFirebase();
+  if (!db) return [];
+  var q = db.collection('registros_visita').orderBy('creadoEn', 'desc').limit(500);
+  var snap = await q.get();
+  var docs = [];
+  snap.forEach(function(d) { docs.push(Object.assign({ id: d.id }, d.data())); });
+  return docs;
+}
+
+// =====================================================================
+//  FIREBASE — NÚMERO CORRELATIVO (atómico con Firestore counter)
+// =====================================================================
+async function fbGenerarNroRegistro() {
+  var db = initFirebase();
+  if (!db) return 'RV-' + new Date().getFullYear() + '-' + Date.now();
+  var year   = new Date().getFullYear();
+  var cntRef = db.collection('meta').doc('contador_' + year);
+  var newNum = await db.runTransaction(async function(tx) {
+    var doc = await tx.get(cntRef);
+    var n   = doc.exists ? (doc.data().count + 1) : 1;
+    tx.set(cntRef, { count: n });
+    return n;
+  });
+  return 'RV-' + year + '-' + String(newNum).padStart(4, '0');
+}
+
+// =====================================================================
+//  FIREBASE — ESTADÍSTICAS PARA DASHBOARD
+// =====================================================================
+async function fbObtenerEstadisticas() {
+  var registros = await fbObtenerRegistros();
+  var hoy   = new Date();
+  var mesAct = hoy.getMonth();
+  var anio   = hoy.getFullYear();
+  var porMes = {}, porRes = {};
+  var centros = new Set();
+  var totalMes = 0;
+  var ultima = null;
+
+  registros.forEach(function(r) {
+    if (!ultima) ultima = r;
+    var partes = (r.fecha || '').split('-');
+    var d = partes.length === 3 ? new Date(partes[2], partes[1]-1, partes[0]) : null;
+    if (r.centroCultivo) centros.add(r.centroCultivo);
+    if (d && d.getFullYear() === anio) {
+      var mes = d.toLocaleDateString('es-CL', { month: 'short' });
+      porMes[mes] = (porMes[mes] || 0) + 1;
+      if (d.getMonth() === mesAct) totalMes++;
+    }
+    (r.resoluciones || '').split(',').forEach(function(x) {
+      var k = x.trim(); if (k) porRes[k] = (porRes[k] || 0) + 1;
+    });
+  });
+
+  return {
+    totalMes,
+    totalAnio    : registros.length,
+    centrosUnicos: centros.size,
+    porMes       : Object.entries(porMes).map(function(e){ return { name:e[0], inspecciones:e[1] }; }),
+    porResolucion: Object.entries(porRes).map(function(e){ return { name:e[0], value:e[1] }; }),
+    ultimaInspeccion: ultima ? { centro: ultima.centroCultivo, titular: ultima.titular, fecha: ultima.fecha } : null,
+    registros
+  };
+}
+
+// =====================================================================
+//  INIT
+// =====================================================================
+document.addEventListener('DOMContentLoaded', function() {
+  document.getElementById('login-year').textContent = new Date().getFullYear();
+  initFirebase();
+  loadTheme();
+  // Firebase Auth — detecta sesión activa automáticamente
+  firebase.auth().onAuthStateChanged(function(user) {
+    document.getElementById('view-splash').style.opacity = '0';
+    setTimeout(function() {
+      document.getElementById('view-splash').style.display = 'none';
+      if (user) {
+        var name = user.displayName ||
+          user.email.split('@')[0].replace(/\./g,' ').replace(/\b\w/g, function(c){ return c.toUpperCase(); });
+        currentUser = {
+          email  : user.email,
+          name   : name,
+          isAdmin: (typeof ADMIN_EMAILS !== 'undefined') && ADMIN_EMAILS.includes(user.email)
+        };
+        showApp();
+      } else {
+        document.getElementById('view-login').classList.remove('hidden');
+      }
+    }, 400);
+  });
+
+  initFirmaCertificador();
+  initFirmaCliente();
+  initChecklist();
+  resetFormulario();
+  generarParticulas();
+});
+
+// =====================================================================
+//  PARTÍCULAS SPLASH
+// =====================================================================
+function generarParticulas() {
+  var cont = document.getElementById('splash-particles');
+  if (!cont) return;
+  var sizes  = [6,10,14,18,24,30,40];
+  var delays = [0,1,2,3,4,5,6,7,8,9];
+  var durations = [6,8,10,12,14,16];
+  for (var i = 0; i < 18; i++) {
+    var p = document.createElement('div');
+    p.className = 'particle';
+    var size = sizes[Math.floor(Math.random()*sizes.length)];
+    p.style.cssText = [
+      'width:'+size+'px',
+      'height:'+size+'px',
+      'left:'+(Math.random()*100)+'%',
+      'animation-duration:'+durations[Math.floor(Math.random()*durations.length)]+'s',
+      'animation-delay:'+(Math.random()*10)+'s',
+      'background:rgba(0,153,204,'+(0.05+Math.random()*0.15)+')'
+    ].join(';');
+    cont.appendChild(p);
+  }
+}
+
+// =====================================================================
+//  LOGIN
+// =====================================================================
+function loginGoogle() {
+  var provider = new firebase.auth.GoogleAuthProvider();
+  firebase.auth().signInWithPopup(provider).catch(function(e) {
+    toast('Error al iniciar sesión: ' + e.message, 'error');
+  });
+}
+
+function showApp() {
+  document.getElementById('view-login').classList.add('hidden');
+  document.getElementById('app').classList.remove('hidden');
+
+  // Mostrar chip de usuario
+  if (currentUser) {
+    var chip = document.getElementById('user-chip');
+    chip.classList.remove('hidden');
+    document.getElementById('user-name-chip').textContent = currentUser.name || currentUser.email.split('@')[0];
+    document.getElementById('user-avatar').textContent = (currentUser.name || currentUser.email)[0].toUpperCase();
+    // Mostrar botón admin si corresponde
+    if (currentUser.isAdmin) {
+      document.getElementById('nav-admin').classList.remove('hidden');
+    }
+  }
+
+  showView('dashboard');
+  initFishIfNeeded();
+  var ocean = document.getElementById('dash-ocean');
+  if (ocean) ocean.classList.remove('hidden');
+}
+
+// =====================================================================
+//  NAVEGACIÓN
+// =====================================================================
+function showView(view) {
+  var views = ['dashboard','registro','historico','admin'];
+  views.forEach(function(v) {
+    var el = document.getElementById('view-'+v);
+    if (el) el.classList.toggle('hidden', v !== view);
+    var btn = document.getElementById('nav-'+v);
+    if (btn) btn.classList.toggle('active', v === view);
+  });
+  var ocean = document.getElementById('dash-ocean');
+  if (ocean) ocean.classList.toggle('hidden', view !== 'dashboard');
+  if (view === 'dashboard') { cargarDashboard(); initFishIfNeeded(); }
+  if (view === 'historico') cargarHistorico();
+  if (view === 'registro')  resetFormulario();
+  if (view === 'admin')     cargarAdmin();
+}
+
+// =====================================================================
+//  FORMULARIO — RESET
+// =====================================================================
+function resetFormulario() {
+  var hoy = new Date().toLocaleDateString('es-CL').replace(/\//g,'-');
+  set('r-fecha', hoy);
+  set('r-nroRegistro', 'Se asignará al guardar');
+  ['centroCultivo','nroCentro','acs','titular','ubicacion','fechaSiembra','tamanoPeces',
+   'latitud','longitud','norte','este','observaciones','nombreResponsable','emailResponsable'].forEach(function(id) {
+    set('r-'+id,'');
+  });
+  document.getElementById('r-obs-si').checked = true;
+  toggleTipoObs();
+  ['cicE2','ca','vs','res1511','desinfeccion'].forEach(function(id) {
+    var el = document.getElementById('r-'+id);
+    if (el) el.checked = false;
+  });
+  document.querySelectorAll('input[name="tipoObs"]').forEach(function(r){ r.checked = false; });
+  clearFirmaCliente();
+  clearPhoto();
+  clearConcesionFill();
+  // Limpiar bloqueo de formulario anterior
+  var banner = document.getElementById('lock-banner');
+  if (banner) banner.remove();
+  var doc = document.getElementById('registro-documento');
+  if (doc) doc.classList.remove('form-locked');
+  var btnSync = document.getElementById('btn-sync');
+  if (btnSync) { btnSync.disabled = true; btnSync.style.opacity = ''; }
+  var btnMail = document.getElementById('btn-mail');
+  if (btnMail) { btnMail.disabled = true; btnMail.style.opacity = ''; btnMail.textContent = ''; btnMail.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg> Notificar Cliente'; btnMail.className = 'btn-action btn-mail'; }
+  appState = { saved: false, sent: false, archived: false, pdfB64: null, fotoB64: null, savedData: null };
+  checkChecklist();
+  setBtnGuardar(false);
+}
+
+function set(id, val) {
+  var el = document.getElementById(id);
+  if (el) el.value = val;
+}
+function get(id) {
+  var el = document.getElementById(id);
+  return el ? el.value.trim() : '';
+}
+
+// =====================================================================
+//  CHECKLIST
+// =====================================================================
+var checkItems = [
+  { id:'ck-datos',      text:'¿La información del formulario digital coincide con los datos físicos?', auto:false },
+  { id:'ck-fecha',      text:'¿Se completó la fecha de última siembra y tamaño peces?', auto:true },
+  { id:'ck-obs',        text:'¿Se han registrado las observaciones y su tipo correspondiente?', auto:true },
+  { id:'ck-responsable',text:'¿Se completó el nombre del responsable del centro?', auto:true },
+  { id:'ck-firma',      text:'¿El responsable del centro ha firmado digitalmente?', auto:true },
+  { id:'ck-foto',       text:'¿Se tomó la fotografía de evidencia?', auto:true },
+];
+
+function initChecklist() {
+  var cont = document.getElementById('checklist-items');
+  cont.innerHTML = checkItems.map(function(item) {
+    if (item.auto) {
+      return '<div class="check-item auto" id="ci-'+item.id+'">'+
+             '<div class="check-dot" id="dot-'+item.id+'"></div>'+
+             '<span class="check-text" id="txt-'+item.id+'">'+item.text+'</span>'+
+             '<span class="alert-icon" id="alrt-'+item.id+'">⚠</span>'+
+             '</div>';
+    } else {
+      return '<div class="check-item" id="ci-'+item.id+'" onclick="toggleCheckItem(\''+item.id+'\')">'+
+             '<div class="check-dot" id="dot-'+item.id+'"></div>'+
+             '<span class="check-text" id="txt-'+item.id+'">'+item.text+'</span>'+
+             '</div>';
+    }
+  }).join('');
+}
+
+var manualChecks = {};
+function toggleCheckItem(id) {
+  manualChecks[id] = !manualChecks[id];
+  checkChecklist();
+}
+
+function toggleTipoObs() {
+  var isNo = document.getElementById('r-obs-no').checked;
+  var tipoRow = document.getElementById('r-tipo-row');
+  if (tipoRow) tipoRow.style.display = isNo ? 'none' : '';
+  // Limpiar selección de tipo si se oculta
+  if (isNo) {
+    document.querySelectorAll('input[name="tipoObs"]').forEach(function(r){ r.checked = false; });
+  }
+}
+
+function checkChecklist() {
+  var checks = {
+    'ck-datos':       !!manualChecks['ck-datos'],
+    'ck-fecha':       !!get('r-fechaSiembra') && !!get('r-tamanoPeces'),
+    'ck-obs':         !!get('r-observaciones') && (document.getElementById('r-obs-no').checked || !!getSelectedRadio('tipoObs')),
+    'ck-responsable': !!get('r-nombreResponsable'),
+    'ck-firma':       firmaClienteHasData,
+    'ck-foto':        !!appState.fotoB64,
+  };
+  var allDone = true;
+  checkItems.forEach(function(item) {
+    var done = checks[item.id];
+    if (!done) allDone = false;
+    var ci = document.getElementById('ci-'+item.id);
+    var dot = document.getElementById('dot-'+item.id);
+    var txt = document.getElementById('txt-'+item.id);
+    var alrt = document.getElementById('alrt-'+item.id);
+    if (!ci) return;
+    ci.classList.toggle('done', done);
+    dot.classList.toggle('done', done);
+    dot.textContent = done ? '✓' : '';
+    if (txt) txt.classList.toggle('done', done);
+    if (alrt) alrt.style.display = done ? 'none' : '';
+  });
+  var badge = document.getElementById('lock-badge');
+  badge.className = 'lock-badge ' + (allDone ? 'unlocked' : 'locked');
+  badge.textContent = allDone ? '🔓 DESBLOQUEADO' : '🔒 BLOQUEO ACTIVO';
+
+  document.getElementById('btn-pdf').disabled  = !allDone;
+  document.getElementById('btn-sync').disabled = !allDone;
+  document.getElementById('btn-mail').disabled = !allDone;
+  document.getElementById('warn-checklist').classList.toggle('hidden', allDone);
+  return allDone;
+}
+
+function getSelectedRadio(name) {
+  var el = document.querySelector('input[name="'+name+'"]:checked');
+  return el ? el.value : '';
+}
+
+// =====================================================================
+//  FIRMA CERTIFICADOR (dibujo simulado)
+// =====================================================================
+function initFirmaCertificador() {
+  var canvas = document.getElementById('firma-certificador');
+  var ctx = canvas.getContext('2d');
+  ctx.strokeStyle = '#111827';
+  ctx.lineWidth = 3;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.beginPath(); ctx.moveTo(30,50); ctx.lineTo(250,55); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(20,85); ctx.lineTo(190,15); ctx.stroke();
+  ctx.fillStyle = '#111827';
+  [[105,30],[75,60],[165,40]].forEach(function(p){ ctx.beginPath(); ctx.arc(p[0],p[1],2.5,0,Math.PI*2); ctx.fill(); });
+}
+
+// =====================================================================
+//  FIRMA CLIENTE
+// =====================================================================
+function initFirmaCliente() {
+  var canvas = document.getElementById('firma-cliente');
+  var ctx = canvas.getContext('2d');
+
+  function getPos(e) {
+    var rect = canvas.getBoundingClientRect();
+    if (e.touches) return { x: e.touches[0].clientX - rect.left, y: e.touches[0].clientY - rect.top };
+    return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+  }
+
+  canvas.addEventListener('mousedown', function(e) { isFirmaDrawing = true; ctx.beginPath(); var p=getPos(e); ctx.moveTo(p.x,p.y); });
+  canvas.addEventListener('mousemove', function(e) {
+    if (!isFirmaDrawing) return;
+    ctx.strokeStyle='#1e3a5f'; ctx.lineWidth=2.5; ctx.lineCap='round';
+    var p=getPos(e); ctx.lineTo(p.x,p.y); ctx.stroke(); ctx.beginPath(); ctx.moveTo(p.x,p.y);
+  });
+  canvas.addEventListener('mouseup',   firmaStop);
+  canvas.addEventListener('mouseleave',firmaStop);
+  canvas.addEventListener('touchstart', function(e){ e.preventDefault(); isFirmaDrawing=true; ctx.beginPath(); var p=getPos(e); ctx.moveTo(p.x,p.y); }, {passive:false});
+  canvas.addEventListener('touchmove',  function(e){ e.preventDefault(); if(!isFirmaDrawing) return; ctx.strokeStyle='#1e3a5f'; ctx.lineWidth=2.5; ctx.lineCap='round'; var p=getPos(e); ctx.lineTo(p.x,p.y); ctx.stroke(); ctx.beginPath(); ctx.moveTo(p.x,p.y); }, {passive:false});
+  canvas.addEventListener('touchend',   firmaStop);
+}
+
+function firmaStop() {
+  if (!isFirmaDrawing) return;
+  isFirmaDrawing = false;
+  firmaClienteHasData = true;
+  document.getElementById('firma-placeholder').style.display = 'none';
+  checkChecklist();
+}
+
+function clearFirmaCliente() {
+  var canvas = document.getElementById('firma-cliente');
+  canvas.getContext('2d').clearRect(0,0,canvas.width,canvas.height);
+  firmaClienteHasData = false;
+  document.getElementById('firma-placeholder').style.display = '';
+  checkChecklist();
+}
+
+// =====================================================================
+//  CÁMARA
+// =====================================================================
+function startCamera() {
+  navigator.mediaDevices.getUserMedia({ video: { facingMode:'environment' } })
+    .then(function(stream) {
+      cameraStream = stream;
+      document.getElementById('camera-video').srcObject = stream;
+      document.getElementById('camera-placeholder').classList.add('hidden');
+      document.getElementById('camera-live').classList.remove('hidden');
+    })
+    .catch(function() { toast('No se pudo acceder a la cámara','error'); });
+}
+
+function stopCamera() {
+  if (cameraStream) { cameraStream.getTracks().forEach(function(t){ t.stop(); }); cameraStream = null; }
+  document.getElementById('camera-live').classList.add('hidden');
+  if (!appState.fotoB64) document.getElementById('camera-placeholder').classList.remove('hidden');
+}
+
+function capturePhoto() {
+  var video  = document.getElementById('camera-video');
+  var canvas = document.getElementById('photo-canvas');
+  canvas.width  = video.videoWidth;
+  canvas.height = video.videoHeight;
+  canvas.getContext('2d').drawImage(video,0,0);
+  var raw = canvas.toDataURL('image/jpeg',0.85);
+  stopCamera();
+  // Aplicar corrección EXIF (la cámara nativa puede incluir orientación)
+  _fixImageOrientation(raw, function(corrected) {
+    appState.fotoB64 = corrected;
+    document.getElementById('photo-img').src = corrected;
+    document.getElementById('photo-preview').classList.remove('hidden');
+    document.getElementById('foto-badge').classList.remove('hidden');
+    checkChecklist();
+  });
+}
+
+function clearPhoto() {
+  appState.fotoB64 = null;
+  document.getElementById('photo-preview').classList.add('hidden');
+  document.getElementById('foto-badge').classList.add('hidden');
+  var img = document.getElementById('photo-img');
+  img.src = ''; img.style.display = 'none';
+  document.getElementById('pdf-preview').classList.add('hidden');
+  document.getElementById('file-upload').value = '';
+  if (!cameraStream) document.getElementById('camera-placeholder').classList.remove('hidden');
+  checkChecklist();
+}
+
+function handleFileUpload(event) {
+  var file = event.target.files[0];
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var isPDF = file.type === 'application/pdf';
+    var pdfPrev = document.getElementById('pdf-preview');
+    var img = document.getElementById('photo-img');
+
+    if (isPDF) {
+      appState.fotoB64 = e.target.result;
+      img.style.display = 'none';
+      pdfPrev.classList.remove('hidden');
+      pdfPrev.style.display = 'flex';
+      document.getElementById('pdf-filename').textContent = file.name;
+      _showPhotoPreview();
+      toast('Archivo adjuntado ✓','success');
+    } else {
+      // Corregir orientación EXIF antes de mostrar
+      _fixImageOrientation(e.target.result, function(correctedB64) {
+        appState.fotoB64 = correctedB64;
+        img.src = correctedB64;
+        img.style.display = 'block';
+        pdfPrev.classList.add('hidden');
+        pdfPrev.style.display = 'none';
+        _showPhotoPreview();
+        toast('Archivo adjuntado ✓','success');
+      });
+    }
+  };
+  reader.readAsDataURL(file);
+}
+
+function _showPhotoPreview() {
+  document.getElementById('camera-placeholder').classList.add('hidden');
+  document.getElementById('photo-preview').classList.remove('hidden');
+  document.getElementById('foto-badge').classList.remove('hidden');
+  checkChecklist();
+}
+
+// Lee orientación EXIF y corrige rotación dibujando en canvas
+function _fixImageOrientation(base64, callback) {
+  var img = new Image();
+  img.onload = function() {
+    var orientation = 1;
+    // Parsear EXIF manualmente para obtener orientación
+    try {
+      var arr = _base64ToUint8Array(base64);
+      orientation = _getExifOrientation(arr) || 1;
+    } catch(e) { /* si falla, usar sin rotación */ }
+
+    var canvas = document.createElement('canvas');
+    var ctx = canvas.getContext('2d');
+    var w = img.naturalWidth, h = img.naturalHeight;
+
+    // Orientaciones que rotan 90°/270° intercambian ancho y alto
+    if (orientation >= 5 && orientation <= 8) {
+      canvas.width = h; canvas.height = w;
+    } else {
+      canvas.width = w; canvas.height = h;
+    }
+
+    // Aplicar transformación según orientación EXIF
+    switch (orientation) {
+      case 2: ctx.transform(-1,0,0,1,w,0); break;
+      case 3: ctx.transform(-1,0,0,-1,w,h); break;
+      case 4: ctx.transform(1,0,0,-1,0,h); break;
+      case 5: ctx.transform(0,1,1,0,0,0); break;
+      case 6: ctx.transform(0,1,-1,0,h,0); break;
+      case 7: ctx.transform(0,-1,-1,0,h,w); break;
+      case 8: ctx.transform(0,-1,1,0,0,w); break;
+      default: break; // orientation 1 = normal
+    }
+
+    ctx.drawImage(img, 0, 0);
+    callback(canvas.toDataURL('image/jpeg', 0.88));
+  };
+  img.src = base64;
+}
+
+function _base64ToUint8Array(base64) {
+  var b64 = base64.split(',')[1];
+  var bin = atob(b64);
+  var arr = new Uint8Array(bin.length);
+  for (var i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+  return arr;
+}
+
+function _getExifOrientation(arr) {
+  // JPEG starts with FF D8
+  if (arr[0] !== 0xFF || arr[1] !== 0xD8) return 1;
+  var i = 2;
+  while (i < arr.length) {
+    if (arr[i] !== 0xFF) break;
+    var marker = arr[i+1];
+    var len = (arr[i+2] << 8) | arr[i+3];
+    if (marker === 0xE1) { // APP1 — EXIF
+      // Check for "Exif" header
+      if (arr[i+4]===0x45 && arr[i+5]===0x78 && arr[i+6]===0x69 && arr[i+7]===0x66) {
+        var tiffStart = i + 10;
+        var littleEndian = arr[tiffStart]===0x49;
+        var read16 = function(o) { return littleEndian ? (arr[tiffStart+o] | arr[tiffStart+o+1]<<8) : (arr[tiffStart+o]<<8 | arr[tiffStart+o+1]); };
+        var read32 = function(o) { return littleEndian ? (arr[tiffStart+o] | arr[tiffStart+o+1]<<8 | arr[tiffStart+o+2]<<16 | arr[tiffStart+o+3]<<24) : (arr[tiffStart+o]<<24 | arr[tiffStart+o+1]<<16 | arr[tiffStart+o+2]<<8 | arr[tiffStart+o+3]); };
+        var ifdOffset = read32(4);
+        var entries = read16(ifdOffset);
+        for (var e = 0; e < entries; e++) {
+          var eOff = ifdOffset + 2 + e*12;
+          if (read16(eOff) === 0x0112) { // Orientation tag
+            return read16(eOff + 8);
+          }
+        }
+      }
+    }
+    if (marker === 0xDA) break; // SOS — start of scan, no more EXIF
+    i += 2 + len;
+  }
+  return 1;
+}
+
+// =====================================================================
+//  GUARDAR LOCAL
+// =====================================================================
+function setBtnGuardar(saved) {
+  var btn = document.getElementById('btn-guardar');
+  btn.textContent = saved ? '✓ Cambios Guardados' : 'Guardar Cambios';
+  btn.className   = 'btn-action btn-save ' + (saved ? 'saved' : '');
+}
+
+function handleGuardar() {
+  if (checkChecklist()) {
+    // Checklist completo → exportar directamente a Drive + Sheets + Firebase
+    handleSyncGoogle();
+  } else {
+    // Aún incompleto → guardar solo localmente y avisar
+    appState.saved = true;
+    setBtnGuardar(true);
+    toast('Guardado localmente. Complete el checklist para exportar a Sheets.', 'success');
+  }
+}
+
+// =====================================================================
+//  DESCARGAR PDF
+// =====================================================================
+async function handleDescargarPDF() {
+  if (!window.jspdf || !window.html2canvas) { window.print(); return; }
+  try {
+    setBtnLoading('btn-pdf', true);
+    pushNotif('pdf-dl', 'info', '📄 Generando PDF…', [
+      { id:'pdf-render', label:'Capturando formulario en alta resolución', state:'active' },
+      { id:'pdf-build',  label:'Construyendo documento PDF',               state:'pending' },
+      { id:'pdf-save',   label:'Descargando archivo',                      state:'pending' }
+    ]);
+    var pdf = await generarPDF();
+    updateNotifStep('pdf-dl','pdf-render','done');
+    updateNotifStep('pdf-dl','pdf-build','done');
+    updateNotifStep('pdf-dl','pdf-save','active');
+    var nombre = 'CertimarRV_' + get('r-centroCultivo').replace(/\s+/g,'_') + '_' + get('r-fecha') + '.pdf';
+    pdf.save(nombre);
+    updateNotifCard('pdf-dl', 'success', '📄 PDF descargado', nombre);
+  } catch(e) {
+    updateNotifCard('pdf-dl', 'error', '❌ Error al generar PDF', String(e));
+    toast('Error al generar PDF','error');
+  } finally {
+    setBtnLoading('btn-pdf', false);
+  }
+}
+
+async function generarPDF() {
+  var el = document.getElementById('registro-documento');
+  // scale 1.5 en JPEG = 60% menos datos que scale:2 PNG, misma calidad visual para A4
+  var canvas = await html2canvas(el, {
+    scale: 1.5,
+    backgroundColor: '#ffffff',
+    useCORS: true,
+    imageTimeout: 0,
+    height: el.scrollHeight,
+    windowHeight: el.scrollHeight,
+    logging: false
+  });
+  var { jsPDF } = window.jspdf;
+  var pdf    = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
+  // JPEG 88% = mucho más liviano que PNG y suficiente para impresión
+  var imgData = canvas.toDataURL('image/jpeg', 0.88);
+  var pdfW    = pdf.internal.pageSize.getWidth();
+  var pdfH    = (canvas.height * pdfW) / canvas.width;
+
+  // Paginar si el contenido excede una página A4
+  var pageH = pdf.internal.pageSize.getHeight();
+  if (pdfH <= pageH) {
+    pdf.addImage(imgData, 'JPEG', 0, 0, pdfW, pdfH);
+  } else {
+    var pos = 0;
+    while (pos < pdfH) {
+      if (pos > 0) pdf.addPage();
+      pdf.addImage(imgData, 'JPEG', 0, -pos, pdfW, pdfH);
+      pos += pageH;
+    }
+  }
+
+  if (appState.fotoB64) {
+    pdf.addPage();
+    pdf.setFontSize(12); pdf.setFont('helvetica','bold');
+    pdf.text('Evidencia Fotografica', 20, 18);
+    pdf.setLineWidth(0.3); pdf.setDrawColor(200,200,200);
+    pdf.line(20, 21, pdfW-20, 21);
+    try {
+      var props = pdf.getImageProperties(appState.fotoB64);
+      var maxW  = pdfW - 40;
+      var maxH  = pdf.internal.pageSize.getHeight() - 40;
+      var ratio = Math.min(maxW/props.width, maxH/props.height);
+      pdf.addImage(appState.fotoB64, 'JPEG', 20, 28, props.width*ratio, props.height*ratio);
+    } catch(e) { /* si la foto falla, continuar */ }
+  }
+  return pdf;
+}
+  return pdf;
+}
+
+// =====================================================================
+//  SYNC DRIVE + SHEETS
+// =====================================================================
+async function handleSyncGoogle() {
+  if (!checkChecklist()) { toast('Complete el checklist primero','error'); return; }
+
+  // 1. Generar PDF (cliente, rápido)
+  var pdfB64 = null;
+  try {
+    if (window.jspdf && window.html2canvas) {
+      pushNotif('pdf', 'info', '📄 Generando PDF', [
+        { id:'pdf-render', label:'Renderizando formulario', state:'active' }
+      ]);
+      var pdf = await generarPDF();
+      // datauristring es el método correcto de jsPDF — evita problemas con btoa + binario
+      pdfB64 = pdf.output('datauristring');
+      appState.pdfB64 = pdfB64;
+      updateNotifStep('pdf', 'pdf-render', 'done');
+      removeNotif('pdf');
+    }
+  } catch(e) {
+    updateNotifCard('pdf','error','❌ Error al generar PDF', String(e));
+    return;
+  }
+
+  pushNotif('sync', 'info', '☁️ Guardando en Firebase…', [
+    { id:'step-nro',      label:'Generando N° correlativo',   state:'active' },
+    { id:'step-firebase', label:'Escribiendo en Firestore',   state:'pending' },
+    { id:'step-drive',    label:'Subiendo PDF a Drive',       state:'pending' },
+    { id:'step-sheets',   label:'Registrando en Hoja RV',     state:'pending' }
+  ]);
+
+  setBtnLoading('btn-sync', true);
+
+  // Generar correlativo atómico justo antes de guardar (evita huecos por formularios abiertos sin guardar)
+  var nroGenerado;
+  try {
+    nroGenerado = await fbGenerarNroRegistro();
+    set('r-nroRegistro', nroGenerado);
+    updateNotifStep('sync','step-nro','done');
+    updateNotifStep('sync','step-firebase','active');
+  } catch(e) {
+    // Fallback a Apps Script si Firebase falla
+    try {
+      // Reintentar Firestore una vez más
+      nroGenerado = await fbGenerarNroRegistro();
+      set('r-nroRegistro', nroGenerado);
+      updateNotifStep('sync','step-nro','done');
+      updateNotifStep('sync','step-firebase','active');
+    } catch(e2) {
+      updateNotifCard('sync','error','❌ No se pudo obtener correlativo', String(e2));
+      setBtnLoading('btn-sync', false);
+      return;
+    }
+  }
+
+  var datos = getDatos();
+  var emailDest = appState.pendingEmail || '';
+
+  try {
+    // 2. Subir PDF a Drive (via Apps Script) y guardar en Firestore en paralelo
+    var urlCertificado = '';
+    var urlFoto = '';
+
+    // Subir PDF a Firebase Storage
+    var drivePromise = (async function() {
+      if (!pdfB64) return '';
+      try {
+        var raw    = pdfB64.replace(/^data:application\/pdf;base64,/, '');
+        var bytes  = Uint8Array.from(atob(raw), function(c){ return c.charCodeAt(0); });
+        var nombre = 'CertimarRV_' + datos.nroRegistro + '_' +
+                     (datos.centroCultivo || '').replace(/\s+/g,'_') + '.pdf';
+        var ref    = firebase.storage().ref('certificados/' + nombre);
+        await ref.put(bytes.buffer, { contentType: 'application/pdf' });
+        var url = await ref.getDownloadURL();
+        // Subir foto de evidencia si existe
+        if (appState.fotoB64 && !appState.fotoB64.startsWith('data:application/pdf')) {
+          try {
+            var mt   = (appState.fotoB64.match(/^data:([^;]+);base64,/) || [])[1] || 'image/jpeg';
+            var rawF = appState.fotoB64.replace(/^data:[^;]+;base64,/, '');
+            var bytF = Uint8Array.from(atob(rawF), function(c){ return c.charCodeAt(0); });
+            var ext  = mt.split('/')[1] || 'jpg';
+            var refF = firebase.storage().ref('fotos/Foto_' + datos.nroRegistro + '.' + ext);
+            await refF.put(bytF.buffer, { contentType: mt });
+          } catch(eFoto) { console.warn('Foto upload error (no fatal):', eFoto); }
+        }
+        return url;
+      } catch(eStorage) {
+        console.error('Storage upload error:', eStorage);
+        return '';
+      }
+    })()
+
+    // 3. Firestore — escritura inmediata (~200ms)
+    await fbGuardarRegistro(datos, '', '');
+    updateNotifStep('sync','step-firebase','done');
+    updateNotifStep('sync','step-drive','active');
+
+    // 4. Esperar Drive
+    var driveRes = await drivePromise;
+    urlCertificado = driveRes;
+    updateNotifStep('sync','step-drive', urlCertificado ? 'done' : 'warn');
+    updateNotifStep('sync','step-sheets','active');
+
+    // 5. Registrar en Google Sheets via Firebase Function
+    await new Promise(function(resolve) {
+      firebase.functions().httpsCallable('registrarEnSheets')({
+        datos: datos, urlCertificado: urlCertificado
+      }).then(function(res) {
+        updateNotifStep('sync','step-sheets', res && res.data && res.data.ok ? 'done' : 'fail');
+        resolve(res.data);
+      }).catch(function(e) {
+        updateNotifStep('sync','step-sheets','fail');
+        console.error('registrarEnSheets error:', e);
+        resolve(null);
+      });
+    });
+
+    // 6. Actualizar Firestore con URL del PDF si se obtuvo
+    if (urlCertificado) {
+      await fbActualizarEstado(datos.nroRegistro, 'GUARDADO', { urlCertificado });
+    }
+    updateNotifProgress('sync', 100);
+
+    setTimeout(function() {
+      updateNotifCard('sync', 'success', '✅ Guardado en Firestore + Drive + Sheets', datos.nroRegistro);
+    }, 400);
+
+    appState.saved = true;
+    appState.savedData = Object.assign({}, datos, { urlCert: urlCertificado });
+    setBtnGuardar(true);
+    updateCustomCentroIfNeeded(datos);
+
+    localRecords.unshift({
+      nroReg: datos.nroRegistro, fecha: datos.fecha,
+      centro: datos.centroCultivo, nroCentro: datos.nroCentro,
+      acs: datos.acs, titular: datos.titular,
+      resoluciones: buildResExt(datos.resoluciones),
+      observaciones: datos.observaciones, tipoObs: datos.tipoObservacion,
+      responsable: datos.nombreResponsable, emailResp: emailDest,
+      urlCert: urlCertificado, estado: 'GUARDADO',
+      creadoPor: currentUser ? currentUser.email : ''
+    });
+
+    lockForm(false);
+    showCompletionDialog(datos.nroRegistro, false, emailDest);
+
+  } catch(e) {
+    updateNotifCard('sync','error','❌ Error al guardar', String(e));
+    toast('Error: ' + String(e), 'error');
+  } finally {
+    setBtnLoading('btn-sync', false);
+  }
+}
+
+
+function buildResExt(res) {
+  if (!res) return '';
+  var arr = [];
+  if (res.cicE2) arr.push('1821-CIC E2');
+  if (res.ca)    arr.push('1821-CA');
+  if (res.vs)    arr.push('1821-VS');
+  if (res.res1511) arr.push('1511');
+  if (res.desinfeccion) arr.push('DESINFECCIÓN');
+  return arr.join(', ');
+}
+
+// =====================================================================
+//  BLOQUEO DE FORMULARIO
+// =====================================================================
+function lockForm(fullyLocked) {
+  var doc = document.getElementById('registro-documento');
+  doc.classList.add('form-locked');
+
+  // Banner de estado sobre el formulario
+  var existingBanner = document.getElementById('lock-banner');
+  if (existingBanner) existingBanner.remove();
+
+  var banner = document.createElement('div');
+  banner.id = 'lock-banner';
+  banner.className = 'lock-overlay-banner' + (fullyLocked ? ' sent' : '');
+
+  if (fullyLocked) {
+    banner.innerHTML = '<span>🔒 Registro enviado y bloqueado — <strong>' + get('r-nroRegistro') + '</strong></span>'+
+      '<span style="font-size:11px;opacity:.8">Para correcciones contacte a su supervisor</span>';
+  } else {
+    var nro = get('r-nroRegistro');
+    banner.innerHTML = '<span>💾 Guardado — <strong>' + nro + '</strong> — Pendiente de notificación</span>'+
+      '<button class="btn-archive" id="btn-archive-action" onclick="openModalArchive()">📁 Archivar sin notificar</button>';
+  }
+
+  // Insertar banner antes del doc-paper
+  var viewReg = document.getElementById('view-registro');
+  viewReg.insertBefore(banner, viewReg.firstChild);
+
+  // Deshabilitar botón sync, dejar activo mail
+  document.getElementById('btn-sync').disabled = true;
+  document.getElementById('btn-sync').style.opacity = '0.4';
+  if (fullyLocked) {
+    document.getElementById('btn-mail').disabled = true;
+    document.getElementById('btn-mail').style.opacity = '0.4';
+  }
+}
+
+// =====================================================================
+//  MODAL EMAIL
+// =====================================================================
+function openModalMail() {
+  if (!checkChecklist()) { toast('Complete el checklist primero','error'); return; }
+  if (appState.saved) {
+    // Ya guardado → solo enviar correo
+    var datos = getDatos();
+    document.getElementById('modal-email').value = datos.emailDestinatario || get('r-emailResponsable') || '';
+    document.getElementById('modal-asunto').textContent = 'Registro de Visita — '+datos.centroCultivo+' — '+datos.fecha;
+    document.getElementById('modal-body-preview').textContent = generarMensaje(datos);
+    document.getElementById('modal-mail').classList.remove('hidden');
+  } else {
+    // No guardado → ir al flujo completo vía completion dialog
+    showCompletionDialog(get('r-nroRegistro'), false, '');
+  }
+}
+
+function closeModalMail() {
+  document.getElementById('modal-mail').classList.add('hidden');
+}
+
+function handleEnviarMail() {
+  var emailDest = document.getElementById('modal-email').value.trim();
+  if (!emailDest) {
+    document.getElementById('modal-email').style.borderColor = '#dc2626';
+    toast('Ingrese un email de destinatario','error');
+    return;
+  }
+  document.getElementById('modal-email').style.borderColor = '';
+
+  var emailCC  = document.getElementById('modal-cc')  ? document.getElementById('modal-cc').value.trim()  : '';
+  var emailCCO = document.getElementById('modal-cco') ? document.getElementById('modal-cco').value.trim() : '';
+
+  setBtnLoading('btn-enviar-mail', true);
+  closeModalMail();
+
+  // Notificación lateral con detalle
+  var ccInfo = [];
+  if (emailCC)  ccInfo.push('CC: ' + emailCC.split(',').length + ' dest.');
+  if (emailCCO) ccInfo.push('CCO: 1 dest.');
+  pushNotif('mail-send', 'info', '✉️ Enviando correo…', [
+    { id:'m1', label:'Preparando mensaje y adjunto PDF', state:'active' },
+    { id:'m2', label:'Enviando a ' + emailDest,          state:'pending' },
+    { id:'m3', label: ccInfo.length ? ccInfo.join(' · ') : 'Copia al certificador',   state:'pending' }
+  ]);
+
+  var datos = getDatos();
+  datos.emailDestinatario = emailDest;
+  datos.emailCC  = emailCC;
+  datos.emailCCO = emailCCO;
+
+  setTimeout(function() { updateNotifStep('mail-send','m1','done'); updateNotifStep('mail-send','m2','active'); }, 800);
+
+  google.script.run
+    .withSuccessHandler(function(res) {
+      setBtnLoading('btn-enviar-mail', false);
+      if (res && res.ok) {
+        updateNotifStep('mail-send','m2','done');
+        updateNotifStep('mail-send','m3','done');
+        setTimeout(function() {
+          updateNotifCard('mail-send', 'success', '✉️ Correo enviado correctamente',
+            'Para: ' + emailDest + (emailCC ? ' · CC: ' + emailCC : ''));
+        }, 500);
+
+        appState.sent = true;
+        var nro = datos.nroRegistro;
+        for (var i=0; i<localRecords.length; i++) {
+          if (localRecords[i].nroReg === nro) {
+            localRecords[i].estado = 'ENVIADO';
+            localRecords[i].emailResp = emailDest;
+            break;
+          }
+        }
+        lockForm(true);
+        showCompletionDialog(nro, true, emailDest);
+      } else {
+        updateNotifCard('mail-send', 'error', '❌ Error al enviar', res ? (res.error||'Error desconocido') : 'Sin respuesta del servidor');
+        toast('Error al enviar: '+(res && res.error ? res.error : 'sin respuesta'),'error');
+      }
+    })
+    .withFailureHandler(function(e) {
+      setBtnLoading('btn-enviar-mail', false);
+      updateNotifCard('mail-send', 'error', '❌ Error de conexión', String(e||'Verifica permisos del script'));
+      toast('Error al enviar correo','error');
+    })
+    .enviarNotificacion(datos, appState.savedData ? appState.savedData.urlCert : '', appState.pdfB64);
+}
+
+// =====================================================================
+//  MODAL ARCHIVAR SIN ENVIAR
+// =====================================================================
+function openModalArchive() {
+  var nro = get('r-nroRegistro');
+  document.getElementById('archive-nro').textContent = nro;
+  document.getElementById('archive-motivo').value = '';
+  document.getElementById('archive-motivo-error').style.display = 'none';
+  document.getElementById('modal-archive').classList.remove('hidden');
+}
+
+function closeModalArchive() {
+  document.getElementById('modal-archive').classList.add('hidden');
+}
+
+function handleConfirmarArchive() {
+  var motivo = document.getElementById('archive-motivo').value.trim();
+  if (!motivo) {
+    document.getElementById('archive-motivo-error').style.display = 'block';
+    return;
+  }
+  document.getElementById('archive-motivo-error').style.display = 'none';
+
+  var nro = get('r-nroRegistro');
+  // Actualizar estado en localRecords
+  for (var i = 0; i < localRecords.length; i++) {
+    if (localRecords[i].nroReg === nro) {
+      localRecords[i].estado = 'ARCHIVADO';
+      localRecords[i].observaciones = (localRecords[i].observaciones || '') +
+        '\n[ARCHIVADO SIN NOTIFICAR — Motivo: ' + motivo + ']';
+      break;
+    }
+  }
+
+  // Actualizar banner
+  closeModalArchive();
+  var banner = document.getElementById('lock-banner');
+  if (banner) {
+    banner.style.background = 'linear-gradient(90deg,#92400e,#b45309)';
+    banner.innerHTML = '<span>📁 Archivado sin notificar — <strong>' + nro + '</strong></span>'+
+      '<span style="font-size:11px;opacity:.8">Motivo: ' + motivo + '</span>';
+  }
+
+  // Bloquear completamente
+  document.getElementById('btn-mail').disabled = true;
+  document.getElementById('btn-mail').style.opacity = '0.4';
+  var archBtn = document.getElementById('btn-archive-action');
+  if (archBtn) archBtn.remove();
+
+  appState.archived = true;
+  // Actualizar estado en Firestore
+  fbActualizarEstado(nro, 'ARCHIVADO', { motivoArchivo: motivo }).catch(function(){});
+  toast('📁 Registro archivado correctamente','success');
+}
+
+function generarMensaje(datos) {
+  return 'Estimado(a) '+datos.nombreResponsable+',\n\n'+
+    'En relación a la visita técnica de auditoría realizada en el Centro de Cultivo\n'+
+    '"'+datos.centroCultivo+'" (RNA: '+datos.nroCentro+', ACS: '+datos.acs+') con fecha '+datos.fecha+',\n'+
+    'adjunto encontrará el Registro de Visita oficial emitido por Certimar SpA.\n\n'+
+    'Este documento corresponde al respaldo y evidencia de la inspección técnica en terreno\n'+
+    'realizada según los protocolos vigentes de Sernapesca.\n\n'+
+    'Ante cualquier consulta, no dude en contactarnos.\n\n'+
+    'Saludos cordiales,\n'+
+    'Departamento de Certificaciones\n'+
+    'Certimar SpA\n'+
+    'operaciones@certimar.cl\n'+
+    '+56 9 6115 6322';
+}
+
+// =====================================================================
+//  OBTENER DATOS DEL FORMULARIO
+// =====================================================================
+function getDatos() {
+  return {
+    fecha          : get('r-fecha'),
+    nroRegistro    : get('r-nroRegistro'),
+    centroCultivo  : get('r-centroCultivo'),
+    nroCentro      : get('r-nroCentro'),
+    acs            : get('r-acs'),
+    titular        : get('r-titular'),
+    ubicacion      : get('r-ubicacion'),
+    fechaSiembra   : get('r-fechaSiembra'),
+    tamanoPeces    : get('r-tamanoPeces'),
+    latitud        : get('r-latitud'),
+    longitud       : get('r-longitud'),
+    norte          : get('r-norte'),
+    este           : get('r-este'),
+    observaciones  : get('r-observaciones'),
+    tipoObservacion: getSelectedRadio('tipoObs'),
+    nombreResponsable  : get('r-nombreResponsable'),
+    emailDestinatario  : get('r-emailResponsable'),
+    nombreCertificador : get('r-nombreCertificador'),
+    rutCertificador    : get('r-rutCertificador'),
+    resoluciones: {
+      cicE2:        document.getElementById('r-cicE2').checked,
+      ca:           document.getElementById('r-ca').checked,
+      vs:           document.getElementById('r-vs').checked,
+      res1511:      document.getElementById('r-res1511').checked,
+      desinfeccion: document.getElementById('r-desinfeccion').checked,
+    }
+  };
+}
+
+// =====================================================================
+//  DASHBOARD — carga desde Firestore
+// =====================================================================
+function cargarDashboard() {
+  pushNotif('dash-load', 'info', '📊 Cargando dashboard…', [
+    { id:'d1', label:'Leyendo registros de Firestore', state:'active' },
+    { id:'d2', label:'Calculando estadísticas',         state:'pending' }
+  ]);
+  fbObtenerEstadisticas().then(function(stats) {
+    updateNotifStep('dash-load','d1','done');
+    updateNotifStep('dash-load','d2','active');
+    document.getElementById('dash-total-mes').textContent  = stats.totalMes || 0;
+    document.getElementById('dash-centros').textContent    = stats.centrosUnicos || 0;
+    document.getElementById('dash-sub-anio').textContent   = 'Total año: ' + (stats.totalAnio || 0);
+    document.getElementById('dash-sub-mes').textContent    = stats.totalMes > 0 ? '↑ activo este mes' : 'Sin inspecciones este mes';
+    if (stats.ultimaInspeccion) {
+      document.getElementById('dash-ultima-centro').textContent = stats.ultimaInspeccion.centro || '—';
+      document.getElementById('dash-ultima-info').textContent   = (stats.ultimaInspeccion.titular||'') + ' · ' + (stats.ultimaInspeccion.fecha||'');
+    }
+    renderChartMes(stats.porMes || []);
+    renderChartRes(stats.porResolucion || []);
+    renderVencer(stats);
+    updateNotifStep('dash-load','d2','done');
+    setTimeout(function(){ updateNotifCard('dash-load','success','📊 Dashboard actualizado', stats.totalAnio + ' registros · ' + stats.centrosUnicos + ' centros'); }, 300);
+  }).catch(function(e) {
+    updateNotifCard('dash-load','error','❌ Error al cargar dashboard', String(e));
+  });
+}
+
+function filtrarDashboard() { cargarDashboard(); }
+
+function renderChartMes(data) {
+  var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  var ctx = document.getElementById('chart-mes').getContext('2d');
+  if (chartMes) chartMes.destroy();
+  chartMes = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: data.map(function(d){ return d.name; }),
+      datasets: [{ data: data.map(function(d){ return d.inspecciones; }),
+        backgroundColor: isDark ? '#4db8ff' : '#003366', borderRadius:4, barThickness:28 }]
+    },
+    options: {
+      plugins:{ legend:{ display:false } },
+      scales:{
+        y:{ grid:{ color: isDark ? '#334155':'#f1f5f9' }, ticks:{ color: isDark?'#94a3b8':'#64748b' } },
+        x:{ grid:{ display:false },                        ticks:{ color: isDark?'#94a3b8':'#64748b' } }
+      }
+    }
+  });
+}
+
+function renderChartRes(data) {
+  var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  var ctx = document.getElementById('chart-res').getContext('2d');
+  if (chartRes) chartRes.destroy();
+  var colors = isDark
+    ? ['#4db8ff','#38bdf8','#7dd3fc','#0284c7','#bae6fd']
+    : ['#003366','#0099CC','#4db8ff','#005b99','#99d6ff'];
+  chartRes = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: data.map(function(d){ return d.name; }),
+      datasets: [{ data: data.map(function(d){ return d.value; }),
+        backgroundColor: colors, borderWidth:2, borderColor: isDark?'#1e293b':'#fff' }]
+    },
+    options: {
+      plugins:{ legend:{ position:'bottom', labels:{ font:{ size:11 }, color: isDark?'#94a3b8':'#374151' } } },
+      cutout:'65%'
+    }
+  });
+}
+
+function renderVencer(stats) {
+  // Tabla estática de ejemplo (basada en últimos registros reales sería más complejo)
+  var tbody = document.getElementById('vencer-tbody');
+  tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:20px;color:#94a3b8;font-size:13px">'+
+    'Conecte sus datos reales para ver vencimientos automáticos.</td></tr>';
+}
+
+// =====================================================================
+//  HISTÓRICO — carga desde Firestore
+// =====================================================================
+function cargarHistorico() {
+  document.getElementById('hist-tbody').innerHTML =
+    '<tr><td colspan="9" class="hist-empty"><div class="spinner dark" style="margin:0 auto 8px"></div>Cargando registros…</td></tr>';
+  document.getElementById('hist-footer').textContent = 'Consultando Firestore…';
+
+  pushNotif('hist-load', 'info', '📋 Cargando Histórico…', [
+    { id:'h1', label:'Conectando con Firestore',  state:'active' },
+    { id:'h2', label:'Procesando registros',      state:'pending' },
+    { id:'h3', label:'Renderizando tabla',         state:'pending' }
+  ]);
+
+  fbObtenerRegistros().then(function(docs) {
+    updateNotifStep('hist-load','h1','done');
+    updateNotifStep('hist-load','h2','active');
+
+    // Fusionar con localRecords de esta sesión
+    var fbNros = new Set(docs.map(function(d){ return d.nroRegistro; }));
+    var extras = localRecords.filter(function(r){ return !fbNros.has(r.nroReg); });
+    var mapped = extras.map(function(r){ return {
+      nroRegistro: r.nroReg, fecha: r.fecha, centroCultivo: r.centro,
+      nroCentro: r.nroCentro, acs: r.acs, titular: r.titular,
+      resoluciones: r.resExt||r.resoluciones||'', observaciones: r.observaciones,
+      tipoObservacion: r.tipoObs, nombreResponsable: r.responsable,
+      emailResponsable: r.emailResp, urlCertificado: r.urlCert,
+      estado: r.estado||'GUARDADO', creadoPor: r.creadoPor||''
+    }; });
+
+    historicData = mapped.concat(docs);
+    updateNotifStep('hist-load','h2','done');
+    updateNotifStep('hist-load','h3','active');
+
+    if (historicData.length === 0) {
+      document.getElementById('hist-tbody').innerHTML =
+        '<tr><td colspan="9" class="hist-empty">' +
+        '<div style="font-size:32px;margin-bottom:10px">📋</div>' +
+        'No hay registros aún.<br>' +
+        '<span style="font-size:11px;color:var(--text-muted)">Crea tu primer registro con "Nueva Visita"</span>' +
+        '</td></tr>';
+      document.getElementById('hist-footer').textContent = '0 registros';
+      updateNotifCard('hist-load','info','📋 Histórico vacío','Aún no hay registros en Firestore');
+    } else {
+      renderHistorico(historicData);
+      updateNotifStep('hist-load','h3','done');
+      setTimeout(function() {
+        updateNotifCard('hist-load','success','📋 Histórico listo',
+          historicData.length + ' registro' + (historicData.length!==1?'s':'') + ' · carga instantánea desde Firestore');
+      }, 300);
+    }
+  }).catch(function(e) {
+    updateNotifCard('hist-load','error','❌ Error al cargar','Error Firestore: ' + String(e));
+    // Fallback local
+    if (localRecords.length > 0) {
+      historicData = localRecords.map(function(r){ return { nroRegistro:r.nroReg, fecha:r.fecha, centroCultivo:r.centro, nroCentro:r.nroCentro, acs:r.acs, titular:r.titular, resoluciones:r.resExt||'', estado:r.estado||'GUARDADO' }; });
+      renderHistorico(historicData);
+    } else {
+      document.getElementById('hist-tbody').innerHTML =
+        '<tr><td colspan="9" class="hist-empty" style="color:var(--error)">⚠️ Sin conexión a Firestore<br>' +
+        '<span style="font-size:11px">'+esc(String(e))+'</span><br>' +
+        '<span style="font-size:11px;color:var(--text-muted)">Verifica la configuración en FirebaseConfig.html</span></td></tr>';
+    }
+  });
+}
+
+
+function filtrarHistorico() {
+  var q      = document.getElementById('hist-search').value.toLowerCase();
+  var desde  = document.getElementById('hist-desde').value;
+  var hasta  = document.getElementById('hist-hasta').value;
+  var filtered = historicData.filter(function(r) {
+    var ok = (!q || r.centro.toLowerCase().includes(q) || r.titular.toLowerCase().includes(q) || r.nroReg.toLowerCase().includes(q));
+    if (desde && r.fecha < desde) ok = false;
+    if (hasta && r.fecha > hasta) ok = false;
+    return ok;
+  });
+  renderHistorico(filtered);
+}
+
+function renderHistorico(data) {
+  var tbody  = document.getElementById('hist-tbody');
+  var footer = document.getElementById('hist-footer');
+  if (!data || !data.length) {
+    tbody.innerHTML = '<tr><td colspan="9" class="hist-empty">No se encontraron registros</td></tr>';
+    footer.textContent = '0 registros';
+    return;
+  }
+  // Soporte both old (Sheets) and new (Firestore) field names
+  tbody.innerHTML = data.map(function(r) {
+    var nro      = r.nroRegistro || r.nroReg || '—';
+    var fecha    = r.fecha || '—';
+    var centro   = r.centroCultivo || r.centro || '—';
+    var titular  = r.titular || '—';
+    var res      = r.resoluciones || r.resExt || '—';
+    var tipoObs  = r.tipoObservacion || r.tipoObs || '—';
+    var resp     = r.nombreResponsable || r.responsable || '—';
+    var urlCert  = r.urlCertificado || r.urlCert || '';
+    var estado   = r.estado || 'GUARDADO';
+    var certLink = urlCert ? '<a href="'+esc(urlCert)+'" target="_blank" class="link-cert">📄 Ver PDF</a>' : '—';
+    var badgeCls = estado === 'ENVIADO' ? 'badge-ok' : estado === 'ARCHIVADO' ? 'badge-warn' : 'badge-blue';
+    var icon     = estado === 'ENVIADO' ? '✉️' : estado === 'ARCHIVADO' ? '📁' : '💾';
+    return '<tr>'+
+      '<td style="font-weight:600;color:var(--brand)">'+esc(nro)+'</td>'+
+      '<td>'+esc(fecha)+'</td>'+
+      '<td style="font-weight:600">'+esc(centro)+'</td>'+
+      '<td>'+esc(titular)+'</td>'+
+      '<td><span class="badge badge-blue" style="font-size:10px">'+esc(res)+'</span></td>'+
+      '<td>'+esc(tipoObs)+'</td>'+
+      '<td>'+esc(resp)+'</td>'+
+      '<td><span class="badge '+badgeCls+'">'+icon+' '+estado+'</span></td>'+
+      '<td>'+certLink+'</td>'+
+      '</tr>';
+  }).join('');
+  footer.textContent = 'Mostrando ' + data.length + ' registro' + (data.length!==1?'s':'') + ' · Firestore';
+}
+
+
+function esc(str) {
+  return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// =====================================================================
+//  UTILIDADES UI
+// =====================================================================
+function setBtnLoading(id, loading) {
+  var btn = document.getElementById(id);
+  if (!btn) return;
+  if (loading) {
+    btn._prevHTML = btn.innerHTML;
+    btn.innerHTML = '<span class="spinner"></span> Procesando...';
+    btn.disabled = true;
+  } else {
+    if (btn._prevHTML) btn.innerHTML = btn._prevHTML;
+    btn.disabled = false;
+  }
+}
+
+// =====================================================================
+//  PECES ANIMADOS — DASHBOARD OCEAN
+// =====================================================================
+var fishInitialized = false;
+function initFishIfNeeded() {
+  if (fishInitialized) return;
+  fishInitialized = true;
+  var container = document.getElementById('fish-container');
+  if (!container) return;
+
+  // SVG de pez salmón
+  function fishSVG(scale, color) {
+    var s = scale || 1;
+    var c = color || '#e8826a';
+    return '<svg width="'+(40*s)+'" height="'+(22*s)+'" viewBox="0 0 40 22" fill="none" xmlns="http://www.w3.org/2000/svg">' +
+      '<path d="M38,11 C34,4 24,2 14,5 C8,7 3,9 0,11 C3,13 8,15 14,17 C24,20 34,18 38,11 Z" fill="'+c+'" opacity=".92"/>' +
+      '<path d="M0,11 C-2,7 -5,5 -5,11 C-5,17 -2,15 0,11 Z" fill="'+c+'" opacity=".7"/>' +
+      '<circle cx="32" cy="9" r="2" fill="white" opacity=".8"/>' +
+      '<circle cx="32.5" cy="9" r="1" fill="#333"/>' +
+      '<path d="M14,5 C16,4 18,3 20,5" stroke="'+c+'" stroke-width="1" opacity=".5"/>' +
+      '</svg>';
+  }
+
+  var salmonColors = ['#e8826a','#f0956d','#d4634e','#fa9070','#c85a40','#f5a07a'];
+  var totalFish = 12;
+
+  for (var i = 0; i < totalFish; i++) {
+    (function(idx) {
+      var div = document.createElement('div');
+      div.className = 'fish' + (Math.random() > 0.5 ? ' rev' : '');
+      var isRev = div.classList.contains('rev');
+      var scale = 0.6 + Math.random() * 0.9;
+      var bottom = 8 + Math.random() * 170; // dentro del océano (220px alto)
+      var duration = 10 + Math.random() * 20;
+      var delay = -(Math.random() * duration);
+      var color = salmonColors[Math.floor(Math.random() * salmonColors.length)];
+      var travelDist = (100 + Math.random() * 120) + 'vw';
+
+      div.style.cssText = [
+        'bottom:' + bottom + 'px',
+        isRev ? 'right:-80px' : 'left:-80px',
+        'animation-duration:' + duration + 's',
+        'animation-delay:' + delay + 's',
+        '--fish-travel:' + (isRev ? '-' : '') + travelDist,
+        'opacity:' + (0.55 + Math.random() * 0.45)
+      ].join(';');
+      div.innerHTML = fishSVG(scale, color);
+      container.appendChild(div);
+    })(i);
+  }
+}
+
+// =====================================================================
+//  AUTOCOMPLETE CONCESIONES — por N° de Centro
+// =====================================================================
+
+// Al iniciar, fusionar centros guardados localmente en localStorage
+(function initCustomConcesiones() {
+  try {
+    var saved = localStorage.getItem('certimar_custom_centros');
+    if (saved) {
+      var custom = JSON.parse(saved);
+      var count = 0;
+      Object.keys(custom).forEach(function(code) {
+        if (!CONCESIONES_DB[code]) {
+          CONCESIONES_DB[code] = custom[code];
+          count++;
+        }
+      });
+      if (count > 0) console.log('[Centros custom] Cargados desde localStorage:', count);
+    }
+  } catch(e) { console.warn('No se pudieron cargar centros custom:', e); }
+})();
+
+function _positionDropdown() {
+  var input = document.getElementById('r-nroCentro');
+  var dd = document.getElementById('ac-dropdown');
+  if (!input || !dd) return;
+  var rect = input.getBoundingClientRect();
+  dd.style.top  = (rect.bottom + window.scrollY + 2) + 'px';
+  dd.style.left = rect.left + 'px';
+  dd.style.width = Math.max(rect.width, 320) + 'px';
+}
+
+function onNroCentroInput(val) {
+  val = val.trim();
+  var dd = document.getElementById('ac-dropdown');
+
+  if (val.length === 0) { closeAcDropdown(); clearConcesionFill(); return; }
+
+  // Match exacto → autocompleta silenciosamente
+  if (CONCESIONES_DB && CONCESIONES_DB[val]) {
+    fillConcesion(val, CONCESIONES_DB[val]);
+    closeAcDropdown();
+    return;
+  }
+
+  if (val.length < 3 || !CONCESIONES_DB) { closeAcDropdown(); return; }
+
+  var matches = Object.entries(CONCESIONES_DB)
+    .filter(function(e) { return e[0].startsWith(val) || e[0].includes(val); })
+    .slice(0, 12);
+
+  var html = matches.map(function(e) {
+    var code = e[0], c = e[1];
+    var isCustom = c._custom ? ' <span style="color:#f59e0b;font-size:9px">★ LOCAL</span>' : '';
+    return '<div class="ac-item' + (c._custom ? ' ac-new' : '') + '" onmousedown="selectConcesion(\'' + code + '\')">' +
+      '<span class="ac-code">' + code + isCustom + '</span>' +
+      '<div><div class="ac-name">' + esc(c.ubicacion || c.centroCultivo || '—') + '</div>' +
+      '<div class="ac-titular">' + esc(c.titular || '—') + ' · ACS: ' + esc(c.acs || '—') + '</div></div>' +
+      '</div>';
+  }).join('');
+
+  // Si no hay coincidencia exacta, ofrecer guardar este código como nuevo
+  if (!CONCESIONES_DB[val] && val.length >= 4) {
+    html += '<div class="ac-item ac-new" onmousedown="saveNewCentro(\'' + val + '\')" style="border-top:2px solid #fde68a">' +
+      '<span class="ac-code" style="color:#d97706">✚ ' + val + '</span>' +
+      '<div><div class="ac-name" style="color:#92400e;font-weight:600">Guardar como nuevo centro</div>' +
+      '<div class="ac-titular">Los datos ingresados en el formulario quedarán asociados a este código</div></div>' +
+      '</div>';
+  }
+
+  if (!html) { closeAcDropdown(); return; }
+
+  dd.innerHTML = html;
+  dd.style.display = 'block';
+  _positionDropdown();
+}
+
+function saveNewCentro(code) {
+  closeAcDropdown();
+  // Capturar datos actuales del formulario para este centro
+  var newEntry = {
+    centroCultivo: get('r-centroCultivo') || code,
+    titular      : get('r-titular') || '',
+    ubicacion    : get('r-ubicacion') || '',
+    acs          : get('r-acs') || '',
+    region       : '',
+    comuna       : '',
+    superficie   : '',
+    estado       : 'CONCESION OTORGADA',
+    coords       : (get('r-latitud') && get('r-longitud'))
+                   ? { lat: parseFloat(get('r-latitud')), lon: parseFloat(get('r-longitud')) }
+                   : null,
+    _custom      : true
+  };
+
+  // Agregar a DB en memoria
+  CONCESIONES_DB[code] = newEntry;
+
+  // Persistir en localStorage
+  try {
+    var saved = localStorage.getItem('certimar_custom_centros');
+    var custom = saved ? JSON.parse(saved) : {};
+    custom[code] = newEntry;
+    localStorage.setItem('certimar_custom_centros', JSON.stringify(custom));
+    toast('✓ Centro ' + code + ' guardado localmente para futuros registros', 'success');
+  } catch(e) {
+    toast('Centro guardado en sesión (sin localStorage)', '');
+  }
+
+  // Marcar badge como custom
+  var input = document.getElementById('r-nroCentro');
+  if (input) { input.style.color = '#d97706'; input.style.fontWeight = '700'; }
+  var badge = document.getElementById('ac-ok-badge');
+  if (badge) { badge.textContent = '★ Nuevo centro guardado'; badge.className = 'ac-badge custom'; }
+  else {
+    var b = document.createElement('span');
+    b.id = 'ac-ok-badge'; b.className = 'ac-badge custom';
+    b.textContent = '★ Nuevo centro guardado';
+    input && input.parentNode.appendChild(b);
+  }
+}
+
+// Actualizar datos del centro en localStorage cuando el usuario guarda en Sheets
+function updateCustomCentroIfNeeded(datos) {
+  if (!datos || !datos.nroCentro) return;
+  var code = datos.nroCentro;
+  var existing = CONCESIONES_DB[code];
+  // Solo actualizar si es custom o si campos vacíos en la DB
+  if (!existing || existing._custom) {
+    var updated = {
+      centroCultivo: datos.centroCultivo || (existing && existing.centroCultivo) || '',
+      titular      : datos.titular       || (existing && existing.titular)       || '',
+      ubicacion    : datos.ubicacion     || (existing && existing.ubicacion)     || '',
+      acs          : datos.acs           || (existing && existing.acs)           || '',
+      region       : (existing && existing.region) || '',
+      comuna       : (existing && existing.comuna) || '',
+      superficie   : (existing && existing.superficie) || '',
+      estado       : 'CONCESION OTORGADA',
+      coords       : (datos.latitud && datos.longitud)
+                     ? { lat: parseFloat(datos.latitud), lon: parseFloat(datos.longitud) }
+                     : (existing && existing.coords) || null,
+      _custom      : true
+    };
+    CONCESIONES_DB[code] = updated;
+    try {
+      var saved = localStorage.getItem('certimar_custom_centros');
+      var custom = saved ? JSON.parse(saved) : {};
+      custom[code] = updated;
+      localStorage.setItem('certimar_custom_centros', JSON.stringify(custom));
+      console.log('[Centros custom] Actualizado:', code, updated);
+    } catch(e) {}
+  }
+}
+
+function selectConcesion(code) {
+  set('r-nroCentro', code);
+  fillConcesion(code, CONCESIONES_DB[code]);
+  closeAcDropdown();
+}
+
+function fillConcesion(code, c) {
+  if (c.titular)   { set('r-titular',   c.titular);   highlightFilled('r-titular'); }
+  if (c.ubicacion) { set('r-ubicacion', c.ubicacion); highlightFilled('r-ubicacion'); }
+  if (c.acs)       { set('r-acs',       c.acs);       highlightFilled('r-acs'); }
+  if (c.coords) {
+    set('r-latitud',  Math.abs(c.coords.lat).toFixed(6));
+    set('r-longitud', Math.abs(c.coords.lon).toFixed(6));
+    highlightFilled('r-latitud'); highlightFilled('r-longitud');
+  }
+  var input = document.getElementById('r-nroCentro');
+  if (input) {
+    input.style.color = c._custom ? '#d97706' : '#15803d';
+    input.style.fontWeight = '700';
+    var old = document.getElementById('ac-ok-badge');
+    if (old) old.remove();
+    var badge = document.createElement('span');
+    badge.id = 'ac-ok-badge';
+    badge.className = c._custom ? 'ac-badge custom' : 'ac-badge';
+    badge.textContent = c._custom ? '★ Centro local' : '✓ Autocompletado';
+    input.parentNode.appendChild(badge);
+  }
+  toast('✓ Centro ' + code + ' — campos autocompletados', 'success');
+}
+
+function clearConcesionFill() {
+  var badge = document.getElementById('ac-ok-badge');
+  if (badge) badge.remove();
+  var input = document.getElementById('r-nroCentro');
+  if (input) { input.style.color = ''; input.style.fontWeight = ''; }
+}
+
+function highlightFilled(id) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  el.classList.add('ac-filled');
+  setTimeout(function() { el.classList.remove('ac-filled'); }, 1800);
+}
+
+function closeAcDropdown() {
+  var dd = document.getElementById('ac-dropdown');
+  if (dd) dd.style.display = 'none';
+}
+
+// Reposicionar dropdown al hacer scroll
+window.addEventListener('scroll', function() {
+  var dd = document.getElementById('ac-dropdown');
+  if (dd && dd.style.display !== 'none') _positionDropdown();
+}, true);
+
+// =====================================================================
+//  SIDEBAR NOTIFICATIONS
+// =====================================================================
+var _notifTimers = {};
+
+function pushNotif(id, type, title, steps, autoClose) {
+  removeNotif(id);
+  var sidebar = document.getElementById('notif-sidebar');
+  var card = document.createElement('div');
+  card.className = 'notif-card ' + (type || 'info');
+  card.id = 'notif-' + id;
+
+  var stepsHtml = '';
+  if (steps && steps.length) {
+    stepsHtml = '<div class="notif-steps">' + steps.map(function(s) {
+      var dot = s.state === 'done' ? '✓' : s.state === 'fail' ? '✕' : s.state === 'active' ? '●' : '○';
+      return '<div class="notif-step ' + s.state + '" id="nstep-' + id + '-' + s.id + '">' +
+             '<span class="step-dot">' + dot + '</span>' + s.label + '</div>';
+    }).join('') + '</div>';
+  }
+
+  card.innerHTML =
+    '<button class="notif-close" onclick="removeNotif(\'' + id + '\')">×</button>' +
+    '<div class="notif-title">' + title + '</div>' +
+    (steps ? stepsHtml : '<div class="notif-body" id="notif-body-' + id + '"></div>') +
+    '<div class="notif-progress"><div class="notif-progress-fill" id="notif-prog-' + id + '" style="width:0%"></div></div>';
+
+  sidebar.appendChild(card);
+  // Trigger animation
+  requestAnimationFrame(function() { requestAnimationFrame(function() { card.classList.add('show'); }); });
+
+  // Animar barra de progreso
+  if (steps) {
+    var pct = steps.filter(function(s){ return s.state==='done'; }).length / steps.length * 100;
+    setTimeout(function() { setNotifProgress(id, Math.max(pct, 15)); }, 100);
+  }
+
+  if (autoClose !== undefined && autoClose !== null && autoClose >= 0) {
+    _notifTimers[id] = setTimeout(function() { removeNotif(id); }, (autoClose || 4000));
+  }
+  return card;
+}
+
+function updateNotifStep(notifId, stepId, newState) {
+  var el = document.getElementById('nstep-' + notifId + '-' + stepId);
+  if (!el) return;
+  el.className = 'notif-step ' + newState;
+  var dot = el.querySelector('.step-dot');
+  if (dot) dot.textContent = newState==='done' ? '✓' : newState==='fail' ? '✕' : newState==='active' ? '●' : '○';
+  // Recalcular progreso
+  var card = document.getElementById('notif-' + notifId);
+  if (card) {
+    var steps = card.querySelectorAll('.notif-step');
+    var done  = card.querySelectorAll('.notif-step.done').length;
+    setNotifProgress(notifId, (done / steps.length) * 100);
+  }
+}
+
+function updateNotifCard(id, type, title, body) {
+  var card = document.getElementById('notif-' + id);
+  if (!card) { pushNotif(id, type, title, null, 5000); return; }
+  card.className = 'notif-card ' + type + ' show';
+  var t = card.querySelector('.notif-title');
+  if (t) t.textContent = title;
+  var steps = card.querySelector('.notif-steps');
+  if (steps) steps.remove();
+  var existing = card.querySelector('.notif-body');
+  if (!existing) {
+    var b = document.createElement('div');
+    b.className = 'notif-body';
+    b.id = 'notif-body-' + id;
+    card.insertBefore(b, card.querySelector('.notif-progress'));
+  }
+  var bodyEl = card.querySelector('.notif-body');
+  if (bodyEl) bodyEl.textContent = body || '';
+  setNotifProgress(id, 100);
+  clearTimeout(_notifTimers[id]);
+  _notifTimers[id] = setTimeout(function() { removeNotif(id); }, 6000);
+}
+
+function updateNotifProgress(id, pct) {
+  setNotifProgress(id, pct);
+}
+
+function setNotifProgress(id, pct) {
+  var bar = document.getElementById('notif-prog-' + id);
+  if (bar) bar.style.width = Math.min(100, pct) + '%';
+}
+
+function removeNotif(id) {
+  clearTimeout(_notifTimers[id]);
+  var card = document.getElementById('notif-' + id);
+  if (!card) return;
+  card.classList.remove('show');
+  setTimeout(function() { if (card.parentNode) card.parentNode.removeChild(card); }, 400);
+}
+
+// =====================================================================
+//  COMPLETION DIALOG
+// =====================================================================
+function showCompletionDialog(nro, emailSent, emailDest) {
+  var dlg = document.getElementById('completion-dialog');
+  document.getElementById('cd-nro').textContent = nro;
+
+  if (emailSent) {
+    document.getElementById('cd-icon').textContent = '🎉';
+    document.getElementById('cd-title').textContent = 'Registro Guardado y Notificado';
+    document.getElementById('cd-sub').textContent = 'El registro fue guardado en Drive/Sheets y el correo fue enviado a ' + emailDest + '.';
+    document.getElementById('cd-email-section').style.display = 'none';
+  } else {
+    document.getElementById('cd-icon').textContent = '✅';
+    document.getElementById('cd-title').textContent = 'Registro Guardado';
+    document.getElementById('cd-sub').textContent = 'El registro fue guardado exitosamente. ¿Deseas notificar al responsable del centro?';
+    document.getElementById('cd-email-section').style.display = 'block';
+    document.getElementById('cd-email-input').value = emailDest || get('r-emailResponsable') || '';
+    document.getElementById('cd-send-btn').disabled = false;
+    document.getElementById('cd-send-btn').textContent = '✉️ Enviar';
+  }
+
+  dlg.classList.add('show');
+}
+
+function closeCompletionDialog() {
+  document.getElementById('completion-dialog').classList.remove('show');
+}
+
+function completionGo(view) {
+  closeCompletionDialog();
+  showView(view);
+}
+
+function handleCompletionEnviar() {
+  var email = document.getElementById('cd-email-input').value.trim();
+  if (!email || !email.includes('@')) { 
+    document.getElementById('cd-email-input').style.borderColor = '#dc2626';
+    return; 
+  }
+  document.getElementById('cd-send-btn').disabled = true;
+  document.getElementById('cd-send-btn').textContent = '⏳ Enviando…';
+
+  appState.pendingEmail = email;
+  var datos = getDatos();
+  datos.emailDestinatario = email;
+  datos.emailCC  = document.getElementById('cd-cc-input')  ? document.getElementById('cd-cc-input').value.trim()  : '';
+  datos.emailCCO = document.getElementById('cd-cco-input') ? document.getElementById('cd-cco-input').value.trim() : '';
+
+  pushNotif('mail', 'info', '✉️ Enviando correo…', [
+    { id:'mail-send', label:'Enviando a ' + email, state:'active' }
+  ]);
+
+  firebase.functions().httpsCallable('enviarNotificacion')({
+    datos         : datos,
+    urlCertificado: appState.savedData ? appState.savedData.urlCert : '',
+    pdfB64        : appState.pdfB64
+  }).then(function(result) {
+    var res = result.data;
+    if (res && res.ok) {
+      updateNotifCard('mail', 'success', '✉️ Correo enviado', 'Notificación enviada a ' + email);
+      document.getElementById('cd-send-btn').textContent = '✓ Enviado';
+      document.getElementById('cd-email-section').style.display = 'none';
+      document.getElementById('cd-icon').textContent = '🎉';
+      document.getElementById('cd-title').textContent = 'Registro Guardado y Notificado';
+      document.getElementById('cd-sub').textContent = 'Correo enviado a ' + email + '.';
+      appState.sent = true;
+      lockForm(true);
+      var nro = get('r-nroRegistro');
+      fbActualizarEstado(nro, 'ENVIADO', { emailResponsable: email }).catch(function(){});
+      for (var i=0; i<localRecords.length; i++) {
+        if (localRecords[i].nroReg === nro) { localRecords[i].estado = 'ENVIADO'; localRecords[i].emailResp = email; break; }
+      }
+    } else {
+      updateNotifCard('mail', 'error', '❌ Error al enviar', res ? res.error : 'Reintenta');
+      document.getElementById('cd-send-btn').disabled = false;
+      document.getElementById('cd-send-btn').textContent = '✉️ Reintentar';
+    }
+  }).catch(function(e) {
+    updateNotifCard('mail', 'error', '❌ Error de conexión', String(e || ''));
+    document.getElementById('cd-send-btn').disabled = false;
+    document.getElementById('cd-send-btn').textContent = '✉️ Reintentar';
+  });
+}
+
+// =====================================================================
+//  TEMA CLARO / OSCURO
+// =====================================================================
+function loadTheme() {
+  var saved = localStorage.getItem('certimar_theme') || 'light';
+  applyTheme(saved);
+}
+
+function toggleTheme() {
+  var current = document.documentElement.getAttribute('data-theme') || 'light';
+  applyTheme(current === 'dark' ? 'light' : 'dark');
+}
+
+function applyTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  localStorage.setItem('certimar_theme', theme);
+  var btn = document.getElementById('btn-theme');
+  if (btn) btn.textContent = theme === 'dark' ? '☀️' : '🌙';
+  // Actualizar chart colors si existen
+  if (chartMes || chartRes) { setTimeout(function(){ cargarDashboard(); }, 50); }
+}
+
+// =====================================================================
+//  PANEL ADMIN
+// =====================================================================
+var _adminAll = [];
+var _adminFiltered = [];
+var _adminPage = 0;
+var _adminPageSize = 25;
+
+function cargarAdmin() {
+  if (!currentUser || !currentUser.isAdmin) {
+    showView('dashboard');
+    toast('Acceso restringido', 'error');
+    return;
+  }
+
+  document.getElementById('adm-tbody').innerHTML =
+    '<tr><td colspan="11" class="admin-empty"><div class="spinner dark" style="margin:0 auto 8px"></div>Cargando todos los registros…</td></tr>';
+  document.getElementById('adm-footer-count').textContent = 'Cargando…';
+
+  pushNotif('admin-load','info','🛡️ Panel Admin cargando…',[
+    { id:'a1', label:'Obteniendo todos los registros', state:'active' },
+    { id:'a2', label:'Calculando estadísticas globales', state:'pending' }
+  ]);
+
+  fbObtenerTodos().then(function(docs) {
+    _adminAll = docs;
+    _adminFiltered = docs.slice();
+
+    // Stats globales
+    var mes = new Date().getMonth();
+    var anio = new Date().getFullYear();
+    var certs = new Set();
+    var totalMes = 0, enviados = 0, pendientes = 0;
+    docs.forEach(function(d) {
+      if (d.creadoPor) certs.add(d.creadoPor);
+      var partes = (d.fecha||'').split('-');
+      var f = partes.length===3 ? new Date(partes[2],partes[1]-1,partes[0]) : null;
+      if (f && f.getFullYear()===anio && f.getMonth()===mes) totalMes++;
+      if (d.estado==='ENVIADO') enviados++;
+      if (d.estado==='GUARDADO') pendientes++;
+    });
+
+    document.getElementById('adm-total').textContent     = docs.length;
+    document.getElementById('adm-mes').textContent       = totalMes;
+    document.getElementById('adm-cert').textContent      = certs.size;
+    document.getElementById('adm-enviados').textContent  = enviados;
+    document.getElementById('adm-pendientes').textContent= pendientes;
+    document.getElementById('admin-header-sub').textContent =
+      'Total: ' + docs.length + ' registros · ' + certs.size + ' certificadores';
+
+    // Poblar selector de certificadores
+    var sel = document.getElementById('adm-cert-filter');
+    var existing = new Set(['']);
+    certs.forEach(function(c) {
+      if (!existing.has(c)) {
+        existing.add(c);
+        var op = document.createElement('option');
+        op.value = c; op.textContent = c.split('@')[0];
+        sel.appendChild(op);
+      }
+    });
+
+    updateNotifStep('admin-load','a1','done');
+    updateNotifStep('admin-load','a2','active');
+    _adminPage = 0;
+    renderAdminTabla();
+    updateNotifStep('admin-load','a2','done');
+    setTimeout(function(){ updateNotifCard('admin-load','success','🛡️ Panel Admin listo', docs.length + ' registros cargados'); }, 300);
+  }).catch(function(e) {
+    updateNotifCard('admin-load','error','❌ Error Admin', String(e));
+    document.getElementById('adm-tbody').innerHTML =
+      '<tr><td colspan="11" class="admin-empty" style="color:var(--error)">⚠️ Error: '+esc(String(e))+'</td></tr>';
+  });
+}
+
+function renderAdminTabla() {
+  var tbody = document.getElementById('adm-tbody');
+  var start = _adminPage * _adminPageSize;
+  var page  = _adminFiltered.slice(start, start + _adminPageSize);
+  var total = _adminFiltered.length;
+
+  if (!total) {
+    tbody.innerHTML = '<tr><td colspan="11" class="admin-empty">No hay registros con esos filtros</td></tr>';
+    document.getElementById('adm-footer-count').textContent = '0 resultados';
+    document.getElementById('adm-pag-info').textContent = '';
+    return;
+  }
+
+  tbody.innerHTML = page.map(function(r) {
+    var estado  = r.estado || 'GUARDADO';
+    var icon    = estado==='ENVIADO' ? '✉️' : estado==='ARCHIVADO' ? '📁' : '💾';
+    var bdg     = estado==='ENVIADO' ? 'badge-ok' : estado==='ARCHIVADO' ? 'badge-warn' : 'badge-blue';
+    var certIni = (r.certNombre || r.creadoPor || 'U')[0].toUpperCase();
+    var certNom = r.certNombre || (r.creadoPor||'').split('@')[0] || '—';
+    var urlCert = r.urlCertificado || '';
+    return '<tr>'+
+      '<td style="font-weight:700;color:var(--brand);white-space:nowrap">'+esc(r.nroRegistro||'—')+'</td>'+
+      '<td style="white-space:nowrap">'+esc(r.fecha||'—')+'</td>'+
+      '<td style="font-weight:600;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+esc(r.centroCultivo||'')+'">'+esc(r.centroCultivo||'—')+'</td>'+
+      '<td style="white-space:nowrap">'+esc(r.nroCentro||'—')+'</td>'+
+      '<td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+esc(r.titular||'')+'">'+esc(r.titular||'—')+'</td>'+
+      '<td>'+esc(r.acs||'—')+'</td>'+
+      '<td style="font-size:10px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(r.resoluciones||'—')+'</td>'+
+      '<td>'+esc(r.nombreResponsable||'—')+'</td>'+
+      '<td><span class="badge '+bdg+'">'+icon+' '+estado+'</span></td>'+
+      '<td><div class="admin-cert-chip"><div class="admin-cert-avatar">'+certIni+'</div><span style="max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+esc(certNom)+'">'+esc(certNom)+'</span></div></td>'+
+      '<td style="white-space:nowrap">'+
+        (urlCert ? '<a href="'+esc(urlCert)+'" target="_blank" class="admin-action-btn">📄</a> ' : '')+
+        '<button class="admin-action-btn" onclick="admReenviarMail(\''+esc(r.nroRegistro||'')+'\',\''+esc(r.emailResponsable||'')+'\')">✉️</button>'+
+      '</td>'+
+      '</tr>';
+  }).join('');
+
+  var pages = Math.ceil(total / _adminPageSize);
+  document.getElementById('adm-footer-count').textContent =
+    'Mostrando '+(start+1)+'–'+Math.min(start+_adminPageSize, total)+' de '+total+' registros';
+  document.getElementById('adm-pag-info').textContent = 'Pág ' + (_adminPage+1) + ' / ' + pages;
+  document.getElementById('adm-prev').disabled = _adminPage === 0;
+  document.getElementById('adm-next').disabled = _adminPage >= pages - 1;
+}
+
+function filtrarAdmin() {
+  var q    = (document.getElementById('adm-search').value || '').toLowerCase().trim();
+  var est  = document.getElementById('adm-estado').value;
+  var cert = document.getElementById('adm-cert-filter').value;
+  var desde= document.getElementById('adm-desde').value;
+  var hasta= document.getElementById('adm-hasta').value;
+
+  _adminFiltered = _adminAll.filter(function(r) {
+    if (q && !( (r.nroRegistro||'').toLowerCase().includes(q) ||
+                (r.centroCultivo||'').toLowerCase().includes(q) ||
+                (r.titular||'').toLowerCase().includes(q) ||
+                (r.creadoPor||'').toLowerCase().includes(q) ||
+                (r.certNombre||'').toLowerCase().includes(q) )) return false;
+    if (est  && r.estado !== est)         return false;
+    if (cert && r.creadoPor !== cert)     return false;
+    if (desde && r.fecha < convertDateFilter(desde)) return false;
+    if (hasta && r.fecha > convertDateFilter(hasta)) return false;
+    return true;
+  });
+  _adminPage = 0;
+  renderAdminTabla();
+}
+
+function convertDateFilter(isoDate) {
+  // ISO input: yyyy-mm-dd → convert to dd-mm-yyyy stored format
+  if (!isoDate) return '';
+  var p = isoDate.split('-');
+  return p[2]+'-'+p[1]+'-'+p[0];
+}
+
+function limpiarFiltrosAdmin() {
+  document.getElementById('adm-search').value   = '';
+  document.getElementById('adm-estado').value   = '';
+  document.getElementById('adm-cert-filter').value = '';
+  document.getElementById('adm-desde').value    = '';
+  document.getElementById('adm-hasta').value    = '';
+  filtrarAdmin();
+}
+
+function admPagina(dir) {
+  var pages = Math.ceil(_adminFiltered.length / _adminPageSize);
+  _adminPage = Math.max(0, Math.min(_adminPage + dir, pages - 1));
+  renderAdminTabla();
+  document.getElementById('view-admin').scrollTo(0,0);
+}
+
+function admReenviarMail(nro, email) {
+  var dest = prompt('Reenviar notificación para ' + nro + '\nEmail del responsable:', email || '');
+  if (!dest) return;
+  pushNotif('adm-mail','info','✉️ Reenviando correo…',[{ id:'m1', label:'Enviando a '+dest, state:'active' }]);
+  var r = _adminAll.find(function(x){ return x.nroRegistro === nro; });
+  if (!r) { updateNotifCard('adm-mail','error','❌ Registro no encontrado',''); return; }
+  var datos = { nroRegistro: r.nroRegistro, fecha: r.fecha, centroCultivo: r.centroCultivo,
+    nroCentro: r.nroCentro, acs: r.acs, titular: r.titular, nombreResponsable: r.nombreResponsable,
+    emailDestinatario: dest, observaciones: r.observaciones, tipoObservacion: r.tipoObservacion };
+  google.script.run
+    .withSuccessHandler(function(res) {
+      if (res && res.ok) {
+        updateNotifCard('adm-mail','success','✉️ Reenviado correctamente','Para: '+dest);
+        fbActualizarEstado(nro, 'ENVIADO', { emailResponsable: dest }).catch(function(){});
+        // Actualizar UI
+        var idx = _adminAll.findIndex(function(x){ return x.nroRegistro === nro; });
+        if (idx >= 0) { _adminAll[idx].estado = 'ENVIADO'; _adminAll[idx].emailResponsable = dest; }
+        filtrarAdmin();
+      } else {
+        updateNotifCard('adm-mail','error','❌ Error al reenviar', res ? res.error : 'Sin respuesta');
+      }
+    })
+    .withFailureHandler(function(e){ updateNotifCard('adm-mail','error','❌ Error',String(e)); })
+    .enviarNotificacion(datos, r.urlCertificado||'', null);
+}
+
+function exportarCSV() {
+  var data = _adminFiltered.length ? _adminFiltered : _adminAll;
+  if (!data.length) { toast('No hay datos para exportar','error'); return; }
+  var headers = ['N° Registro','Fecha','Centro','N° Centro','Titular','ACS','Resoluciones','Responsable','Email','Estado','Certificador'];
+  var rows = data.map(function(r) {
+    return [r.nroRegistro, r.fecha, r.centroCultivo, r.nroCentro, r.titular, r.acs,
+      r.resoluciones, r.nombreResponsable, r.emailResponsable, r.estado,
+      r.certNombre||r.creadoPor].map(function(v){ return '"'+(v||'').replace(/"/g,'""')+'"'; }).join(',');
+  });
+  var csv = [headers.map(function(h){ return '"'+h+'"'; }).join(',')].concat(rows).join('\n');
+  var blob = new Blob(['\uFEFF'+csv], { type:'text/csv;charset=utf-8' });
+  var url  = URL.createObjectURL(blob);
+  var a    = document.createElement('a');
+  a.href = url; a.download = 'certimar_registros_'+new Date().toISOString().split('T')[0]+'.csv';
+  a.click(); URL.revokeObjectURL(url);
+  toast('CSV exportado ✓','success');
+  pushNotif('export','success','⬇️ CSV Exportado', data.length+' registros · '+a.download, 4000);
+}
+
+var toastTimer;
+function toast(msg, type) {
+  var el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'show ' + (type || '');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function(){ el.className = ''; }, 3500);
+}
+</script>
+<!-- Dropdown autocomplete global (fuera de doc-paper para evitar overflow:hidden) -->
+<div id="ac-dropdown" class="autocomplete-dropdown" style="display:none;position:fixed"></div>
+
+</body>
+</html>

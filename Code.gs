@@ -10,7 +10,7 @@ const EMAIL_REMITENTE = 'operaciones@certimar.cl';
 const TIMEZONE        = 'America/Santiago';
 
 // ============================================================
-//  ROUTER
+//  ROUTER — GET (Apps Script web app)
 // ============================================================
 function doGet(e) {
   const tpl = HtmlService.createTemplateFromFile('Index');
@@ -22,6 +22,69 @@ function doGet(e) {
 
 function include(filename) {
   return HtmlService.createHtmlOutputFromFile(filename).getContent();
+}
+
+// ============================================================
+//  ROUTER — POST (webhook para Firebase Functions)
+//  Permite que Firebase escriba en Sheets sin service account.
+//
+//  Deployment requerido:
+//    Apps Script → Deploy → New deployment
+//    Tipo: Web app | Execute as: Me | Access: Anyone
+// ============================================================
+const WEBHOOK_SECRET = 'CERTIMAR_FB_2026';   // debe coincidir con functions:config
+
+function doPost(e) {
+  const resp = (data) =>
+    ContentService.createTextOutput(JSON.stringify(data))
+      .setMimeType(ContentService.MimeType.JSON);
+
+  try {
+    const payload = JSON.parse(e.postData.contents);
+
+    // Verificar secret compartido
+    if (payload.secret !== WEBHOOK_SECRET) {
+      return resp({ ok: false, error: 'No autorizado' });
+    }
+
+    const accion = payload.accion || 'registrar';
+
+    if (accion === 'registrar') {
+      const result = registrarEnSheets(payload.datos, payload.urlCertificado || '');
+      return resp({ ok: true, accion: result.accion });
+    }
+
+    if (accion === 'actualizarEnviado') {
+      const { nroRegistro, emailDestinatario, urlCertificado } = payload;
+      _actualizarFilaEnviado(nroRegistro, emailDestinatario, urlCertificado);
+      return resp({ ok: true, accion: 'actualizado' });
+    }
+
+    return resp({ ok: false, error: 'Acción desconocida: ' + accion });
+
+  } catch(err) {
+    Logger.log('doPost error: ' + err);
+    return resp({ ok: false, error: err.toString() });
+  }
+}
+
+// Actualiza columnas P (email), Q (URL cert) y R (estado=ENVIADO) en la fila del registro
+function _actualizarFilaEnviado(nroRegistro, emailDestinatario, urlCertificado) {
+  const ss    = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const sheet = ss.getSheetByName(SHEET_NAME);
+  if (!sheet || sheet.getLastRow() < 2) return;
+
+  const nros = sheet.getRange(2, 2, sheet.getLastRow() - 1, 1).getValues();
+  for (let i = 0; i < nros.length; i++) {
+    if (String(nros[i][0]).trim() === String(nroRegistro).trim()) {
+      const fila = i + 2;
+      sheet.getRange(fila, 16).setValue(emailDestinatario  || '');
+      sheet.getRange(fila, 17).setValue(urlCertificado     || '');
+      sheet.getRange(fila, 18).setValue('ENVIADO');
+      SpreadsheetApp.flush();
+      return;
+    }
+  }
 }
 
 // ============================================================

@@ -1,0 +1,15 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Registros de visita — solo usuarios autenticados
+    match /registros_visita/{docId} {
+      allow read, write: if request.auth != null;
+    }
+
+    // Contadores correlativos — solo autenticados
+    match /meta/{docId} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}
