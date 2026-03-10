@@ -1064,6 +1064,7 @@ video{width:100%;border-radius:8px;background:black}
             <div class="firma-line"></div>
             <input type="text" id="r-nombreResponsable" class="firma-input-name" placeholder="Nombre Responsable" oninput="checkChecklist()">
             <div class="firma-role">Firma Responsable Centro de Cultivo</div>
+            <input type="email" id="r-emailResponsable" class="doc-input" style="text-align:center;font-size:11px;margin-top:4px;border-bottom:1px dashed #93c5fd" placeholder="correo@empresa.cl">
           </div>
         </div>
       </div><!-- /doc-content -->
@@ -1673,7 +1674,7 @@ function resetFormulario() {
   set('r-fecha', hoy);
   set('r-nroRegistro', 'Se asignará al guardar');
   ['centroCultivo','nroCentro','acs','titular','ubicacion','fechaSiembra','tamanoPeces',
-   'latitud','longitud','norte','este','observaciones','nombreResponsable'].forEach(function(id) {
+   'latitud','longitud','norte','este','observaciones','nombreResponsable','emailResponsable'].forEach(function(id) {
     set('r-'+id,'');
   });
   document.getElementById('r-obs-si').checked = true;
@@ -2032,9 +2033,15 @@ function setBtnGuardar(saved) {
 }
 
 function handleGuardar() {
-  appState.saved = true;
-  setBtnGuardar(true);
-  toast('Cambios guardados localmente','success');
+  if (checkChecklist()) {
+    // Checklist completo → exportar directamente a Drive + Sheets + Firebase
+    handleSyncGoogle();
+  } else {
+    // Aún incompleto → guardar solo localmente y avisar
+    appState.saved = true;
+    setBtnGuardar(true);
+    toast('Guardado localmente. Complete el checklist para exportar a Sheets.', 'success');
+  }
 }
 
 // =====================================================================
@@ -2312,7 +2319,7 @@ function openModalMail() {
   if (appState.saved) {
     // Ya guardado → solo enviar correo
     var datos = getDatos();
-    document.getElementById('modal-email').value = datos.emailDestinatario || '';
+    document.getElementById('modal-email').value = datos.emailDestinatario || get('r-emailResponsable') || '';
     document.getElementById('modal-asunto').textContent = 'Registro de Visita — '+datos.centroCultivo+' — '+datos.fecha;
     document.getElementById('modal-body-preview').textContent = generarMensaje(datos);
     document.getElementById('modal-mail').classList.remove('hidden');
@@ -2484,7 +2491,7 @@ function getDatos() {
     observaciones  : get('r-observaciones'),
     tipoObservacion: getSelectedRadio('tipoObs'),
     nombreResponsable  : get('r-nombreResponsable'),
-    emailDestinatario  : '',    // se rellena en el modal
+    emailDestinatario  : get('r-emailResponsable'),
     nombreCertificador : get('r-nombreCertificador'),
     rutCertificador    : get('r-rutCertificador'),
     resoluciones: {
@@ -3090,7 +3097,7 @@ function showCompletionDialog(nro, emailSent, emailDest) {
     document.getElementById('cd-title').textContent = 'Registro Guardado';
     document.getElementById('cd-sub').textContent = 'El registro fue guardado exitosamente. ¿Deseas notificar al responsable del centro?';
     document.getElementById('cd-email-section').style.display = 'block';
-    document.getElementById('cd-email-input').value = emailDest || '';
+    document.getElementById('cd-email-input').value = emailDest || get('r-emailResponsable') || '';
     document.getElementById('cd-send-btn').disabled = false;
     document.getElementById('cd-send-btn').textContent = '✉️ Enviar';
   }
