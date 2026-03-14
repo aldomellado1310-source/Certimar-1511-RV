@@ -4035,6 +4035,9 @@ function renderAdminTabla() {
     var btnFirma = efirma === 'FIRMADO'
       ? '<button class="admin-action-btn" title="Ya firmado" disabled style="opacity:.4;cursor:default">🔗</button> '
       : '<button class="admin-action-btn" title="Generar link de firma" onclick="admGenerarLinkFirma(\''+esc(r.nroRegistro||'')+'\')">🔗</button> ';
+    var btnBorrarFirma = (efirma === 'FIRMADO' || efirma === 'PENDIENTE')
+      ? '<button class="admin-action-btn" title="Borrar firma / resetear estado" onclick="admBorrarFirma(\''+esc(r.nroRegistro||'')+'\')" style="color:#dc2626">🗑️</button> '
+      : '';
     return '<tr>'+
       '<td style="font-weight:700;color:var(--brand);white-space:nowrap">'+esc(r.nroRegistro||'—')+'</td>'+
       '<td style="white-space:nowrap">'+esc(r.fecha||'—')+'</td>'+
@@ -4051,6 +4054,7 @@ function renderAdminTabla() {
         (urlCert ? '<a href="'+esc(urlCert)+'" target="_blank" class="admin-action-btn">📄</a> ' : '')+
         '<button class="admin-action-btn" onclick="admReenviarMail(\''+esc(r.nroRegistro||'')+'\',\''+esc(r.emailResponsable||'')+'\')">✉️</button> '+
         btnFirma+
+        btnBorrarFirma+
         '<button class="admin-action-btn" title="Editar registro" onclick="abrirEdicionConPin(\''+esc(r.nroRegistro||'')+'\')">✏️</button> '+
         '<button class="admin-action-btn" title="Regenerar PDF" onclick="abrirRegeneracionConPin(\''+esc(r.nroRegistro||'')+'\')">🔄</button>'+
       '</td>'+
@@ -4153,6 +4157,29 @@ function admGenerarLinkFirma(nro) {
       updateNotifCard('adm-firma','error','❌ Error al generar link', String(e));
     })
     .generarLinkFirma(nro);
+}
+
+function admBorrarFirma(nro) {
+  if (!confirm('¿Borrar firma y resetear estado de ' + nro + '?\n\nEl token quedará inválido y podrás generar un nuevo link de firma.')) return;
+  pushNotif('adm-bfirma','info','🗑️ Borrando firma…',[{ id:'bf1', label:'Limpiando datos de firma', state:'active' }]);
+  google.script.run
+    .withSuccessHandler(function(res) {
+      if (res && res.ok) {
+        updateNotifCard('adm-bfirma','success','✅ Firma eliminada','Estado de firma reseteado para ' + nro);
+        // Actualizar en memoria y re-renderizar
+        var rec = _adminAll.find(function(x){ return x.nroRegistro === nro; });
+        if (rec) { rec.estadoFirma = ''; rec.urlFirmaCliente = ''; rec.tokenFirma = ''; }
+        var recF = _adminFiltered.find(function(x){ return x.nroRegistro === nro; });
+        if (recF) { recF.estadoFirma = ''; recF.urlFirmaCliente = ''; recF.tokenFirma = ''; }
+        renderAdminTabla();
+      } else {
+        updateNotifCard('adm-bfirma','error','❌ Error', res ? res.error : 'Error desconocido');
+      }
+    })
+    .withFailureHandler(function(e) {
+      updateNotifCard('adm-bfirma','error','❌ Error al borrar', String(e));
+    })
+    .borrarFirma(nro);
 }
 
 function exportarCSV() {

@@ -9,6 +9,7 @@ const SPREADSHEET_ID     = '1Gq_8OBd75OnSzk9e6GXtOjhs8nhL9fKrlFzs_w4MezM';
 const SHEET_NAME         = 'RV';
 const DRIVE_FOLDER_ID    = '1RmNcnVq0bBumlwA0KlgL9PIrIB8mQrFk';
 const EMAIL_REMITENTE    = 'operaciones@certimar.cl';
+const EMAIL_COPIA_FIRMA  = 'eflores@certimar.cl';   // copia en notificaciones de firma
 const TIMEZONE           = 'America/Santiago';
 const FIREBASE_PROJECT_ID = 'certimar-rv';
 
@@ -1093,7 +1094,8 @@ function submitFirma(nroRegistro, token, firmaB64, nombreResponsable) {
 </td></tr>
 </table></body></html>`;
       GmailApp.sendEmail(EMAIL_REMITENTE, asuntoInterno, '', {
-        htmlBody: htmlInterno, name: 'Sistema Certimar RV'
+        htmlBody: htmlInterno, name: 'Sistema Certimar RV',
+        cc: EMAIL_COPIA_FIRMA
       });
     } catch(eMail) {
       Logger.log('submitFirma: notificación interna fallida (no-fatal): ' + eMail);
@@ -1102,6 +1104,58 @@ function submitFirma(nroRegistro, token, firmaB64, nombreResponsable) {
     return { ok: true, urlFirma };
   } catch(e) {
     Logger.log('submitFirma error: ' + e);
+    return { ok: false, error: String(e) };
+  }
+}
+
+// Borra el estado de firma de un registro (token, URL y estado).
+// Permite re-generar el link y volver a solicitar firma.
+function borrarFirma(nroRegistro) {
+  if (!nroRegistro) return { ok: false, error: 'N° registro requerido' };
+  try {
+    const ss    = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const sheet = ss.getSheetByName(SHEET_NAME);
+    if (!sheet) return { ok: false, error: 'Hoja no encontrada' };
+
+    const lastRow = sheet.getLastRow();
+    if (lastRow < 2) return { ok: false, error: 'Sin registros' };
+    const nros = sheet.getRange(2, 2, lastRow - 1, 1).getValues();
+    let rowIdx = -1;
+    for (let i = 0; i < nros.length; i++) {
+      if (String(nros[i][0]).trim() === nroRegistro) { rowIdx = i + 2; break; }
+    }
+    if (rowIdx < 0) return { ok: false, error: 'Registro no encontrado' };
+
+    // Limpiar col S (URLFirma), T (Token), U (EstadoFirma)
+    sheet.getRange(rowIdx, 19, 1, 3).clearContent();
+    SpreadsheetApp.flush();
+
+    // Limpiar en Firestore (no-fatal)
+    try {
+      const mask = '?updateMask.fieldPaths=firmaClienteB64'
+                 + '&updateMask.fieldPaths=urlFirmaCliente'
+                 + '&updateMask.fieldPaths=estadoFirma';
+      const apiUrl = 'https://firestore.googleapis.com/v1/projects/' + FIREBASE_PROJECT_ID
+                   + '/databases/(default)/documents/registros_visita/'
+                   + encodeURIComponent(nroRegistro) + mask;
+      UrlFetchApp.fetch(apiUrl, {
+        method            : 'PATCH',
+        headers           : { 'Authorization': 'Bearer ' + ScriptApp.getOAuthToken(),
+                               'Content-Type' : 'application/json' },
+        payload           : JSON.stringify({ fields: {
+          firmaClienteB64: { stringValue: '' },
+          urlFirmaCliente : { stringValue: '' },
+          estadoFirma     : { stringValue: '' }
+        }}),
+        muteHttpExceptions: true
+      });
+    } catch(eFs) {
+      Logger.log('borrarFirma: Firestore no actualizado (no-fatal): ' + eFs);
+    }
+
+    return { ok: true };
+  } catch(e) {
+    Logger.log('borrarFirma error: ' + e);
     return { ok: false, error: String(e) };
   }
 }
