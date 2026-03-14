@@ -948,7 +948,7 @@ function getRegistroParaFirma(nroRegistro, token) {
 }
 
 // Escribe campos de firma en el documento de Firestore vía REST API (no-fatal).
-function _actualizarFirmaEnFirestore(nroRegistro, firmaB64, urlFirma, nombreResponsable) {
+function _actualizarFirmaEnFirestore(nroRegistro, firmaB64, urlFirma, nombreResponsable, emailResponsable) {
   try {
     let mask = '?updateMask.fieldPaths=firmaClienteB64'
              + '&updateMask.fieldPaths=urlFirmaCliente'
@@ -961,6 +961,10 @@ function _actualizarFirmaEnFirestore(nroRegistro, firmaB64, urlFirma, nombreResp
     if (nombreResponsable) {
       mask += '&updateMask.fieldPaths=nombreResponsable';
       fields.nombreResponsable = { stringValue: nombreResponsable };
+    }
+    if (emailResponsable) {
+      mask += '&updateMask.fieldPaths=emailResponsable';
+      fields.emailResponsable = { stringValue: emailResponsable };
     }
     const apiUrl = 'https://firestore.googleapis.com/v1/projects/' + FIREBASE_PROJECT_ID
                  + '/databases/(default)/documents/registros_visita/'
@@ -979,9 +983,10 @@ function _actualizarFirmaEnFirestore(nroRegistro, firmaB64, urlFirma, nombreResp
 }
 
 // Recibe la firma del jefe de centro, la sube a Drive, invalida el token y notifica.
-function submitFirma(nroRegistro, token, firmaB64, nombreResponsable) {
+function submitFirma(nroRegistro, token, firmaB64, nombreResponsable, emailCorregido) {
   if (!nroRegistro || !token || !firmaB64) return { ok: false, error: 'Datos incompletos' };
   const nombreFinal = (nombreResponsable || '').trim();
+  const emailFinal  = (emailCorregido   || '').trim();
   try {
     const ss    = SpreadsheetApp.openById(SPREADSHEET_ID);
     const sheet = ss.getSheetByName(SHEET_NAME);
@@ -1027,15 +1032,19 @@ function submitFirma(nroRegistro, token, firmaB64, nombreResponsable) {
     sheet.getRange(rowIdx, 19).setValue(urlFirma);
     sheet.getRange(rowIdx, 20).setValue('');       // invalidar token
     sheet.getRange(rowIdx, 21).setValue('FIRMADO');
-    // Guardar nombre si fue ingresado en la página de firma (col O = 15)
-    if (nombreFinal && !valores[rowIdx - 2][14]) {
+    // Siempre actualizar nombre y email si el responsable los corrigió/completó
+    if (nombreFinal) {
       sheet.getRange(rowIdx, 15).setValue(nombreFinal);
-      nombreResp = nombreFinal;    // usar en el correo de confirmación
+      nombreResp = nombreFinal;
+    }
+    if (emailFinal) {
+      sheet.getRange(rowIdx, 16).setValue(emailFinal);
+      emailResp = emailFinal;
     }
     SpreadsheetApp.flush();
 
     // Sincronizar firma + nombre a Firestore para que Regen. PDF los incluya
-    _actualizarFirmaEnFirestore(nroRegistro, firmaB64, urlFirma, nombreFinal);
+    _actualizarFirmaEnFirestore(nroRegistro, firmaB64, urlFirma, nombreFinal, emailFinal);
 
     // Enviar confirmación al responsable + copia a Certimar
     if (emailResp) {
@@ -1213,12 +1222,21 @@ canvas{display:block;width:100%;height:120px;cursor:crosshair}
     <div class="field"><div class="label">ACS</div><div class="value" id="f-acs">—</div></div>
     <div class="field"><div class="label">Observaciones</div><div class="value" id="f-obs" style="font-size:13px;color:#374151">—</div></div>
     <hr class="divider">
-    <div id="wrap-nombre" style="display:none;margin-bottom:16px">
-      <div class="label" style="margin-bottom:6px">Nombre del Responsable del Centro de Cultivo <span style="color:#ef4444">*</span></div>
+    <hr class="divider" style="margin:16px 0 20px">
+    <p style="font-size:12px;color:#64748b;margin-bottom:16px">Verifique y complete sus datos antes de firmar. Puede corregirlos si es necesario.</p>
+    <div class="field" style="margin-bottom:14px">
+      <div class="label" style="margin-bottom:5px">Nombre del Responsable <span style="color:#ef4444">*</span></div>
       <input type="text" id="f-nombre" placeholder="Ingrese su nombre completo"
-        style="width:100%;border:1.5px solid #93c5fd;border-radius:6px;padding:10px 12px;font-size:14px;font-family:Arial,sans-serif;outline:none"
-        oninput="checkNombre()">
-      <div id="nombre-err" style="color:#dc2626;font-size:11px;margin-top:4px;display:none">Debe ingresar su nombre para continuar.</div>
+        style="width:100%;border:1.5px solid #cbd5e1;border-radius:6px;padding:10px 12px;font-size:14px;font-family:Arial,sans-serif;outline:none"
+        oninput="checkForm()">
+      <div id="nombre-err" style="color:#dc2626;font-size:11px;margin-top:3px;display:none">Mínimo 3 caracteres.</div>
+    </div>
+    <div class="field" style="margin-bottom:20px">
+      <div class="label" style="margin-bottom:5px">Correo del Responsable <span style="color:#ef4444">*</span></div>
+      <input type="email" id="f-email" placeholder="correo@empresa.cl"
+        style="width:100%;border:1.5px solid #cbd5e1;border-radius:6px;padding:10px 12px;font-size:14px;font-family:Arial,sans-serif;outline:none"
+        oninput="checkForm()">
+      <div id="email-err" style="color:#dc2626;font-size:11px;margin-top:3px;display:none">Ingrese un correo válido.</div>
     </div>
     <div class="label" style="margin-bottom:8px">Firma del Responsable del Centro de Cultivo</div>
     <div class="firma-wrap">
@@ -1237,12 +1255,14 @@ var hasFirma = false;
 var nombreGuardado = '';   // nombre que venía en el registro (puede estar vacío)
 var canvas, ctx, drawing = false;
 
-function checkNombre() {
-  var v = (document.getElementById('f-nombre').value || '').trim();
-  var ok = v.length >= 3;
-  document.getElementById('nombre-err').style.display = ok ? 'none' : '';
-  // Habilitar botón solo si hay firma Y nombre
-  document.getElementById('btn-submit').disabled = !(hasFirma && ok);
+function checkForm() {
+  var nombre = (document.getElementById('f-nombre').value || '').trim();
+  var email  = (document.getElementById('f-email').value  || '').trim();
+  var nombreOk = nombre.length >= 3;
+  var emailOk  = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  document.getElementById('nombre-err').style.display = nombreOk ? 'none' : '';
+  document.getElementById('email-err').style.display  = emailOk  ? 'none' : '';
+  document.getElementById('btn-submit').disabled = !(hasFirma && nombreOk && emailOk);
 }
 
 google.script.run
@@ -1261,11 +1281,9 @@ google.script.run
     document.getElementById('f-titular').textContent   = d.titular;
     document.getElementById('f-acs').textContent       = d.acs;
     document.getElementById('f-obs').textContent       = d.observaciones || '(Sin observaciones)';
-    nombreGuardado = (d.nombreResponsable || '').trim();
-    // Si no hay nombre en el registro, mostrar campo de texto
-    if (!nombreGuardado) {
-      document.getElementById('wrap-nombre').style.display = 'block';
-    }
+    // Pre-rellenar nombre y correo (editables para corrección)
+    document.getElementById('f-nombre').value = d.nombreResponsable || '';
+    document.getElementById('f-email').value  = d.emailResponsable  || '';
     document.getElementById('content').style.display = 'block';
     initCanvas();
   })
@@ -1293,10 +1311,7 @@ function initCanvas() {
   function move(e)  { e.preventDefault(); if (!drawing) return; var p = pos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); }
   function end(e) {
     drawing = false; hasFirma = true;
-    // Si se requiere nombre, habilitamos solo cuando ambos estén completos
-    var necesitaNombre = document.getElementById('wrap-nombre').style.display !== 'none';
-    var nombreOk = !necesitaNombre || (document.getElementById('f-nombre').value || '').trim().length >= 3;
-    document.getElementById('btn-submit').disabled = !nombreOk;
+    checkForm();
   }
 
   canvas.addEventListener('mousedown', start);
@@ -1316,20 +1331,14 @@ function clearFirma() {
 
 function enviarFirma() {
   if (!hasFirma) return;
-  // Validar nombre si el campo está visible
-  var necesitaNombre = document.getElementById('wrap-nombre').style.display !== 'none';
-  var nombreIngresado = necesitaNombre ? (document.getElementById('f-nombre').value || '').trim() : '';
-  if (necesitaNombre && nombreIngresado.length < 3) {
-    document.getElementById('nombre-err').style.display = '';
-    document.getElementById('f-nombre').focus();
-    return;
-  }
+  var nombreFinal = (document.getElementById('f-nombre').value || '').trim();
+  var emailFinal  = (document.getElementById('f-email').value  || '').trim();
+  if (nombreFinal.length < 3) { checkForm(); document.getElementById('f-nombre').focus(); return; }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailFinal)) { checkForm(); document.getElementById('f-email').focus(); return; }
   var btn = document.getElementById('btn-submit');
   btn.innerHTML = '<span class="spinner"></span>Enviando…';
   btn.disabled = true;
   var firmaB64 = canvas.toDataURL('image/png');
-  // Nombre final: el que venía en el registro o el que ingresó el responsable
-  var nombreFinal = nombreGuardado || nombreIngresado;
   google.script.run
     .withSuccessHandler(function(res) {
       if (res && res.ok) {
@@ -1348,7 +1357,7 @@ function enviarFirma() {
       btn.innerHTML = 'Reintentar';
       btn.disabled = false;
     })
-    .submitFirma(NRO, TOKEN, firmaB64, nombreFinal);
+    .submitFirma(NRO, TOKEN, firmaB64, nombreFinal, emailFinal);
 }
 </script>
 </body>

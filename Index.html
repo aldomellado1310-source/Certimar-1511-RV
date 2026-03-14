@@ -950,6 +950,10 @@ video{width:100%;border-radius:8px;background:black}
               <input type="text" id="r-fecha" class="doc-input" style="width:90px;text-align:right;font-weight:700">
             </div>
             <div class="doc-meta-row">
+              <span class="doc-meta-label">HORA:</span>
+              <input type="text" id="r-hora" class="doc-input" style="width:60px;text-align:right;font-weight:700" readonly>
+            </div>
+            <div class="doc-meta-row">
               <span class="doc-meta-label">N° REGISTRO:</span>
               <input type="text" id="r-nroRegistro" class="doc-input" style="width:110px;text-align:right;font-weight:700;color:#B91C1C;font-size:16px">
             </div>
@@ -1524,7 +1528,7 @@ async function fbGuardarRegistro(datos, urlCertificado, urlFoto) {
 
   var docData = {
     nroRegistro      : datos.nroRegistro,
-    fecha            : datos.fecha,
+    fecha            : datos.fecha + (datos.hora ? '  ' + datos.hora : ''),
     centroCultivo    : datos.centroCultivo,
     nroCentro        : datos.nroCentro,
     acs              : datos.acs,
@@ -1772,8 +1776,11 @@ function showView(view) {
 //  FORMULARIO — RESET
 // =====================================================================
 function resetFormulario() {
-  var hoy = new Date().toLocaleDateString('es-CL').replace(/\//g,'-');
+  var ahora = new Date();
+  var hoy = ahora.toLocaleDateString('es-CL').replace(/\//g,'-');
+  var hora = ahora.toLocaleTimeString('es-CL', { hour:'2-digit', minute:'2-digit' });
   set('r-fecha', hoy);
+  set('r-hora', hora);
   set('r-nroRegistro', 'Se asignará al guardar');
   ['centroCultivo','nroCentro','acs','titular','ubicacion','fechaSiembra','tamanoPeces',
    'latitud','longitud','norte','este','observaciones','nombreResponsable','emailResponsable'].forEach(function(id) {
@@ -2918,6 +2925,7 @@ function generarMensaje(datos) {
 function getDatos() {
   return {
     fecha          : get('r-fecha'),
+    hora           : get('r-hora') || '',
     nroRegistro    : get('r-nroRegistro'),
     centroCultivo  : get('r-centroCultivo'),
     nroCentro      : get('r-nroCentro'),
@@ -3357,7 +3365,10 @@ async function cargarRegistroParaEdicion(nroRegistro, autoPreview) {
 
     // Poblar campos de texto
     set('r-nroRegistro',      r.nroRegistro      || '');
-    set('r-fecha',            r.fecha            || '');
+    // fecha puede venir como "13-03-2026 14:35" — separar fecha y hora
+    var _fechaHora = (r.fecha || '').split(/\s+/);
+    set('r-fecha', _fechaHora[0] || '');
+    set('r-hora',  _fechaHora[1] || '');
     set('r-centroCultivo',    r.centroCultivo    || '');
     set('r-nroCentro',        r.nroCentro        || '');
     set('r-acs',              r.acs              || '');
@@ -4035,9 +4046,8 @@ function renderAdminTabla() {
     var btnFirma = efirma === 'FIRMADO'
       ? '<button class="admin-action-btn" title="Ya firmado" disabled style="opacity:.4;cursor:default">🔗</button> '
       : '<button class="admin-action-btn" title="Generar link de firma" onclick="admGenerarLinkFirma(\''+esc(r.nroRegistro||'')+'\')">🔗</button> ';
-    var btnBorrarFirma = (efirma === 'FIRMADO' || efirma === 'PENDIENTE')
-      ? '<button class="admin-action-btn" title="Borrar firma / resetear estado" onclick="admBorrarFirma(\''+esc(r.nroRegistro||'')+'\')" style="color:#dc2626">🗑️</button> '
-      : '';
+    // Siempre visible: borrarFirma es idempotente y resuelve desincronías Sheets↔Firestore
+    var btnBorrarFirma = '<button class="admin-action-btn" title="Borrar firma / resetear estado" onclick="admBorrarFirma(\''+esc(r.nroRegistro||'')+'\')" style="color:#dc2626;opacity:'+(efirma?'1':'.35')+'">🗑️</button> ';
     return '<tr>'+
       '<td style="font-weight:700;color:var(--brand);white-space:nowrap">'+esc(r.nroRegistro||'—')+'</td>'+
       '<td style="white-space:nowrap">'+esc(r.fecha||'—')+'</td>'+
