@@ -1,3 +1,8 @@
+<!-- =====================================================================
+     CERTIMAR — Registro de Visita (Frontend)
+     Última edición : 2026-03-14 - 17:25 - Aldo Mellado
+     Último push    : 2026-03-14 - 17:25 - Aldo Mellado
+     ===================================================================== -->
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -46,29 +51,29 @@
 }
 
 [data-theme="dark"] {
-  --bg:           #0f172a;
-  --surface:      #1e293b;
-  --surface-2:    #263448;
-  --surface-3:    #334155;
-  --text-pri:     #f1f5f9;
-  --text-sec:     #94a3b8;
-  --text-muted:   #64748b;
-  --border:       #334155;
-  --border-2:     #475569;
-  --brand:        #4db8ff;
-  --brand-mid:    #38a9f4;
-  --brand-light:  #0f2a4a;
-  --accent:       #38bdf8;
-  --accent-light: #0c2f44;
-  --success:      #22c55e;
-  --success-bg:   #052e16;
-  --error:        #f87171;
-  --error-bg:     #2d0a0a;
-  --warn:         #fbbf24;
-  --warn-bg:      #2d1d02;
-  --shadow-sm:    0 1px 4px rgba(0,0,0,.3);
-  --shadow-md:    0 4px 12px rgba(0,0,0,.4);
-  --shadow-lg:    0 8px 24px rgba(0,0,0,.5);
+  --bg:           #0d1117;
+  --surface:      #161b22;
+  --surface-2:    #1c2333;
+  --surface-3:    #273044;
+  --text-pri:     #e6edf3;
+  --text-sec:     #8b9cb8;
+  --text-muted:   #58697f;
+  --border:       #2a3549;
+  --border-2:     #3d5070;
+  --brand:        #58a6ff;
+  --brand-mid:    #4d9de8;
+  --brand-light:  #0d2340;
+  --accent:       #39c0ed;
+  --accent-light: #0a2535;
+  --success:      #3fb950;
+  --success-bg:   #0a2217;
+  --error:        #f85149;
+  --error-bg:     #250c0c;
+  --warn:         #e3b341;
+  --warn-bg:      #251a00;
+  --shadow-sm:    0 1px 4px rgba(0,0,0,.45);
+  --shadow-md:    0 4px 12px rgba(0,0,0,.60);
+  --shadow-lg:    0 8px 24px rgba(0,0,0,.70);
 }
 
 *{box-sizing:border-box;margin:0;padding:0}
@@ -296,17 +301,17 @@ input::placeholder,textarea::placeholder{color:var(--text-muted)}
 
 /* ===================== ADMIN VIEW ===================== */
 #view-admin{background:var(--bg);min-height:calc(100vh - 64px)}
-.admin-header{max-width:1200px;margin:0 auto;padding:28px 24px 0;display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
+.admin-header{max-width:1600px;margin:0 auto;padding:28px 24px 0;display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
 .admin-header h1{font-size:24px;font-weight:800;color:var(--text-pri)}
 .admin-header p{font-size:13px;color:var(--text-sec);margin-top:4px}
 .admin-badge{background:#7c3aed;color:white;font-size:10px;font-weight:700;padding:2px 8px;border-radius:9999px;text-transform:uppercase;letter-spacing:.5px;vertical-align:middle;margin-left:8px}
-.admin-stats{max-width:1200px;margin:20px auto 0;padding:0 24px;display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px}
+.admin-stats{max-width:1600px;margin:20px auto 0;padding:0 24px;display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px}
 .admin-stat{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 18px;box-shadow:var(--shadow-sm)}
 .admin-stat-val{font-size:28px;font-weight:800;color:var(--brand)}
 .admin-stat-lbl{font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-top:2px}
-.admin-filters{max-width:1200px;margin:16px auto 0;padding:0 24px;background:var(--surface);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.admin-filters{max-width:1600px;margin:16px auto 0;padding:0 24px;background:var(--surface);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
 .admin-filters-inner{padding:14px 0;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-.admin-table-wrap{max-width:1200px;margin:20px auto 40px;padding:0 24px}
+.admin-table-wrap{max-width:1600px;margin:20px auto 40px;padding:0 24px}
 .admin-table-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;box-shadow:var(--shadow-sm)}
 .admin-table{width:100%;border-collapse:collapse;font-size:12px}
 .admin-table th{background:var(--surface-2);color:var(--text-sec);font-size:10px;text-transform:uppercase;letter-spacing:.6px;padding:10px 12px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap;font-weight:700}
@@ -463,7 +468,7 @@ video{width:100%;border-radius:8px;background:black}
 .btn-success{background:#10b981;color:white;border:none;padding:8px 20px;border-radius:8px;font-size:13px;font-weight:600;display:inline-flex;align-items:center;gap:6px}
 .btn-success:hover{background:#059669}
 /* Histórico */
-#view-historico{max-width:1100px;margin:0 auto;padding:28px 20px}
+#view-historico{max-width:1600px;margin:0 auto;padding:28px 20px}
 .hist-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px;flex-wrap:wrap;gap:12px}
 .hist-header h1{font-size:26px;font-weight:700;color:#003366}
 .hist-table-wrap{background:white;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden}
@@ -478,6 +483,16 @@ video{width:100%;border-radius:8px;background:black}
 .hist-table .link-cert:hover{text-decoration:underline}
 .hist-empty{text-align:center;padding:48px;color:#94a3b8;font-size:14px}
 .hist-footer{padding:12px 16px;border-top:1px solid #f1f5f9;background:#f8fafc;font-size:12px;color:#64748b}
+.btn-editar-hist{background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;border-radius:6px;padding:4px 10px;font-size:11px;font-weight:600;cursor:pointer;transition:.15s}
+.btn-editar-hist:hover{background:#dbeafe}
+.btn-hist-audit{background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;border-radius:6px;padding:4px 8px;font-size:11px;font-weight:600;cursor:pointer;transition:.15s}
+.btn-hist-audit:hover{background:#dcfce7}
+.audit-entry{border-left:3px solid #e2e8f0;padding:8px 12px;margin-bottom:8px;background:#f8fafc;border-radius:0 6px 6px 0}
+.audit-entry-creado{border-left-color:#16a34a}
+.audit-entry-editado{border-left-color:#1d4ed8}
+.audit-entry-pdf_regenerado{border-left-color:#7c3aed}
+.input-email-ok{border-bottom-color:#16a34a!important}
+.input-email-err{border-bottom-color:#dc2626!important}
 /* Modal */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;display:flex;align-items:center;justify-content:center;padding:16px}
 .modal-box{background:white;border-radius:16px;max-width:520px;width:100%;max-height:90vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.2)}
@@ -739,7 +754,7 @@ video{width:100%;border-radius:8px;background:black}
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>
           Histórico
         </button>
-        <button class="nav-btn admin-btn hidden" id="nav-admin" onclick="showView('admin')">
+        <button class="nav-btn admin-btn hidden" id="nav-admin" onclick="irAdmin()">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
           Admin
         </button>
@@ -948,9 +963,9 @@ video{width:100%;border-radius:8px;background:black}
           <tbody>
             <tr>
               <td class="label-cell">Centro de Cultivo</td>
-              <td style="width:50%"><input type="text" id="r-centroCultivo" class="doc-input" placeholder="—"></td>
-              <td class="label-cell" style="width:15%">N° de Centro</td>
-              <td style="position:relative">
+              <td style="width:42%"><input type="text" id="r-centroCultivo" class="doc-input" placeholder="—"></td>
+              <td class="label-cell" style="width:14%">N° de Centro</td>
+              <td style="position:relative;width:18%">
                 <input type="text" id="r-nroCentro" class="doc-input" placeholder="—" oninput="onNroCentroInput(this.value)" onblur="setTimeout(closeAcDropdown,200)">
               </td>
             </tr>
@@ -1027,12 +1042,14 @@ video{width:100%;border-radius:8px;background:black}
             </tr>
             <tr id="r-tipo-row">
               <td colspan="2" style="padding:0;border:1px solid #94a3b8">
-                <div style="font-size:11px;font-weight:700;padding:6px 12px;border-bottom:1px solid #94a3b8">TIPO OBSERVACIÓN (MARQUE UNA):</div>
+                <div style="font-size:11px;font-weight:700;padding:6px 12px;border-bottom:1px solid #94a3b8">TIPO OBSERVACIÓN (MARQUE LAS QUE CORRESPONDAN):</div>
                 <div class="tipo-obs-row">
-                  <label class="tipo-obs-label"><input type="radio" name="tipoObs" value="EXTRACCION" onchange="checkChecklist()"> EXTRACCION</label>
-                  <label class="tipo-obs-label"><input type="radio" name="tipoObs" value="DESNATURALIZACION" onchange="checkChecklist()"> DESNATURALIZACION</label>
-                  <label class="tipo-obs-label"><input type="radio" name="tipoObs" value="ALMACENAMIENTO" onchange="checkChecklist()"> ALMACENAMIENTO</label>
-                  <label class="tipo-obs-label"><input type="radio" name="tipoObs" value="OTRO" onchange="checkChecklist()"> OTRO</label>
+                  <label class="tipo-obs-label"><input type="checkbox" class="tipoObsCk" value="EXTRACCION" onchange="checkChecklist()"> EXTRACCION</label>
+                  <label class="tipo-obs-label"><input type="checkbox" class="tipoObsCk" value="DESNATURALIZACION" onchange="checkChecklist()"> DESNATURALIZACION</label>
+                  <label class="tipo-obs-label"><input type="checkbox" class="tipoObsCk" value="ALMACENAMIENTO" onchange="checkChecklist()"> ALMACENAMIENTO</label>
+                  <label class="tipo-obs-label"><input type="checkbox" class="tipoObsCk" value="ESTRUCTURA" onchange="checkChecklist()"> ESTRUCTURA</label>
+                  <label class="tipo-obs-label"><input type="checkbox" class="tipoObsCk" value="FONDEO" onchange="checkChecklist()"> FONDEO</label>
+                  <label class="tipo-obs-label"><input type="checkbox" class="tipoObsCk" value="OTRO" onchange="checkChecklist()"> OTRO</label>
                 </div>
               </td>
             </tr>
@@ -1045,9 +1062,10 @@ video{width:100%;border-radius:8px;background:black}
           <div class="firma-col">
             <canvas id="firma-certificador" width="280" height="90" class="firma-canvas" style="cursor:default"></canvas>
             <div class="firma-line"></div>
-            <input type="text" id="r-nombreCertificador" class="firma-input-name" value="Engelbert Flores Carrio">
+            <input type="text" id="r-nombreCertificador" class="firma-input-name" value="Engelbert Flores Carrio" oninput="var s=document.getElementById('disclaimer-cert-nombre');if(s)s.textContent=this.value||'el certificador suscrito'">
             <div class="firma-role">CERTIFICADOR</div>
             <input type="text" id="r-rutCertificador" class="doc-input" style="text-align:center;font-size:11px" value="13.968.696-9">
+            <button onclick="guardarFirmaCertificador()" style="margin-top:6px;background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;border-radius:6px;padding:3px 10px;font-size:10px;font-weight:600;cursor:pointer" title="Guardar firma como predeterminada">💾 Guardar firma</button>
           </div>
           <!-- Cliente -->
           <div class="firma-col" style="position:relative">
@@ -1064,9 +1082,16 @@ video{width:100%;border-radius:8px;background:black}
             <div class="firma-line"></div>
             <input type="text" id="r-nombreResponsable" class="firma-input-name" placeholder="Nombre Responsable" oninput="checkChecklist()">
             <div class="firma-role">Firma Responsable Centro de Cultivo</div>
-            <input type="email" id="r-emailResponsable" class="doc-input" style="text-align:center;font-size:11px;margin-top:4px;border-bottom:1px dashed #93c5fd" placeholder="correo@empresa.cl">
+            <input type="email" id="r-emailResponsable" class="doc-input" style="text-align:center;font-size:11px;margin-top:4px;border-bottom:1px dashed #93c5fd" placeholder="correo@empresa.cl" oninput="validarEmail(this); checkChecklist()">
           </div>
         </div>
+      <!-- DISCLAIMER -->
+      <div style="margin:18px 0 0;padding:10px 16px;border-top:2px solid #003366;display:flex;align-items:flex-start;gap:10px">
+        <svg style="flex-shrink:0;margin-top:1px" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#003366" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        <p style="margin:0;font-size:9px;color:#374151;line-height:1.6;font-style:italic">
+          El presente Registro de Visita es emitido por <strong><span id="disclaimer-cert-nombre">el certificador suscrito</span></strong>, profesional acreditado inscrito en el Registro de Certificadores DS N°15 de Sernapesca, certificando la revisión documental y verificación en terreno del establecimiento conforme a la normativa vigente.
+        </p>
+      </div>
       </div><!-- /doc-content -->
     </div><!-- /doc-paper -->
 
@@ -1139,6 +1164,10 @@ video{width:100%;border-radius:8px;background:black}
     <!-- ACCIONES -->
     <div class="actions-bar">
       <button class="btn-action btn-save" id="btn-guardar" onclick="handleGuardar()">Guardar Cambios</button>
+      <button class="btn-action" id="btn-preview" onclick="handlePreviewPDF()" style="background:#7c3aed;border-color:#7c3aed;color:white" disabled>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        Vista Previa PDF
+      </button>
       <button class="btn-action btn-pdf" id="btn-pdf" onclick="handleDescargarPDF()" disabled>
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7,10 12,15 17,10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
         Descargar PDF
@@ -1151,6 +1180,10 @@ video{width:100%;border-radius:8px;background:black}
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
         Notificar Cliente
       </button>
+      <a class="btn-action btn-pdf hidden" id="btn-ver-pdf" target="_blank" href="#">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/></svg>
+        Ver PDF
+      </a>
     </div>
     <p class="warn-msg hidden" id="warn-checklist">
       ⚠️ Complete el checklist de bloqueo para habilitar las acciones.
@@ -1178,7 +1211,7 @@ video{width:100%;border-radius:8px;background:black}
           <thead>
             <tr>
               <th>ID Registro</th><th>Fecha</th><th>Centro</th><th>Titular</th>
-              <th>Res. Ext.</th><th>Tipo Obs.</th><th>Responsable</th><th>Estado</th><th>Certificado</th>
+              <th>Res. Ext.</th><th>Tipo Obs.</th><th>Responsable</th><th>Estado</th><th>Certificado</th><th></th>
             </tr>
           </thead>
           <tbody id="hist-tbody">
@@ -1267,12 +1300,13 @@ video{width:100%;border-radius:8px;background:black}
                 <th>Resoluciones</th>
                 <th>Responsable</th>
                 <th>Estado</th>
+                <th>Firma</th>
                 <th>Certificador</th>
                 <th>Acciones</th>
               </tr>
             </thead>
             <tbody id="adm-tbody">
-              <tr><td colspan="11" class="admin-empty">
+              <tr><td colspan="12" class="admin-empty">
                 <div style="font-size:32px;margin-bottom:10px">🔄</div>
                 Cargando registros…
               </td></tr>
@@ -1334,7 +1368,7 @@ video{width:100%;border-radius:8px;background:black}
         <div class="email-row" style="align-items:flex-start">
           <span class="email-label">Para: <span style="color:#dc2626">*</span></span>
           <div style="flex:1">
-            <input type="email" id="modal-email" class="email-to-input" placeholder="responsable@empresa.cl" style="width:100%">
+            <input type="email" id="modal-email" class="email-to-input" placeholder="responsable@empresa.cl" style="width:100%" oninput="validarEmail(this)">
           </div>
         </div>
         <div class="email-row" style="align-items:flex-start">
@@ -1374,11 +1408,73 @@ video{width:100%;border-radius:8px;background:black}
   </div>
 </div>
 
+<!-- ===================== MODAL PREVIEW PDF ===================== -->
+<div class="modal-overlay hidden" id="modal-pdf-preview">
+  <div class="modal-box" style="max-width:860px;width:96vw;height:90vh;display:flex;flex-direction:column">
+    <div class="modal-header" style="flex-shrink:0">
+      <h2>👁 Vista Previa del PDF</h2>
+      <button class="modal-close" onclick="cerrarPreviewPDF()">×</button>
+    </div>
+    <div style="flex:1;overflow:hidden;padding:0">
+      <iframe id="pdf-preview-frame" src="about:blank" style="width:100%;height:100%;border:none"></iframe>
+    </div>
+    <div class="modal-footer" style="flex-shrink:0">
+      <button class="btn-action btn-save" onclick="cerrarPreviewPDF()" style="border-color:#d1d5db;color:#374151">Cerrar</button>
+      <button class="btn-action btn-sync" id="btn-preview-confirmar" onclick="cerrarPreviewPDF(); appState.modoEdicion ? handleActualizarRegistro() : handleSyncGoogle()">
+        ✅ Confirmar y Guardar
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== MODAL PIN EDICIÓN ===================== -->
+<div class="modal-overlay hidden" id="modal-pin">
+  <div class="modal-box" style="max-width:360px">
+    <div class="modal-header">
+      <h2>🔐 Modo Edición</h2>
+      <button class="modal-close" onclick="cerrarModalPin()">×</button>
+    </div>
+    <div style="padding:24px">
+      <p style="margin:0 0 16px;color:#64748b;font-size:14px">Ingresa el PIN para desbloquear la edición del registro.</p>
+      <input type="password" id="pin-input" class="filtro-input" placeholder="PIN" maxlength="10"
+        style="width:100%;font-size:18px;text-align:center;letter-spacing:6px"
+        onkeydown="if(event.key==='Enter') confirmarPin()">
+      <div id="pin-error" style="color:#dc2626;font-size:12px;margin-top:8px;display:none">PIN incorrecto. Intenta nuevamente.</div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-action btn-save" onclick="cerrarModalPin()" style="border-color:#d1d5db;color:#374151">Cancelar</button>
+      <button class="btn-action btn-sync" onclick="confirmarPin()">🔓 Desbloquear</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== MODAL HISTORIAL AUDITORÍA ===================== -->
+<div class="modal-overlay hidden" id="modal-historial">
+  <div class="modal-box" style="max-width:500px">
+    <div class="modal-header">
+      <h2>📋 Historial de Auditoría</h2>
+      <button class="modal-close" onclick="document.getElementById('modal-historial').classList.add('hidden')">×</button>
+    </div>
+    <div style="padding:16px 20px">
+      <div id="historial-nro" style="font-size:12px;color:#64748b;margin-bottom:12px;font-weight:600"></div>
+      <div id="historial-lista" style="max-height:380px;overflow-y:auto"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-action" onclick="document.getElementById('modal-historial').classList.add('hidden')" style="border-color:#d1d5db;color:#374151">Cerrar</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // =====================================================================
 //  ESTADO GLOBAL
 // =====================================================================
 var appState = { saved: false, sent: false, pdfB64: null, fotoB64: null };
+var EDIT_PIN = '1511';
+var _pinTargetNro = null;
+var _modoRegeneracion = false;
+var _modoAdmin = false;
+var _adminPinVerified = false;  // persiste durante la sesión de página
 var chartMes = null, chartRes = null;
 var historicData = [];
 var localRecords = [];
@@ -1451,7 +1547,12 @@ async function fbGuardarRegistro(datos, urlCertificado, urlFoto) {
     estado           : 'GUARDADO',
     creadoPor        : currentUser ? currentUser.email : '',
     certNombre       : currentUser ? currentUser.name  : '',
-    creadoEn         : firebase.firestore.FieldValue.serverTimestamp()
+    creadoEn         : firebase.firestore.FieldValue.serverTimestamp(),
+    historialEdiciones: [{
+      accion  : 'creado',
+      usuario : currentUser ? currentUser.email : 'desconocido',
+      fecha   : new Date().toISOString()
+    }]
   };
 
   // Usar nroRegistro como document ID para idempotencia
@@ -1591,6 +1692,7 @@ document.addEventListener('DOMContentLoaded', function() {
   initChecklist();
   resetFormulario();
   generarParticulas();
+  iniciarAutosave();
 });
 
 // =====================================================================
@@ -1662,7 +1764,7 @@ function showView(view) {
   if (ocean) ocean.classList.toggle('hidden', view !== 'dashboard');
   if (view === 'dashboard') { cargarDashboard(); initFishIfNeeded(); }
   if (view === 'historico') cargarHistorico();
-  if (view === 'registro')  resetFormulario();
+  if (view === 'registro' && !appState.modoEdicion) { resetFormulario(); setTimeout(restaurarBorrador, 100); }
   if (view === 'admin')     cargarAdmin();
 }
 
@@ -1683,7 +1785,7 @@ function resetFormulario() {
     var el = document.getElementById('r-'+id);
     if (el) el.checked = false;
   });
-  document.querySelectorAll('input[name="tipoObs"]').forEach(function(r){ r.checked = false; });
+  document.querySelectorAll('.tipoObsCk').forEach(function(r){ r.checked = false; });
   clearFirmaCliente();
   clearPhoto();
   clearConcesionFill();
@@ -1696,7 +1798,9 @@ function resetFormulario() {
   if (btnSync) { btnSync.disabled = true; btnSync.style.opacity = ''; }
   var btnMail = document.getElementById('btn-mail');
   if (btnMail) { btnMail.disabled = true; btnMail.style.opacity = ''; btnMail.textContent = ''; btnMail.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg> Notificar Cliente'; btnMail.className = 'btn-action btn-mail'; }
-  appState = { saved: false, sent: false, archived: false, pdfB64: null, fotoB64: null, savedData: null };
+  appState = { saved: false, sent: false, archived: false, pdfB64: null, fotoB64: null, savedData: null, modoEdicion: false };
+  var btnVerPdf = document.getElementById('btn-ver-pdf');
+  if (btnVerPdf) { btnVerPdf.classList.add('hidden'); btnVerPdf.href = '#'; }
   checkChecklist();
   setBtnGuardar(false);
 }
@@ -1717,6 +1821,7 @@ var checkItems = [
   { id:'ck-datos',      text:'¿La información del formulario digital coincide con los datos físicos?', auto:false },
   { id:'ck-fecha',      text:'¿Se completó la fecha de última siembra y tamaño peces?', auto:true },
   { id:'ck-obs',        text:'¿Se han registrado las observaciones y su tipo correspondiente?', auto:true },
+  { id:'ck-email',      text:'¿Se ingresó el correo del jefe de centro (destinatario)?', auto:true },
   { id:'ck-responsable',text:'¿Se completó el nombre del responsable del centro?', auto:true },
   { id:'ck-firma',      text:'¿El responsable del centro ha firmado digitalmente?', auto:true },
   { id:'ck-foto',       text:'¿Se tomó la fotografía de evidencia?', auto:true },
@@ -1752,7 +1857,7 @@ function toggleTipoObs() {
   if (tipoRow) tipoRow.style.display = isNo ? 'none' : '';
   // Limpiar selección de tipo si se oculta
   if (isNo) {
-    document.querySelectorAll('input[name="tipoObs"]').forEach(function(r){ r.checked = false; });
+    document.querySelectorAll('.tipoObsCk').forEach(function(r){ r.checked = false; });
   }
 }
 
@@ -1760,7 +1865,8 @@ function checkChecklist() {
   var checks = {
     'ck-datos':       !!manualChecks['ck-datos'],
     'ck-fecha':       !!get('r-fechaSiembra') && !!get('r-tamanoPeces'),
-    'ck-obs':         !!get('r-observaciones') && (document.getElementById('r-obs-no').checked || !!getSelectedRadio('tipoObs')),
+    'ck-obs':         !!get('r-observaciones') && (document.getElementById('r-obs-no').checked || !!getSelectedTipoObs()),
+    'ck-email':       (function(){ var v=(get('r-emailResponsable')||'').trim(); return !!v && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v); })(),
     'ck-responsable': !!get('r-nombreResponsable'),
     'ck-firma':       firmaClienteHasData,
     'ck-foto':        !!appState.fotoB64,
@@ -1788,6 +1894,8 @@ function checkChecklist() {
   document.getElementById('btn-sync').disabled = !allDone;
   document.getElementById('btn-mail').disabled = !allDone;
   document.getElementById('warn-checklist').classList.toggle('hidden', allDone);
+  var btnPreview = document.getElementById('btn-preview');
+  if (btnPreview) btnPreview.disabled = !allDone;
   return allDone;
 }
 
@@ -1797,11 +1905,42 @@ function getSelectedRadio(name) {
 }
 
 // =====================================================================
+//  VALIDACIÓN EMAIL
+// =====================================================================
+function validarEmail(input) {
+  var v = input.value.trim();
+  if (!v) { input.classList.remove('input-email-ok','input-email-err'); return; }
+  var ok = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+  input.classList.toggle('input-email-ok',  ok);
+  input.classList.toggle('input-email-err', !ok);
+}
+
+function getSelectedTipoObs() {
+  var checked = document.querySelectorAll('.tipoObsCk:checked');
+  return Array.prototype.map.call(checked, function(el){ return el.value; }).join(', ');
+}
+
+// =====================================================================
 //  FIRMA CERTIFICADOR (dibujo simulado)
 // =====================================================================
 function initFirmaCertificador() {
   var canvas = document.getElementById('firma-certificador');
   var ctx = canvas.getContext('2d');
+  // Intentar cargar firma guardada en localStorage
+  try {
+    var saved = localStorage.getItem('certimar_cert_firma');
+    if (saved) {
+      var img = new Image();
+      img.onload = function() { ctx.drawImage(img, 0, 0); };
+      img.src = saved;
+      var nombre = localStorage.getItem('certimar_cert_nombre');
+      var rut    = localStorage.getItem('certimar_cert_rut');
+      if (nombre) { set('r-nombreCertificador', nombre); var s=document.getElementById('disclaimer-cert-nombre'); if(s) s.textContent=nombre; }
+      if (rut)    set('r-rutCertificador', rut);
+      return;
+    }
+  } catch(e) {}
+  // Firma por defecto si no hay nada guardado
   ctx.strokeStyle = '#111827';
   ctx.lineWidth = 3;
   ctx.lineCap = 'round';
@@ -1810,6 +1949,18 @@ function initFirmaCertificador() {
   ctx.beginPath(); ctx.moveTo(20,85); ctx.lineTo(190,15); ctx.stroke();
   ctx.fillStyle = '#111827';
   [[105,30],[75,60],[165,40]].forEach(function(p){ ctx.beginPath(); ctx.arc(p[0],p[1],2.5,0,Math.PI*2); ctx.fill(); });
+}
+
+function guardarFirmaCertificador() {
+  try {
+    var canvas = document.getElementById('firma-certificador');
+    localStorage.setItem('certimar_cert_firma',  canvas.toDataURL());
+    localStorage.setItem('certimar_cert_nombre', get('r-nombreCertificador'));
+    localStorage.setItem('certimar_cert_rut',    get('r-rutCertificador'));
+    toast('Firma del certificador guardada como predeterminada', 'success');
+  } catch(e) {
+    toast('No se pudo guardar la firma: ' + e.message, 'error');
+  }
 }
 
 // =====================================================================
@@ -1844,6 +1995,11 @@ function firmaStop() {
   firmaClienteHasData = true;
   document.getElementById('firma-placeholder').style.display = 'none';
   checkChecklist();
+  // Persistir firma en localStorage por si se cae la página
+  try {
+    var canvas = document.getElementById('firma-cliente');
+    localStorage.setItem('certimar_draft_firma', canvas.toDataURL());
+  } catch(e) {}
 }
 
 function clearFirmaCliente() {
@@ -1851,6 +2007,7 @@ function clearFirmaCliente() {
   canvas.getContext('2d').clearRect(0,0,canvas.width,canvas.height);
   firmaClienteHasData = false;
   document.getElementById('firma-placeholder').style.display = '';
+  try { localStorage.removeItem('certimar_draft_firma'); } catch(e) {}
   checkChecklist();
 }
 
@@ -1858,14 +2015,29 @@ function clearFirmaCliente() {
 //  CÁMARA
 // =====================================================================
 function startCamera() {
-  navigator.mediaDevices.getUserMedia({ video: { facingMode:'environment' } })
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    toast('Tu navegador no soporta acceso a cámara. Usa "Adjuntar Archivo".', 'error');
+    return;
+  }
+  // Intenta cámara trasera (móvil); si falla, usa cualquier cámara disponible (webcam escritorio)
+  navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+    .catch(function() {
+      return navigator.mediaDevices.getUserMedia({ video: true });
+    })
     .then(function(stream) {
       cameraStream = stream;
       document.getElementById('camera-video').srcObject = stream;
       document.getElementById('camera-placeholder').classList.add('hidden');
       document.getElementById('camera-live').classList.remove('hidden');
     })
-    .catch(function() { toast('No se pudo acceder a la cámara','error'); });
+    .catch(function(e) {
+      var msg = e.name === 'NotAllowedError'
+        ? 'Permiso de cámara denegado. Habilítalo en la configuración del navegador.'
+        : e.name === 'NotFoundError'
+        ? 'No se encontró ninguna cámara. Usa "Adjuntar Archivo".'
+        : 'No se pudo acceder a la cámara: ' + e.message;
+      toast(msg, 'error');
+    });
 }
 
 function stopCamera() {
@@ -1979,7 +2151,19 @@ function _fixImageOrientation(base64, callback) {
     }
 
     ctx.drawImage(img, 0, 0);
-    callback(canvas.toDataURL('image/jpeg', 0.88));
+    // Comprimir: redimensionar si el lado mayor supera 1600 px (~70% menos peso)
+    var MAX_PX = 1600;
+    var cw = canvas.width, ch = canvas.height;
+    if (cw > MAX_PX || ch > MAX_PX) {
+      var scale = MAX_PX / Math.max(cw, ch);
+      var small = document.createElement('canvas');
+      small.width  = Math.round(cw * scale);
+      small.height = Math.round(ch * scale);
+      small.getContext('2d').drawImage(canvas, 0, 0, small.width, small.height);
+      callback(small.toDataURL('image/jpeg', 0.82));
+    } else {
+      callback(canvas.toDataURL('image/jpeg', 0.88));
+    }
   };
   img.src = base64;
 }
@@ -2033,6 +2217,10 @@ function setBtnGuardar(saved) {
 }
 
 function handleGuardar() {
+  if (appState.modoEdicion) {
+    handleActualizarRegistro();
+    return;
+  }
   if (checkChecklist()) {
     // Checklist completo → exportar directamente a Drive + Sheets + Firebase
     handleSyncGoogle();
@@ -2041,6 +2229,104 @@ function handleGuardar() {
     appState.saved = true;
     setBtnGuardar(true);
     toast('Guardado localmente. Complete el checklist para exportar a Sheets.', 'success');
+  }
+}
+
+// =====================================================================
+//  ACTUALIZAR REGISTRO EXISTENTE (modo edición)
+// =====================================================================
+async function handleActualizarRegistro() {
+  setBtnLoading('btn-guardar', true);
+  var datos = getDatos();
+
+  pushNotif('edit-sync', 'info', '✏️ Actualizando registro…', [
+    { id:'e-firebase', label:'Actualizando Firestore',      state:'active' },
+    { id:'e-sheets',   label:'Actualizando Google Sheets',  state:'pending' },
+    { id:'e-pdf',      label:'Generando PDF actualizado',   state:'pending' }
+  ]);
+
+  try {
+    // 1. Actualizar Firestore
+    var db = initFirebase();
+    if (!db) throw new Error('Firebase no disponible');
+    var updateData = {
+      fecha             : datos.fecha,
+      centroCultivo     : datos.centroCultivo,
+      nroCentro         : datos.nroCentro,
+      acs               : datos.acs,
+      titular           : datos.titular,
+      ubicacion         : datos.ubicacion    || '',
+      fechaSiembra      : datos.fechaSiembra || '',
+      tamanoPeces       : datos.tamanoPeces  || '',
+      latitud           : datos.latitud      || '',
+      longitud          : datos.longitud     || '',
+      norte             : datos.norte        || '',
+      este              : datos.este         || '',
+      resoluciones      : (function(){
+        var arr=[];
+        if(datos.resoluciones.cicE2)        arr.push('1821-CIC E2');
+        if(datos.resoluciones.ca)           arr.push('1821-CA');
+        if(datos.resoluciones.vs)           arr.push('1821-VS');
+        if(datos.resoluciones.res1511)      arr.push('1511');
+        if(datos.resoluciones.desinfeccion) arr.push('DESINFECCIÓN');
+        return arr.join(', ');
+      })(),
+      observaciones     : datos.observaciones   || '',
+      tipoObservacion   : datos.tipoObservacion || '',
+      nombreResponsable : datos.nombreResponsable    || '',
+      emailResponsable  : datos.emailDestinatario    || '',
+      nombreCertificador: datos.nombreCertificador   || '',
+      modificadoPor     : currentUser ? currentUser.email : '',
+      modificadoEn      : firebase.firestore.FieldValue.serverTimestamp(),
+      historialEdiciones: firebase.firestore.FieldValue.arrayUnion({
+        accion  : 'editado',
+        usuario : currentUser ? currentUser.email : 'desconocido',
+        fecha   : new Date().toISOString()
+      })
+    };
+    await db.collection('registros_visita').doc(datos.nroRegistro).update(updateData);
+    updateNotifStep('edit-sync','e-firebase','done');
+    updateNotifStep('edit-sync','e-sheets','active');
+
+    // 2. Actualizar Google Sheets via Apps Script
+    await new Promise(function(resolve) {
+      google.script.run
+        .withSuccessHandler(function(res) {
+          updateNotifStep('edit-sync','e-sheets', res && res.ok ? 'done' : 'warn');
+          resolve(res);
+        })
+        .withFailureHandler(function() {
+          updateNotifStep('edit-sync','e-sheets','warn');
+          resolve(null);
+        })
+        .actualizarRegistro(datos);
+    });
+    updateNotifStep('edit-sync','e-pdf','active');
+
+    // 3. Generar PDF actualizado
+    var pdfB64 = null;
+    try {
+      if (window.jspdf && window.html2canvas) {
+        var pdf = await generarPDF();
+        pdfB64 = pdf.output('datauristring');
+        appState.pdfB64 = pdfB64;
+      }
+    } catch(ePdf) { console.warn('PDF gen error (no fatal):', ePdf); }
+    updateNotifStep('edit-sync','e-pdf','done');
+
+    setTimeout(function() {
+      updateNotifCard('edit-sync','success','✅ Registro actualizado correctamente', datos.nroRegistro);
+    }, 300);
+
+    appState.saved = true;
+    appState.savedData = Object.assign({}, datos, { urlCert: appState.savedData ? appState.savedData.urlCert : '' });
+    setBtnGuardar(true);
+    toast('✅ Cambios guardados en Firestore y Sheets', 'success');
+  } catch(e) {
+    updateNotifCard('edit-sync','error','❌ Error al actualizar', String(e));
+    toast('Error: ' + String(e), 'error');
+  } finally {
+    setBtnLoading('btn-guardar', false);
   }
 }
 
@@ -2071,18 +2357,127 @@ async function handleDescargarPDF() {
   }
 }
 
+// =====================================================================
+//  VISTA PREVIA PDF
+// =====================================================================
+async function handlePreviewPDF() {
+  if (!checkChecklist()) { toast('Complete el checklist primero', 'error'); return; }
+  if (!window.jspdf || !window.html2canvas) { toast('Librería PDF no disponible', 'error'); return; }
+  setBtnLoading('btn-preview', true);
+  try {
+    var pdf = await generarPDF();
+    var dataUri = pdf.output('datauristring');
+    var frame = document.getElementById('pdf-preview-frame');
+    frame.src = dataUri;
+    document.getElementById('modal-pdf-preview').classList.remove('hidden');
+    // Mostrar botón Confirmar solo si aún no se ha guardado
+    document.getElementById('btn-preview-confirmar').style.display = appState.saved ? 'none' : '';
+  } catch(e) {
+    toast('Error al generar vista previa: ' + String(e), 'error');
+  } finally {
+    setBtnLoading('btn-preview', false);
+  }
+}
+
+function cerrarPreviewPDF() {
+  document.getElementById('modal-pdf-preview').classList.add('hidden');
+  var frame = document.getElementById('pdf-preview-frame');
+  frame.src = 'about:blank';
+}
+
 async function generarPDF() {
   var el = document.getElementById('registro-documento');
-  // scale 1.5 en JPEG = 60% menos datos que scale:2 PNG, misma calidad visual para A4
-  var canvas = await html2canvas(el, {
-    scale: 1.5,
-    backgroundColor: '#ffffff',
-    useCORS: true,
-    imageTimeout: 0,
-    height: el.scrollHeight,
-    windowHeight: el.scrollHeight,
-    logging: false
+  var PDF_W = 820; // ancho fijo que evita media queries móviles (<600px)
+
+  // ── 1. Ocultar elementos UI que no van en el PDF ──────────────────
+  var OCULTAR_SELECTORES = [
+    '.lock-overlay-banner',
+    '.autocomplete-dropdown',
+    '#foto-badge',
+    '.btn-archive',
+    '.ac-badge',
+    '.btn-archive-action'
+  ];
+  var elsOcultos = [];
+  OCULTAR_SELECTORES.forEach(function(sel) {
+    el.querySelectorAll(sel).forEach(function(e) {
+      elsOcultos.push({ el: e, prev: e.style.display });
+      e.style.display = 'none';
+    });
   });
+
+  // ── 2. Forzar ancho fijo (evita colapso responsive) ──────────────
+  var prevW   = el.style.width;
+  var prevMin = el.style.minWidth;
+  el.style.width    = PDF_W + 'px';
+  el.style.minWidth = PDF_W + 'px';
+
+  // Esperar a que el layout se recalcule al nuevo ancho antes de medir
+  await new Promise(function(r) { requestAnimationFrame(function() { requestAnimationFrame(r); }); });
+
+  // ── 3. Reemplazar inputs[text] y textareas con divs estáticos ─────
+  // html2canvas no renderiza fiablemente el valor de <input> ni expande
+  // <textarea> a su contenido. Reemplazamos por divs antes de capturar.
+  var replacements = [];
+
+  el.querySelectorAll('input[type="text"], input:not([type])').forEach(function(inp) {
+    var div = document.createElement('div');
+    div.style.width      = '100%';
+    div.style.minHeight  = Math.max(inp.offsetHeight, 22) + 'px';
+    div.style.padding    = '2px 4px';
+    div.style.fontSize   = '13px';
+    div.style.fontFamily = 'inherit';
+    div.style.wordBreak  = 'break-word';
+    div.style.whiteSpace = 'normal';
+    div.style.lineHeight = '1.5';
+    div.style.color      = inp.value ? '#111827' : '#9ca3af';
+    div.textContent      = inp.value || '—';
+    inp.parentNode.insertBefore(div, inp);
+    inp.style.display = 'none';
+    replacements.push({ original: inp, replacement: div });
+  });
+
+  el.querySelectorAll('textarea').forEach(function(ta) {
+    var div = document.createElement('div');
+    div.style.width      = '100%';
+    div.style.minHeight  = '160px';
+    div.style.padding    = '12px';
+    div.style.fontSize   = '13px';
+    div.style.fontFamily = 'inherit';
+    div.style.lineHeight = '1.8';
+    div.style.whiteSpace = 'pre-wrap';
+    div.style.wordBreak  = 'break-word';
+    div.style.boxSizing  = 'border-box';
+    div.textContent      = ta.value || '';
+    ta.parentNode.insertBefore(div, ta);
+    ta.style.display = 'none';
+    replacements.push({ original: ta, replacement: div });
+  });
+
+  // Esperar un frame adicional tras los reemplazos para que el DOM recalcule
+  await new Promise(function(r) { requestAnimationFrame(function() { requestAnimationFrame(r); }); });
+
+  // ── 4. Capturar ───────────────────────────────────────────────────
+  var canvas = await html2canvas(el, {
+    scale       : 2,
+    backgroundColor: '#ffffff',
+    useCORS     : true,
+    imageTimeout: 0,
+    width       : PDF_W,
+    height      : el.scrollHeight,
+    windowWidth : PDF_W,
+    windowHeight: el.scrollHeight,
+    logging     : false
+  });
+
+  // ── 5. Restaurar estilos originales ──────────────────────────────
+  el.style.width    = prevW;
+  el.style.minWidth = prevMin;
+  replacements.forEach(function(item) {
+    item.original.style.display = '';
+    item.replacement.parentNode.removeChild(item.replacement);
+  });
+  elsOcultos.forEach(function(item) { item.el.style.display = item.prev; });
   var { jsPDF } = window.jspdf;
   var pdf    = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
   // JPEG 88% = mucho más liviano que PNG y suficiente para impresión
@@ -2154,34 +2549,47 @@ async function handleSyncGoogle() {
 
   setBtnLoading('btn-sync', true);
 
-  // Generar correlativo atómico justo antes de guardar (evita huecos por formularios abiertos sin guardar)
+  // Generar correlativo solo si el formulario no tiene uno válido asignado.
+  // Casos donde YA existe número: regeneración de PDF de registro existente,
+  // o reintento tras un guardado fallido (el número ya fue reservado).
+  // Esto evita saltos en la numeración por reintentos o regeneraciones.
+  var nroActual = get('r-nroRegistro');
+  var necesitaNroNuevo = !nroActual || nroActual === 'Se asignará al guardar' || nroActual.trim() === '';
+
   var nroGenerado;
-  try {
-    nroGenerado = await fbGenerarNroRegistro();
-    set('r-nroRegistro', nroGenerado);
-    updateNotifStep('sync','step-nro','done');
-    updateNotifStep('sync','step-firebase','active');
-  } catch(e) {
-    // Fallback a Apps Script si Firebase falla
+  if (necesitaNroNuevo) {
     try {
-      nroGenerado = await new Promise(function(res, rej) {
-        google.script.run
-          .withSuccessHandler(function(n){ res(n || 'RV-' + new Date().getFullYear() + '-' + Date.now()); })
-          .withFailureHandler(rej)
-          ._generarNroRegistro();
-      });
+      nroGenerado = await fbGenerarNroRegistro();
       set('r-nroRegistro', nroGenerado);
       updateNotifStep('sync','step-nro','done');
       updateNotifStep('sync','step-firebase','active');
-    } catch(e2) {
-      updateNotifCard('sync','error','❌ No se pudo obtener correlativo', String(e2));
-      setBtnLoading('btn-sync', false);
-      return;
+    } catch(e) {
+      // Fallback a Apps Script si Firebase falla
+      try {
+        nroGenerado = await new Promise(function(res, rej) {
+          google.script.run
+            .withSuccessHandler(function(n){ res(n || 'RV-' + new Date().getFullYear() + '-' + Date.now()); })
+            .withFailureHandler(rej)
+            ._generarNroRegistro();
+        });
+        set('r-nroRegistro', nroGenerado);
+        updateNotifStep('sync','step-nro','done');
+        updateNotifStep('sync','step-firebase','active');
+      } catch(e2) {
+        updateNotifCard('sync','error','❌ No se pudo obtener correlativo', String(e2));
+        setBtnLoading('btn-sync', false);
+        return;
+      }
     }
+  } else {
+    // Reusar número existente — no tocar el contador de Firestore
+    nroGenerado = nroActual;
+    updateNotifStep('sync','step-nro','done');
+    updateNotifStep('sync','step-firebase','active');
   }
 
   var datos = getDatos();
-  var emailDest = appState.pendingEmail || '';
+  var emailDest = appState.pendingEmail || get('r-emailResponsable') || '';
 
   try {
     // 2. Subir PDF a Drive (via Apps Script) y guardar en Firestore en paralelo
@@ -2191,20 +2599,48 @@ async function handleSyncGoogle() {
     // Drive upload en background (no bloqueamos la escritura en Firestore ni en Sheets)
     var drivePromise = new Promise(function(resolve) {
       if (!pdfB64) { resolve(''); return; }
+      var firmaClienteB64 = (function(){
+        var c = document.getElementById('firma-cliente');
+        return (c && firmaClienteHasData) ? c.toDataURL('image/png') : null;
+      })();
       google.script.run
         .withSuccessHandler(function(res) { resolve(res && res.ok ? (res.urlCertificado||'') : ''); })
         .withFailureHandler(function()   { resolve(''); })
-        .guardarRegistro(datos, pdfB64, appState.fotoB64);
+        .guardarRegistro(datos, pdfB64, appState.fotoB64, firmaClienteB64);
     });
 
+    // Firebase Storage — subir foto en paralelo al Drive upload
+    var fotoStoragePromise = (async function() {
+      var foto = appState.fotoB64;
+      if (!foto || foto.startsWith('data:application/pdf')) return '';
+      try {
+        var mt  = (foto.match(/^data:([^;]+);base64,/) || [])[1] || 'image/jpeg';
+        var raw = foto.replace(/^data:[^;]+;base64,/, '');
+        var bytes = Uint8Array.from(atob(raw), function(c){ return c.charCodeAt(0); });
+        var ext = mt.split('/')[1] || 'jpg';
+        var ref = firebase.storage().ref('fotos/Foto_' + datos.nroRegistro + '.' + ext);
+        await ref.put(bytes.buffer, { contentType: mt });
+        return await ref.getDownloadURL();
+      } catch(eFoto) {
+        console.warn('Foto Firebase Storage error (no fatal):', eFoto);
+        return '';
+      }
+    })();
+
     // 3. Firestore — escritura inmediata (~200ms)
-    await fbGuardarRegistro(datos, '', '');
+    // En modo regeneración solo se actualiza el documento existente (no se crea uno nuevo)
+    if (_modoRegeneracion) {
+      await fbActualizarEstado(datos.nroRegistro, 'GUARDADO', {});
+    } else {
+      await fbGuardarRegistro(datos, '', '');
+    }
     updateNotifStep('sync','step-firebase','done');
     updateNotifStep('sync','step-drive','active');
 
-    // 4. Esperar Drive
-    var driveRes = await drivePromise;
-    urlCertificado = driveRes;
+    // 4. Esperar Drive y foto en paralelo
+    var results = await Promise.all([drivePromise, fotoStoragePromise]);
+    urlCertificado = results[0];
+    urlFoto = results[1];
     updateNotifStep('sync','step-drive', urlCertificado ? 'done' : 'warn');
     updateNotifStep('sync','step-sheets','active');
 
@@ -2223,10 +2659,17 @@ async function handleSyncGoogle() {
         .registrarEnSheets(datos, urlCertificado);
     });
 
-    // 6. Actualizar Firestore con URL del PDF si se obtuvo
-    if (urlCertificado) {
-      await fbActualizarEstado(datos.nroRegistro, 'GUARDADO', { urlCertificado });
-    }
+    // 6. Actualizar Firestore con URLs si se obtuvieron
+    var fsUpdate = {};
+    if (urlCertificado) fsUpdate.urlCertificado = urlCertificado;
+    if (urlFoto)        fsUpdate.urlFoto = urlFoto;
+    // Registrar en historial de auditoría
+    fsUpdate.historialEdiciones = firebase.firestore.FieldValue.arrayUnion({
+      accion  : _modoRegeneracion ? 'pdf_regenerado' : 'creado',
+      usuario : currentUser ? currentUser.email : 'desconocido',
+      fecha   : new Date().toISOString()
+    });
+    await fbActualizarEstado(datos.nroRegistro, 'GUARDADO', fsUpdate);
     updateNotifProgress('sync', 100);
 
     setTimeout(function() {
@@ -2236,6 +2679,7 @@ async function handleSyncGoogle() {
     appState.saved = true;
     appState.savedData = Object.assign({}, datos, { urlCert: urlCertificado });
     setBtnGuardar(true);
+    limpiarBorrador();
     updateCustomCentroIfNeeded(datos);
 
     localRecords.unshift({
@@ -2487,7 +2931,7 @@ function getDatos() {
     norte          : get('r-norte'),
     este           : get('r-este'),
     observaciones  : get('r-observaciones'),
-    tipoObservacion: getSelectedRadio('tipoObs'),
+    tipoObservacion: getSelectedTipoObs(),
     nombreResponsable  : get('r-nombreResponsable'),
     emailDestinatario  : get('r-emailResponsable'),
     nombreCertificador : get('r-nombreCertificador'),
@@ -2654,7 +3098,11 @@ function filtrarHistorico() {
   var desde  = document.getElementById('hist-desde').value;
   var hasta  = document.getElementById('hist-hasta').value;
   var filtered = historicData.filter(function(r) {
-    var ok = (!q || r.centro.toLowerCase().includes(q) || r.titular.toLowerCase().includes(q) || r.nroReg.toLowerCase().includes(q));
+    var nro    = (r.nroRegistro || r.nroReg || '').toLowerCase();
+    var centro = (r.centroCultivo || r.centro || '').toLowerCase();
+    var tit    = (r.titular || '').toLowerCase();
+    var resp   = (r.nombreResponsable || r.responsable || '').toLowerCase();
+    var ok = (!q || nro.includes(q) || centro.includes(q) || tit.includes(q) || resp.includes(q));
     if (desde && r.fecha < desde) ok = false;
     if (hasta && r.fecha > hasta) ok = false;
     return ok;
@@ -2694,6 +3142,9 @@ function renderHistorico(data) {
       '<td>'+esc(resp)+'</td>'+
       '<td><span class="badge '+badgeCls+'">'+icon+' '+estado+'</span></td>'+
       '<td>'+certLink+'</td>'+
+      '<td style="white-space:nowrap">'+
+        '<button class="btn-hist-audit" onclick="abrirHistorialAuditoria(\''+esc(nro)+'\')" title="Ver historial de auditoría">📋</button>'+
+      '</td>'+
       '</tr>';
   }).join('');
   footer.textContent = 'Mostrando ' + data.length + ' registro' + (data.length!==1?'s':'') + ' · Firestore';
@@ -2702,6 +3153,302 @@ function renderHistorico(data) {
 
 function esc(str) {
   return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// =====================================================================
+//  HISTORIAL DE AUDITORÍA
+// =====================================================================
+async function abrirHistorialAuditoria(nro) {
+  var modal  = document.getElementById('modal-historial');
+  var lista  = document.getElementById('historial-lista');
+  var titulo = document.getElementById('historial-nro');
+  titulo.textContent = 'Registro: ' + nro;
+  lista.innerHTML = '<div style="color:#94a3b8;text-align:center;padding:24px">Cargando…</div>';
+  modal.classList.remove('hidden');
+  try {
+    var db   = initFirebase();
+    var snap = await db.collection('registros_visita').doc(nro).get();
+    var historial = (snap.exists && snap.data().historialEdiciones) || [];
+    if (!historial.length) {
+      lista.innerHTML = '<div style="color:#94a3b8;text-align:center;padding:24px">Sin historial registrado.<br><small>Los registros creados antes de esta actualización no tienen entradas previas.</small></div>';
+      return;
+    }
+    var LABELS = { creado: '🆕 Creado', editado: '✏️ Editado', pdf_regenerado: '🔄 PDF Regenerado' };
+    var COLORS = { creado: '#16a34a',   editado: '#1d4ed8',   pdf_regenerado:  '#7c3aed' };
+    lista.innerHTML = historial.slice().reverse().map(function(h) {
+      var accion = h.accion || 'desconocido';
+      var label  = LABELS[accion] || accion.toUpperCase();
+      var color  = COLORS[accion] || '#64748b';
+      var fecha  = h.fecha ? new Date(h.fecha).toLocaleString('es-CL', { dateStyle:'short', timeStyle:'short' }) : '—';
+      return '<div class="audit-entry audit-entry-'+accion+'">'+
+        '<div style="font-weight:700;font-size:12px;color:'+color+'">'+label+'</div>'+
+        '<div style="font-size:11px;color:#64748b;margin-top:3px">'+fecha+' · '+esc(h.usuario||'—')+'</div>'+
+      '</div>';
+    }).join('');
+  } catch(e) {
+    lista.innerHTML = '<div style="color:#dc2626;padding:16px">Error al cargar historial: '+esc(String(e))+'</div>';
+  }
+}
+
+// =====================================================================
+//  AUTOGUARDADO EN BORRADOR (localStorage)
+// =====================================================================
+var _autosaveTimer = null;
+
+function autoGuardarBorrador() {
+  if (appState.saved || appState.modoEdicion) return; // No sobreescribir registros ya guardados
+  try {
+    var draft = {
+      campos: {},
+      checkboxes: {},
+      tipoObs: [],
+      hasObs: document.getElementById('r-obs-si') ? document.getElementById('r-obs-si').checked : true,
+      ts: Date.now()
+    };
+    // Campos de texto
+    ['centroCultivo','nroCentro','acs','titular','ubicacion','fechaSiembra','tamanoPeces',
+     'latitud','longitud','norte','este','observaciones','nombreResponsable','emailResponsable'].forEach(function(id) {
+      draft.campos[id] = get('r-' + id);
+    });
+    // Checkboxes resoluciones
+    ['cicE2','ca','vs','res1511','desinfeccion'].forEach(function(id) {
+      var el = document.getElementById('r-' + id);
+      if (el) draft.checkboxes[id] = el.checked;
+    });
+    // Tipo observación (múltiple)
+    document.querySelectorAll('.tipoObsCk:checked').forEach(function(cb) {
+      draft.tipoObs.push(cb.value);
+    });
+    localStorage.setItem('certimar_draft', JSON.stringify(draft));
+  } catch(e) { /* localStorage no disponible */ }
+}
+
+function limpiarBorrador() {
+  try {
+    localStorage.removeItem('certimar_draft');
+    localStorage.removeItem('certimar_draft_firma');
+  } catch(e) {}
+}
+
+function restaurarBorrador() {
+  try {
+    var raw = localStorage.getItem('certimar_draft');
+    if (!raw) return;
+    var draft = JSON.parse(raw);
+    var mins = Math.round((Date.now() - draft.ts) / 60000);
+    if (!draft.campos || mins > 1440) { limpiarBorrador(); return; } // Descartar borradores > 24h
+    if (!confirm('Se encontró un borrador guardado hace ' + mins + ' min. ¿Deseas restaurarlo?')) {
+      limpiarBorrador(); return;
+    }
+    Object.keys(draft.campos).forEach(function(id) { set('r-' + id, draft.campos[id]); });
+    Object.keys(draft.checkboxes).forEach(function(id) {
+      var el = document.getElementById('r-' + id);
+      if (el) el.checked = draft.checkboxes[id];
+    });
+    document.querySelectorAll('.tipoObsCk').forEach(function(cb) {
+      cb.checked = draft.tipoObs.indexOf(cb.value) >= 0;
+    });
+    if (!draft.hasObs) {
+      document.getElementById('r-obs-no').checked = true;
+      toggleTipoObs();
+    }
+    // Restaurar firma del cliente si fue guardada
+    var firmaGuardada = localStorage.getItem('certimar_draft_firma');
+    if (firmaGuardada) {
+      var canvas = document.getElementById('firma-cliente');
+      var ctx = canvas.getContext('2d');
+      var img = new Image();
+      img.onload = function() {
+        ctx.drawImage(img, 0, 0);
+        firmaClienteHasData = true;
+        document.getElementById('firma-placeholder').style.display = 'none';
+        checkChecklist();
+      };
+      img.src = firmaGuardada;
+    }
+    checkChecklist();
+    toast('Borrador restaurado' + (firmaGuardada ? ' (incluye firma del cliente)' : ''), 'success');
+  } catch(e) { limpiarBorrador(); }
+}
+
+function iniciarAutosave() {
+  if (_autosaveTimer) clearInterval(_autosaveTimer);
+  _autosaveTimer = setInterval(autoGuardarBorrador, 30000);
+}
+
+// =====================================================================
+//  MODO EDICIÓN — PIN + CARGA DE REGISTRO
+// =====================================================================
+function irAdmin() {
+  if (_adminPinVerified) { showView('admin'); return; }
+  _modoAdmin = true;
+  _pinTargetNro = null;
+  _modoRegeneracion = false;
+  document.getElementById('pin-input').value = '';
+  document.getElementById('pin-error').style.display = 'none';
+  document.getElementById('modal-pin').querySelector('h2').textContent = '🛡️ Acceso Admin';
+  document.getElementById('modal-pin').querySelector('p').textContent = 'Ingresa el PIN para acceder al panel de administración.';
+  document.getElementById('modal-pin').classList.remove('hidden');
+  setTimeout(function(){ document.getElementById('pin-input').focus(); }, 100);
+}
+
+function abrirEdicionConPin(nroRegistro) {
+  _pinTargetNro = nroRegistro;
+  _modoRegeneracion = false;
+  _modoAdmin = false;
+  document.getElementById('pin-input').value = '';
+  document.getElementById('pin-error').style.display = 'none';
+  document.getElementById('modal-pin').querySelector('h2').textContent = '🔐 Modo Edición';
+  document.getElementById('modal-pin').querySelector('p').textContent = 'Ingresa el PIN para desbloquear la edición del registro.';
+  document.getElementById('modal-pin').classList.remove('hidden');
+  setTimeout(function(){ document.getElementById('pin-input').focus(); }, 100);
+}
+
+function abrirRegeneracionConPin(nroRegistro) {
+  _modoAdmin = false;
+  _pinTargetNro = nroRegistro;
+  _modoRegeneracion = true;
+  document.getElementById('pin-input').value = '';
+  document.getElementById('pin-error').style.display = 'none';
+  document.getElementById('modal-pin').querySelector('h2').textContent = '🔄 Regenerar PDF';
+  document.getElementById('modal-pin').classList.remove('hidden');
+  setTimeout(function(){ document.getElementById('pin-input').focus(); }, 100);
+}
+
+function cerrarModalPin() {
+  document.getElementById('modal-pin').classList.add('hidden');
+  _pinTargetNro = null;
+  _modoRegeneracion = false;
+  _modoAdmin = false;
+}
+
+function confirmarPin() {
+  var pin = document.getElementById('pin-input').value;
+  if (pin !== EDIT_PIN) {
+    document.getElementById('pin-error').style.display = 'block';
+    document.getElementById('pin-input').value = '';
+    document.getElementById('pin-input').focus();
+    return;
+  }
+  if (_modoAdmin) {
+    _adminPinVerified = true;
+    cerrarModalPin();
+    showView('admin');
+    return;
+  }
+  var nro  = _pinTargetNro;
+  var regen = _modoRegeneracion;
+  cerrarModalPin();
+  cargarRegistroParaEdicion(nro, regen);
+}
+
+async function cargarRegistroParaEdicion(nroRegistro, autoPreview) {
+  toast('Cargando registro…', 'info');
+  try {
+    var db = initFirebase();
+    if (!db) { toast('Firebase no disponible','error'); return; }
+    var snap = await db.collection('registros_visita').doc(nroRegistro).get();
+    if (!snap.exists) { toast('Registro no encontrado en Firestore','error'); return; }
+    var r = snap.data();
+
+    // Navegar al formulario y resetear
+    showView('registro');
+    resetFormulario();
+
+    // Poblar campos de texto
+    set('r-nroRegistro',      r.nroRegistro      || '');
+    set('r-fecha',            r.fecha            || '');
+    set('r-centroCultivo',    r.centroCultivo    || '');
+    set('r-nroCentro',        r.nroCentro        || '');
+    set('r-acs',              r.acs              || '');
+    set('r-titular',          r.titular          || '');
+    set('r-ubicacion',        r.ubicacion        || '');
+    set('r-fechaSiembra',     r.fechaSiembra     || '');
+    set('r-tamanoPeces',      r.tamanoPeces      || '');
+    set('r-latitud',          r.latitud          || '');
+    set('r-longitud',         r.longitud         || '');
+    set('r-norte',            r.norte            || '');
+    set('r-este',             r.este             || '');
+    set('r-observaciones',    r.observaciones    || '');
+    set('r-nombreResponsable',r.nombreResponsable|| '');
+    set('r-emailResponsable', r.emailResponsable || '');
+    set('r-nombreCertificador',r.nombreCertificador || r.certNombre || '');
+
+    // Resoluciones (checkboxes desde string "1821-CIC E2, 1511, ...")
+    var resStr = r.resoluciones || '';
+    document.getElementById('r-cicE2').checked        = resStr.indexOf('CIC E2') >= 0;
+    document.getElementById('r-ca').checked           = resStr.indexOf('1821-CA') >= 0;
+    document.getElementById('r-vs').checked           = resStr.indexOf('1821-VS') >= 0;
+    document.getElementById('r-res1511').checked      = resStr.indexOf('1511') >= 0;
+    document.getElementById('r-desinfeccion').checked = resStr.indexOf('DESINF') >= 0;
+
+    // Tipo de observación (checkboxes — puede ser múltiple "EXTRACCION, ALMACENAMIENTO")
+    if (r.tipoObservacion) {
+      var tiposStr = r.tipoObservacion.toUpperCase();
+      document.querySelectorAll('.tipoObsCk').forEach(function(cb) {
+        cb.checked = tiposStr.indexOf(cb.value) >= 0;
+      });
+      document.getElementById('r-obs-si').checked = true;
+      toggleTipoObs();
+    } else if (!r.observaciones) {
+      document.getElementById('r-obs-no').checked = true;
+      toggleTipoObs();
+    }
+
+    // Activar modo edición
+    appState.modoEdicion = true;
+    appState.savedData   = { urlCert: r.urlCertificado || '' };
+
+    // Mostrar banner de edición
+    var doc = document.getElementById('registro-documento');
+    doc.classList.remove('form-locked');
+    var banner = document.querySelector('.lock-overlay-banner');
+    if (banner) banner.remove();
+    var newBanner = document.createElement('div');
+    newBanner.className = 'lock-overlay-banner';
+    newBanner.style.background = 'linear-gradient(90deg,#7c3aed,#a855f7)';
+    newBanner.innerHTML = '<span>✏️ Modo Edición — <strong>' + nroRegistro + '</strong> — Modifica los campos y pulsa "Guardar Cambios"</span>';
+    doc.insertBefore(newBanner, doc.firstChild);
+
+    // Mostrar "Ver PDF" si existe URL
+    var btnVerPdf = document.getElementById('btn-ver-pdf');
+    if (r.urlCertificado) {
+      btnVerPdf.href = r.urlCertificado;
+      btnVerPdf.classList.remove('hidden');
+    } else {
+      btnVerPdf.classList.add('hidden');
+    }
+
+    // Habilitar botón PDF
+    document.getElementById('btn-pdf').disabled = false;
+
+    // Restaurar firma del responsable si fue capturada vía link temporal
+    var firmaB64Guardada = r.firmaClienteB64 || '';
+    if (firmaB64Guardada && firmaB64Guardada.startsWith('data:image/')) {
+      var canvasFirma = document.getElementById('firma-cliente');
+      var ctxFirma    = canvasFirma.getContext('2d');
+      var imgFirma    = new Image();
+      imgFirma.onload = function() {
+        ctxFirma.clearRect(0, 0, canvasFirma.width, canvasFirma.height);
+        ctxFirma.drawImage(imgFirma, 0, 0, canvasFirma.width, canvasFirma.height);
+        firmaClienteHasData = true;
+        var ph = document.getElementById('firma-placeholder');
+        if (ph) ph.style.display = 'none';
+        checkChecklist();
+      };
+      imgFirma.src = firmaB64Guardada;
+    }
+
+    checkChecklist();
+    if (autoPreview) {
+      toast('🔄 Registro cargado. Generando vista previa…', 'success');
+      setTimeout(handlePreviewPDF, firmaB64Guardada ? 800 : 600);
+    } else {
+      toast('✏️ Registro ' + nroRegistro + ' listo para editar', 'success');
+    }
+  } catch(e) {
+    toast('Error al cargar registro: ' + String(e), 'error');
+  }
 }
 
 // =====================================================================
@@ -3266,7 +4013,7 @@ function renderAdminTabla() {
   var total = _adminFiltered.length;
 
   if (!total) {
-    tbody.innerHTML = '<tr><td colspan="11" class="admin-empty">No hay registros con esos filtros</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="12" class="admin-empty">No hay registros con esos filtros</td></tr>';
     document.getElementById('adm-footer-count').textContent = '0 resultados';
     document.getElementById('adm-pag-info').textContent = '';
     return;
@@ -3279,6 +4026,15 @@ function renderAdminTabla() {
     var certIni = (r.certNombre || r.creadoPor || 'U')[0].toUpperCase();
     var certNom = r.certNombre || (r.creadoPor||'').split('@')[0] || '—';
     var urlCert = r.urlCertificado || '';
+    var efirma  = r.estadoFirma || '';
+    var firmaBdg = efirma === 'FIRMADO'
+      ? '<span class="badge badge-ok" title="'+esc(r.nombreResponsable||'')+'">✅ FIRMADO</span>'
+      : efirma === 'PENDIENTE'
+        ? '<span class="badge badge-warn">⏳ PENDIENTE</span>'
+        : '<span class="badge" style="background:#e2e8f0;color:#64748b">— S/F</span>';
+    var btnFirma = efirma === 'FIRMADO'
+      ? '<button class="admin-action-btn" title="Ya firmado" disabled style="opacity:.4;cursor:default">🔗</button> '
+      : '<button class="admin-action-btn" title="Generar link de firma" onclick="admGenerarLinkFirma(\''+esc(r.nroRegistro||'')+'\')">🔗</button> ';
     return '<tr>'+
       '<td style="font-weight:700;color:var(--brand);white-space:nowrap">'+esc(r.nroRegistro||'—')+'</td>'+
       '<td style="white-space:nowrap">'+esc(r.fecha||'—')+'</td>'+
@@ -3289,10 +4045,14 @@ function renderAdminTabla() {
       '<td style="font-size:10px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(r.resoluciones||'—')+'</td>'+
       '<td>'+esc(r.nombreResponsable||'—')+'</td>'+
       '<td><span class="badge '+bdg+'">'+icon+' '+estado+'</span></td>'+
+      '<td>'+firmaBdg+'</td>'+
       '<td><div class="admin-cert-chip"><div class="admin-cert-avatar">'+certIni+'</div><span style="max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+esc(certNom)+'">'+esc(certNom)+'</span></div></td>'+
       '<td style="white-space:nowrap">'+
         (urlCert ? '<a href="'+esc(urlCert)+'" target="_blank" class="admin-action-btn">📄</a> ' : '')+
-        '<button class="admin-action-btn" onclick="admReenviarMail(\''+esc(r.nroRegistro||'')+'\',\''+esc(r.emailResponsable||'')+'\')">✉️</button>'+
+        '<button class="admin-action-btn" onclick="admReenviarMail(\''+esc(r.nroRegistro||'')+'\',\''+esc(r.emailResponsable||'')+'\')">✉️</button> '+
+        btnFirma+
+        '<button class="admin-action-btn" title="Editar registro" onclick="abrirEdicionConPin(\''+esc(r.nroRegistro||'')+'\')">✏️</button> '+
+        '<button class="admin-action-btn" title="Regenerar PDF" onclick="abrirRegeneracionConPin(\''+esc(r.nroRegistro||'')+'\')">🔄</button>'+
       '</td>'+
       '</tr>';
   }).join('');
@@ -3359,7 +4119,8 @@ function admReenviarMail(nro, email) {
   if (!r) { updateNotifCard('adm-mail','error','❌ Registro no encontrado',''); return; }
   var datos = { nroRegistro: r.nroRegistro, fecha: r.fecha, centroCultivo: r.centroCultivo,
     nroCentro: r.nroCentro, acs: r.acs, titular: r.titular, nombreResponsable: r.nombreResponsable,
-    emailDestinatario: dest, observaciones: r.observaciones, tipoObservacion: r.tipoObservacion };
+    emailDestinatario: dest, observaciones: r.observaciones, tipoObservacion: r.tipoObservacion,
+    resoluciones: r.resoluciones || '' };
   google.script.run
     .withSuccessHandler(function(res) {
       if (res && res.ok) {
@@ -3375,6 +4136,23 @@ function admReenviarMail(nro, email) {
     })
     .withFailureHandler(function(e){ updateNotifCard('adm-mail','error','❌ Error',String(e)); })
     .enviarNotificacion(datos, r.urlCertificado||'', null);
+}
+
+function admGenerarLinkFirma(nro) {
+  if (!confirm('Generar link temporal de firma para ' + nro + '?\n\nEl responsable del centro podrá firmar su conformidad desde ese link.')) return;
+  pushNotif('adm-firma','info','🔗 Generando link…',[{ id:'fl1', label:'Creando token de acceso', state:'active' }]);
+  google.script.run
+    .withSuccessHandler(function(url) {
+      updateNotifCard('adm-firma','success','🔗 Link generado','');
+      // Mostrar el link en un prompt para copiar
+      setTimeout(function() {
+        prompt('Link de firma para ' + nro + ' (copia y envía al responsable):', url);
+      }, 200);
+    })
+    .withFailureHandler(function(e) {
+      updateNotifCard('adm-firma','error','❌ Error al generar link', String(e));
+    })
+    .generarLinkFirma(nro);
 }
 
 function exportarCSV() {

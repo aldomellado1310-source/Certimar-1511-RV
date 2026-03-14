@@ -1,91 +1,177 @@
-# 🐟 Certimar — Registro de Visita en Google Apps Script
+# Certimar — Sistema de Registro de Visita (RV)
+
+Sistema web de registro de inspecciones técnicas en terreno para centros de cultivo acuícola, desarrollado sobre Google Apps Script. Permite crear, firmar, guardar y notificar registros de visita como documentos PDF, con trazabilidad completa en Google Sheets.
+
+---
 
 ## Archivos del proyecto
 
 | Archivo | Descripción |
 |---|---|
-| `Code.gs` | Backend: Sheets, Drive, Gmail |
-| `Index.html` | Frontend SPA completo |
-| `appsscript.json` | Manifiesto de permisos |
+| `Code.gs` | Backend: Sheets, Drive, Gmail, firma remota |
+| `Index.html` | Frontend SPA completo (vistas, estilos, lógica) |
+| `FirebaseConfig.html` | Configuración del SDK de Firebase (incluido en Index) |
+| `ConcesionesData` | Catálogo de concesiones para autocomplete |
+| `appsscript.json` | Manifiesto de permisos y scopes OAuth |
 
 ---
 
-## 🚀 Pasos para publicar
+## Stack tecnológico
 
-### 1. Crear el proyecto en Apps Script
-
-1. Ve a [script.google.com](https://script.google.com)
-2. Haz clic en **"Nuevo proyecto"**
-3. Nómbralo **"Certimar - Registro de Visita"**
-
----
-
-### 2. Copiar los archivos
-
-#### `Code.gs`
-- Borra el contenido del archivo `Code.gs` que viene por defecto
-- Copia y pega todo el contenido de tu `Code.gs`
-
-#### `Index.html`
-- Haz clic en el ícono **"+"** (junto a los archivos) → **"HTML"**
-- Nómbralo exactamente `Index` (sin extensión)
-- Copia y pega todo el contenido de `Index.html`
-
-#### `appsscript.json`
-- Ve a **Ver → Mostrar archivo de manifiesto**
-- Reemplaza todo el contenido con el de `appsscript.json`
+- **Frontend/Backend:** Google Apps Script (web app, un solo despliegue)
+- **Base de datos:** Google Sheets (hoja `RV`) + Firebase Firestore (tiempo real)
+- **Almacenamiento:** Google Drive (PDFs, fotos, firmas PNG)
+- **Librerías cliente:** jsPDF + html2canvas, Chart.js, Firebase SDK v10 compat
+- **Autenticación:** Google OAuth (login con cuenta Google)
 
 ---
 
-### 3. Configurar el Spreadsheet ID
+## Vistas / Menús
 
-En `Code.gs`, línea 7, reemplaza el ID con el de tu Spreadsheet:
-```javascript
-const SPREADSHEET_ID = 'TU_SPREADSHEET_ID_AQUI';
-```
+### Navegación principal (navbar sticky)
 
-El ID lo encuentras en la URL de tu hoja:
-`https://docs.google.com/spreadsheets/d/`**`1Gq_8OBd75OnSzk9e6GXtOjhs8nhL9fKrlFzs_w4MezM`**`/edit`
-
-El ID de tu hoja actual es: `1Gq_8OBd75OnSzk9e6GXtOjhs8nhL9fKrlFzs_w4MezM`
-
----
-
-### 4. Inicializar la hoja (una sola vez)
-
-1. En Apps Script, selecciona la función `inicializarHoja`
-2. Haz clic en **"Ejecutar"**
-3. Acepta los permisos que solicite
-4. Esto crea la hoja `RV` con los encabezados correctos en tu Spreadsheet
+| Elemento | Función |
+|---|---|
+| Logo / marca | Navega al Dashboard |
+| **Dashboard** | Métricas, gráficos y filtros |
+| **Histórico** | Listado completo de registros con búsqueda |
+| **Admin** *(rol restringido)* | Gestión avanzada, archivado, re-envío |
+| **Nueva Visita** | Abre el formulario en blanco |
+| **Toggle tema** | Cambia entre modo claro y oscuro |
+| **User chip** | Muestra avatar y nombre del usuario logueado |
 
 ---
 
-### 5. Publicar como Web App
+## Vista: Dashboard
 
-1. Haz clic en **"Implementar" → "Nueva implementación"**
-2. Tipo: **Aplicación web**
-3. Descripción: `v1.0`
-4. Ejecutar como: **Usuario que accede a la aplicación**
-5. Quién puede acceder: **Cualquier usuario de Google**
-6. Copia la URL generada (ej: `https://script.google.com/macros/s/AKfy.../exec`)
-
----
-
-### 6. (Opcional) Configurar carpeta Drive
-
-Si tienes una carpeta específica en Drive para los PDFs:
-- En `Code.gs` línea 8, reemplaza el folder ID:
-```javascript
-const DRIVE_FOLDER_ID = 'TU_FOLDER_ID';
-```
-Si no lo configuras, creará automáticamente una carpeta llamada **"Certificados Certimar"** en tu Drive raíz.
+- **Filtros:** fecha desde/hasta, centro, N° de registro
+- **KPIs:** última inspección, inspecciones del mes, centros únicos en el año
+- **Gráficos:** inspecciones por mes (barras), distribución por resolución (dona)
+- **Tabla:** certificaciones próximas a vencer
+- **Elemento decorativo:** olas SVG animadas + peces nadando en el fondo inferior
 
 ---
 
-## 📋 Estructura de la Spreadsheet (hoja "RV")
+## Vista: Formulario de Registro (RV)
+
+### Documento principal
+
+Simula un documento oficial en papel (`doc-paper`) con watermark de olas animadas.
+
+**Header del documento**
+- Logo Certimar + título "REGISTRO DE VISITA" + subtítulo "Auditoría Técnica en Terreno"
+- Fecha autogenerada y N° correlativo (`RV-YYYY-NNNN`) en rojo
+
+**Tabla de datos del centro**
+
+| Campo | Notas |
+|---|---|
+| Centro de Cultivo | Texto libre |
+| N° de Centro | Con autocomplete desde catálogo de concesiones |
+| A.C.S. | Agente Certificador Sernapesca |
+| Titular del Centro | Texto libre |
+| Ubicación | Texto libre |
+| Fecha última siembra | Texto libre, dispara validación del checklist |
+| Tamaño de peces | Texto libre, dispara validación del checklist |
+
+**Norma aplicable** — checkboxes múltiples:
+- 1821 – CIC E2 / 1821 – CA / 1821 – VS / 1511 / DESINFECCIÓN
+
+**Coordenadas geográficas:** Latitud S, Longitud W, Norte, Este
+
+**Observaciones:**
+- Radio SI/NO
+- Textarea de texto libre
+- Tipo de observación (checkboxes): EXTRACCION, DESNATURALIZACION, ALMACENAMIENTO, ESTRUCTURA, FONDEO, OTRO
+
+**Firmas (dos columnas):**
+- Certificador: canvas dibujable, nombre y RUT preconfigurados, botón "Guardar firma"
+- Responsable del centro: canvas dibujable, nombre y email (valida formato)
+
+**Disclaimer legal** al pie, con nombre del certificador dinámico
+
+### Checklist de completitud
+
+Tarjeta lateral que valida en tiempo real si el formulario está listo para guardar/enviar. Items: fecha siembra, tamaño peces, observaciones, email, firma. Muestra badge bloqueado/desbloqueado.
+
+### Cámara / Adjunto
+
+Captura foto desde cámara del dispositivo o permite adjuntar imagen/PDF existente. Vista previa inline.
+
+### Barra de acciones
+
+| Botón | Función |
+|---|---|
+| Guardar | Guarda en Drive + Sheets (sin correo) |
+| Generar PDF | Genera PDF en cliente con jsPDF/html2canvas |
+| Sincronizar | Fuerza re-subida a Drive/Sheets |
+| Enviar correo | Modal con previsualización de email, campos CC/CCO, envío con PDF adjunto |
+
+---
+
+## Vista: Histórico
+
+- Barra de búsqueda de texto libre (busca en centro, titular, N° registro)
+- Filtros de fecha desde/hasta
+- Tabla con columnas: N° registro, fecha, centro, titular, resolución, estado (GUARDADO / ENVIADO), link al PDF
+- Acciones por fila: editar campos, reenviar correo, ver log de auditoría, generar link de firma remota
+
+---
+
+## Vista: Admin *(rol restringido)*
+
+- Estadísticas numéricas en tarjetas
+- Tabla ampliada con filtros adicionales
+- Acciones: archivar registro (con motivo), regenerar PDF, gestionar tokens de firma
+- Badge visual púrpura que distingue el acceso de administrador
+
+---
+
+## Sistema de notificaciones
+
+- **Sidebar de notificaciones** (derecha, slide-in): muestra progreso paso a paso con indicadores por color (PDF → Drive → Sheets → Email)
+- **Toast** (esquina inferior derecha): mensajes rápidos de éxito/error
+- **Completion dialog**: modal post-guardado con N° de registro, envío de correo inline (CC/CCO) y acciones para ir al Dashboard, ver Histórico o continuar editando
+
+---
+
+## Flujo de firma remota
+
+1. Desde el panel Admin, se genera un link único con token UUID para el registro
+2. El token incluye fecha de expiración embebida (72 h): formato `UUID::EPOCH_EXPIRY`
+3. El responsable abre la página de firma (sin login requerido), revisa los datos del RV y firma con canvas táctil
+4. Si no se registró nombre previamente, la página solicita el nombre del jefe de centro (mínimo 3 caracteres)
+5. La firma PNG se sube a Drive (no-fatal), el token se invalida y el estado se actualiza en Sheets (`FIRMADO`) y Firestore
+6. Se envían dos emails:
+   - **Al responsable del centro:** confirmación de conformidad registrada con datos del RV y link al certificado
+   - **A `operaciones@certimar.cl` (Certimar interno):** notificación con detalle completo (nombre del firmante, email, link a PNG de firma, link al certificado)
+7. El panel Admin muestra un badge `✅ FIRMADO` / `⏳ PENDIENTE` / `— S/F` en la columna Firma; el botón 🔗 se deshabilita automáticamente cuando ya fue firmado
+
+---
+
+## Backend — Funciones principales (`Code.gs`)
+
+| Función | Descripción |
+|---|---|
+| `guardarYEnviar()` | Sube PDF, foto y firma a Drive, escribe en Sheets, envía correo — en un solo viaje |
+| `obtenerRegistros()` | Lee Sheets con filtros, devuelve JSON |
+| `obtenerEstadisticas()` | Agrega datos para el Dashboard (por mes, por resolución) |
+| `actualizarRegistro()` | Edita una fila existente desde el Histórico |
+| `enviarNotificacion()` | Reenvía correo con PDF adjunto desde historial |
+| `generarLinkFirma()` | Genera token UUID con expiración 72h (`UUID::EPOCH`) + URL temporal para firma remota |
+| `getRegistroParaFirma()` | Valida token (formato + expiración + estado FIRMADO), devuelve datos del RV |
+| `submitFirma()` | Recibe firma del responsable, sube PNG a Drive, invalida token, notifica al responsable y a Certimar por separado |
+| `_enviarCorreoRV()` | Construye HTML email y despacha vía GmailApp (CC, CCO, copia interna) |
+| `doPost()` | Webhook receptor de Firebase que escribe en Sheets sin service account |
+| `_generarNroRegistro()` | Correlativo `RV-YYYY-NNNN` buscando el máximo existente en la hoja |
+| `testEnvioCorreo()` | Función de test manual que verifica Drive, Sheets, Gmail y plantilla |
+
+---
+
+## Estructura de la hoja Google Sheets (hoja `RV`)
 
 | Col | Encabezado |
-|-----|-----------|
+|---|---|
 | A | Fecha |
 | B | N° Registro |
 | C | Centro |
@@ -103,25 +189,94 @@ Si no lo configuras, creará automáticamente una carpeta llamada **"Certificado
 | O | Nombre responsable |
 | P | Correo responsable |
 | Q | Hipervínculo al certificado |
+| R | Estado (GUARDADO / ENVIADO) |
+| S | URL Firma Cliente |
+| T | Token Firma |
+| U | Estado Firma (PENDIENTE / FIRMADO) |
 
 ---
 
-## 🔧 Notas técnicas
+## Estética general
 
-- **Sin OAuth manual**: Apps Script maneja la autenticación de Google automáticamente
-- **PDF**: Se genera en el navegador (jsPDF + html2canvas via CDN) y se sube a Drive como base64
-- **Email**: Se envía con GmailApp desde la cuenta del usuario que ejecuta la acción
-- **Firma digital**: Canvas HTML5, funciona en móvil y escritorio
-- **Cámara**: Usa getUserMedia, requiere HTTPS (Apps Script ya es HTTPS)
+- **Paleta:** azul marino `#003366` / azul medio `#0055a4` / cyan `#0099CC` sobre blancos y grises slate
+- **Dark mode completo** vía atributo `data-theme="dark"` con variables CSS
+- **Fuente:** Segoe UI / Arial, sin-serif
+- **Bordes:** radius generoso (10–14px), sombras suaves en capas
+- **Motivo decorativo recurrente:** olas SVG animadas en multicapa (splash, dashboard, watermark del documento, formulario)
+- **Logo:** SVG inline — grilla de peces + olas + checkmark — en todas las vistas
+- **Responsive:** navbar colapsado en móvil, modales como bottom-sheet en pantallas pequeñas, grillas adaptables
 
 ---
 
-## ⚠️ Permisos requeridos
+## Guía de despliegue
 
-Al ejecutar por primera vez, Google pedirá autorizar:
+### 1. Crear el proyecto en Apps Script
+
+1. Ve a [script.google.com](https://script.google.com)
+2. Clic en **Nuevo proyecto** y nómbralo `Certimar - Registro de Visita`
+
+### 2. Copiar los archivos
+
+- **`Code.gs`:** borra el contenido por defecto y pega el contenido del archivo
+- **`Index.html`:** clic en **+** → **HTML**, nómbralo `Index` (sin extensión), pega el contenido
+- **`FirebaseConfig.html`:** crear como HTML con nombre `FirebaseConfig`
+- **`ConcesionesData`:** crear como HTML con nombre `ConcesionesData`
+- **`appsscript.json`:** en **Ver → Mostrar archivo de manifiesto**, reemplazar contenido
+
+### 3. Configurar constantes en `Code.gs`
+
+```javascript
+const SPREADSHEET_ID    = 'ID_DE_TU_SPREADSHEET';
+const SHEET_NAME        = 'RV';
+const DRIVE_FOLDER_ID   = 'ID_DE_TU_CARPETA_DRIVE';
+const EMAIL_REMITENTE   = 'tu@empresa.cl';
+const TIMEZONE          = 'America/Santiago';
+const FIREBASE_PROJECT_ID = 'tu-proyecto-firebase';
+const WEBHOOK_SECRET    = 'TU_SECRET_COMPARTIDO';
+```
+
+### 4. Inicializar la hoja (una sola vez)
+
+1. Seleccionar función `inicializarHoja` en el editor
+2. Clic en **Ejecutar** y aceptar los permisos
+3. Esto crea la hoja `RV` con encabezados y formato
+
+### 5. Publicar como Web App
+
+1. **Implementar → Nueva implementación**
+2. Tipo: **Aplicación web**
+3. Ejecutar como: **Usuario que accede a la aplicación**
+4. Quién puede acceder: **Cualquier usuario de Google**
+5. Copiar la URL generada (`https://script.google.com/macros/s/.../exec`)
+
+### 6. Configurar Firebase (opcional, para tiempo real)
+
+Actualizar `FirebaseConfig.html` con las credenciales del proyecto Firebase. El sistema funciona sin Firebase, pero sin actualizaciones en tiempo real.
+
+---
+
+## Permisos OAuth requeridos
+
+Al ejecutar por primera vez, Google solicitará autorizar:
 - Google Sheets (lectura/escritura)
 - Gmail (enviar correos)
 - Google Drive (subir archivos)
-- Info del usuario (email)
+- Información del usuario (email)
 
-Esto es normal y necesario para que la app funcione.
+---
+
+## Qué cambiar al replicar para otro tipo de certificación
+
+Lo **específico de acuicultura/Sernapesca** que debe adaptarse:
+
+| Elemento | Ubicación | Descripción |
+|---|---|---|
+| Resoluciones | `Index.html` + `Code.gs` | Reemplazar 1821-CIC E2, CA, VS, 1511, DESINFECCIÓN por las normas aplicables |
+| Campos del formulario | `Index.html` (sección `doc-table`) | Centro de Cultivo, ACS, siembra, peces → campos del nuevo dominio |
+| Autocomplete | `ConcesionesData` | Catálogo de entidades del nuevo dominio |
+| Prefijo del correlativo | `Code.gs` `_generarNroRegistro()` | `RV-` → el prefijo que corresponda |
+| Disclaimer legal | `Index.html` (sección firma) | Texto de la norma y organismo regulador |
+| Texto del email | `Code.gs` `_plantillaEmail()` | Saludo, descripción y referencia normativa |
+| Nombre del sistema | `Index.html` título, splash, nav | "Registro de Visita" → nombre del nuevo documento |
+
+Lo **reutilizable sin cambios:** autenticación, Drive, Sheets, Firebase, generación de PDF, firma canvas, notificaciones sidebar, dark mode, dashboard con Charts, Histórico, Admin, responsive.

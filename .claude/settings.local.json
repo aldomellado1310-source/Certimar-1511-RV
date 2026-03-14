@@ -2,7 +2,18 @@
   "permissions": {
     "allow": [
       "Bash(node -e \":*)",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "Bash(clasp login:*)",
+      "Read(//c/Users/aldon/.claude/projects/c--Users-aldon-Documents-Proyectos-Certimar-1511-RV/ec4a4cad-e6c3-4cd5-aea8-32c3776c83ba/tool-results/**)",
+      "Read(//c/Users/aldon/.claude/projects/c--Users-aldon-Documents-Proyectos-Certimar-1511-RV/memory/**)",
+      "Bash(clasp deployments:*)",
+      "Bash(for id:*)",
+      "Bash(do echo:*)",
+      "Bash(clasp push:*)",
+      "Bash(clasp deploy:*)"
+    ],
+    "additionalDirectories": [
+      "c:\\Users\\aldon\\.claude\\projects\\c--Users-aldon-Documents-Proyectos-Certimar-1511-RV\\memory"
     ]
   }
 }
