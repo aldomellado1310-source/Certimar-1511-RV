@@ -1176,11 +1176,15 @@ function _servirPaginaFirma(nroRegistro, token) {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light">
 <title>Firma de Conformidad – Certimar</title>
 <style>
+:root{color-scheme:light}
 *{box-sizing:border-box;margin:0;padding:0}
+html,body{background:#f1f5f9!important;color:#1e293b!important}
 body{font-family:Arial,sans-serif;background:#f1f5f9;min-height:100vh;padding:20px}
-.card{background:#fff;border-radius:12px;max-width:520px;margin:0 auto;box-shadow:0 2px 16px rgba(0,0,0,.1);overflow:hidden}
+canvas{background:#fff!important}
+.card{background:#fff!important;border-radius:12px;max-width:520px;margin:0 auto;box-shadow:0 2px 16px rgba(0,0,0,.1);overflow:hidden}
 .hdr{background:#003366;padding:22px 28px}
 .hdr h1{color:#fff;font-size:19px;letter-spacing:1px}
 .hdr p{color:#93c5fd;font-size:12px;margin-top:3px}

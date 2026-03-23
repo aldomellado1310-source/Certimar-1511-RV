@@ -760,6 +760,9 @@ video{width:100%;border-radius:8px;background:black}
         </button>
       </div>
       <div class="nav-right">
+        <button class="btn-theme" onclick="openSettings()" title="Configuraciones" style="margin-left:0">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+        </button>
         <button class="btn-theme" onclick="toggleTheme()" id="btn-theme" title="Cambiar tema">🌙</button>
         <div class="user-chip hidden" id="user-chip">
           <div class="user-avatar" id="user-avatar">U</div>
@@ -1074,6 +1077,11 @@ video{width:100%;border-radius:8px;background:black}
           <!-- Cliente -->
           <div class="firma-col" style="position:relative">
             <button onclick="clearFirmaCliente()" style="position:absolute;top:0;right:4px;background:none;border:none;color:#ef4444;padding:4px;border-radius:4px;cursor:pointer;font-size:16px" title="Borrar firma">✕</button>
+            <input type="file" id="firma-cliente-img-input" accept="image/*" style="display:none" onchange="cargarImagenFirmaCliente(this)">
+            <button id="btn-subir-firma-img" onclick="document.getElementById('firma-cliente-img-input').click()" style="display:none;position:absolute;top:0;left:4px;background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;border-radius:6px;padding:3px 10px;font-size:10px;font-weight:600;cursor:pointer" title="Cargar imagen como firma">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:-1px"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              Imagen
+            </button>
             <div style="position:relative">
               <div id="firma-placeholder" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;opacity:.2;pointer-events:none">
                 <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
@@ -1469,6 +1477,35 @@ video{width:100%;border-radius:8px;background:black}
   </div>
 </div>
 
+<!-- ===================== MODAL CONFIGURACIONES ===================== -->
+<div class="modal-overlay hidden" id="modal-settings">
+  <div class="modal-box" style="max-width:420px">
+    <div class="modal-header">
+      <h2>Configuraciones</h2>
+      <button class="modal-close" onclick="closeSettings()">×</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:11px;color:#94a3b8;margin:0 0 16px;text-transform:uppercase;letter-spacing:.6px;font-weight:700">Firma del Cliente</p>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid #f1f5f9">
+        <div>
+          <div style="font-size:14px;font-weight:600;color:#1e293b">Subir imagen como firma</div>
+          <div style="font-size:12px;color:#64748b;margin-top:2px">Permite cargar una imagen desde el PC como firma del responsable</div>
+        </div>
+        <label style="position:relative;display:inline-block;width:44px;height:24px;flex-shrink:0;margin-left:16px">
+          <input type="checkbox" id="cfg-firma-imagen" onchange="toggleSettingFirmaImagen(this.checked)"
+            style="opacity:0;width:0;height:0;position:absolute">
+          <span id="cfg-firma-imagen-track" style="position:absolute;inset:0;background:#d1d5db;border-radius:12px;transition:.2s;cursor:pointer">
+            <span id="cfg-firma-imagen-thumb" style="position:absolute;left:3px;top:3px;width:18px;height:18px;background:white;border-radius:50%;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.3)"></span>
+          </span>
+        </label>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-action btn-save" onclick="closeSettings()" style="border-color:#d1d5db;color:#374151">Cerrar</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // =====================================================================
 //  ESTADO GLOBAL
@@ -1693,6 +1730,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   initFirmaCertificador();
   initFirmaCliente();
+  applySettingFirmaImagen();
   initChecklist();
   resetFormulario();
   generarParticulas();
@@ -2016,6 +2054,75 @@ function clearFirmaCliente() {
   document.getElementById('firma-placeholder').style.display = '';
   try { localStorage.removeItem('certimar_draft_firma'); } catch(e) {}
   checkChecklist();
+}
+
+// =====================================================================
+//  IMAGEN DE FIRMA CLIENTE
+// =====================================================================
+function cargarImagenFirmaCliente(input) {
+  if (!input.files || !input.files[0]) return;
+  var file = input.files[0];
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var canvas = document.getElementById('firma-cliente');
+    var ctx = canvas.getContext('2d');
+    var img = new Image();
+    img.onload = function() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      // Escalar manteniendo proporción, centrado
+      var scale = Math.min(canvas.width / img.width, canvas.height / img.height);
+      var x = (canvas.width  - img.width  * scale) / 2;
+      var y = (canvas.height - img.height * scale) / 2;
+      ctx.drawImage(img, x, y, img.width * scale, img.height * scale);
+      firmaClienteHasData = true;
+      document.getElementById('firma-placeholder').style.display = 'none';
+      try { localStorage.setItem('certimar_draft_firma', canvas.toDataURL()); } catch(e) {}
+      checkChecklist();
+      toast('Imagen cargada como firma', 'success');
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+  input.value = ''; // reset para permitir cargar misma imagen de nuevo
+}
+
+// =====================================================================
+//  CONFIGURACIONES
+// =====================================================================
+function openSettings() {
+  var checked = localStorage.getItem('certimar_allow_firma_imagen') === 'true';
+  var chk = document.getElementById('cfg-firma-imagen');
+  chk.checked = checked;
+  _updateToggleUI(checked);
+  document.getElementById('modal-settings').classList.remove('hidden');
+}
+
+function closeSettings() {
+  document.getElementById('modal-settings').classList.add('hidden');
+}
+
+function toggleSettingFirmaImagen(checked) {
+  localStorage.setItem('certimar_allow_firma_imagen', checked ? 'true' : 'false');
+  _updateToggleUI(checked);
+  applySettingFirmaImagen();
+}
+
+function _updateToggleUI(checked) {
+  var track = document.getElementById('cfg-firma-imagen-track');
+  var thumb = document.getElementById('cfg-firma-imagen-thumb');
+  if (checked) {
+    track.style.background = '#1d4ed8';
+    thumb.style.left = '23px';
+  } else {
+    track.style.background = '#d1d5db';
+    thumb.style.left = '3px';
+  }
+}
+
+function applySettingFirmaImagen() {
+  var allowed = localStorage.getItem('certimar_allow_firma_imagen') === 'true';
+  var btn = document.getElementById('btn-subir-firma-img');
+  if (btn) btn.style.display = allowed ? '' : 'none';
 }
 
 // =====================================================================
