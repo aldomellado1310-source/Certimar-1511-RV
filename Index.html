@@ -487,6 +487,8 @@ video{width:100%;border-radius:8px;background:black}
 .btn-editar-hist:hover{background:#dbeafe}
 .btn-hist-audit{background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;border-radius:6px;padding:4px 8px;font-size:11px;font-weight:600;cursor:pointer;transition:.15s}
 .btn-hist-audit:hover{background:#dcfce7}
+.btn-hist-dl{background:#f0fdf4;color:#15803d;border:1px solid #bbf7d0;border-radius:6px;padding:4px 8px;font-size:11px;font-weight:600;cursor:pointer;transition:.15s;text-decoration:none;display:inline-block}
+.btn-hist-dl:hover{background:#dcfce7}
 .audit-entry{border-left:3px solid #e2e8f0;padding:8px 12px;margin-bottom:8px;background:#f8fafc;border-radius:0 6px 6px 0}
 .audit-entry-creado{border-left-color:#16a34a}
 .audit-entry-editado{border-left-color:#1d4ed8}
@@ -1089,7 +1091,7 @@ video{width:100%;border-radius:8px;background:black}
                   <line x1="12" y1="19" x2="12" y2="22"/>
                 </svg>
               </div>
-              <canvas id="firma-cliente" width="280" height="90" class="firma-canvas"></canvas>
+              <canvas id="firma-cliente" width="320" height="120" class="firma-canvas"></canvas>
             </div>
             <div class="firma-line"></div>
             <input type="text" id="r-nombreResponsable" class="firma-input-name" placeholder="Nombre Responsable" oninput="checkChecklist()">
@@ -1227,7 +1229,7 @@ video{width:100%;border-radius:8px;background:black}
             </tr>
           </thead>
           <tbody id="hist-tbody">
-            <tr><td colspan="8" class="hist-empty">
+            <tr><td colspan="10" class="hist-empty">
               <div class="spinner dark" style="margin:0 auto 8px"></div>
               Cargando registros...
             </td></tr>
@@ -1583,6 +1585,7 @@ async function fbGuardarRegistro(datos, urlCertificado, urlFoto) {
     nombreResponsable: datos.nombreResponsable || '',
     emailResponsable : datos.emailDestinatario || '',
     nombreCertificador: datos.nombreCertificador || '',
+    rutCertificador  : datos.rutCertificador   || '',
     urlCertificado   : urlCertificado || '',
     urlFoto          : urlFoto        || '',
     estado           : 'GUARDADO',
@@ -1626,6 +1629,19 @@ async function fbObtenerRegistros(filtros) {
   var docs = [];
   snap.forEach(function(d) { docs.push(Object.assign({ id: d.id }, d.data())); });
   return docs;
+}
+
+// =====================================================================
+//  FIREBASE STORAGE — SUBIR PDF
+// =====================================================================
+async function _subirPDFStorage(pdfB64, nroRegistro) {
+  if (!pdfB64 || !pdfB64.startsWith('data:application/pdf')) return '';
+  if (typeof firebase === 'undefined' || !firebase.storage) return '';
+  var raw   = pdfB64.replace(/^data:application\/pdf;base64,/, '');
+  var bytes = Uint8Array.from(atob(raw), function(c){ return c.charCodeAt(0); });
+  var ref   = firebase.storage().ref('certificados/CertimarRV_' + nroRegistro + '.pdf');
+  await ref.put(bytes.buffer, { contentType: 'application/pdf' });
+  return await ref.getDownloadURL();
 }
 
 // =====================================================================
@@ -1673,8 +1689,8 @@ async function fbObtenerEstadisticas() {
 
   registros.forEach(function(r) {
     if (!ultima) ultima = r;
-    var partes = (r.fecha || '').split('-');
-    var d = partes.length === 3 ? new Date(partes[2], partes[1]-1, partes[0]) : null;
+    var partes = (r.fecha || '').split(/\s+/)[0].split('-');
+    var d = partes.length === 3 ? new Date(parseInt(partes[2],10), parseInt(partes[1],10)-1, parseInt(partes[0],10)) : null;
     if (r.centroCultivo) centros.add(r.centroCultivo);
     if (d && d.getFullYear() === anio) {
       var mes = d.toLocaleDateString('es-CL', { month: 'short' });
@@ -2417,13 +2433,21 @@ async function handleActualizarRegistro() {
     });
     updateNotifStep('edit-sync','e-pdf','active');
 
-    // 3. Generar PDF actualizado
+    // 3. Generar PDF actualizado y subir a Firebase Storage
     var pdfB64 = null;
     try {
       if (window.jspdf && window.html2canvas) {
         var pdf = await generarPDF();
         pdfB64 = pdf.output('datauristring');
         appState.pdfB64 = pdfB64;
+        // Subir PDF actualizado a Firebase Storage
+        try {
+          var urlPdfStorageEdit = await _subirPDFStorage(pdfB64, datos.nroRegistro);
+          if (urlPdfStorageEdit) {
+            await db.collection('registros_visita').doc(datos.nroRegistro).update({ urlPdfStorage: urlPdfStorageEdit });
+            appState.savedData = Object.assign(appState.savedData || {}, { urlPdfStorage: urlPdfStorageEdit });
+          }
+        } catch(eSt) { console.warn('PDF Storage update (no fatal):', eSt); }
       }
     } catch(ePdf) { console.warn('PDF gen error (no fatal):', ePdf); }
     updateNotifStep('edit-sync','e-pdf','done');
@@ -2741,6 +2765,10 @@ async function handleSyncGoogle() {
       }
     })();
 
+    // Firebase Storage — subir PDF en paralelo
+    var pdfStoragePromise = _subirPDFStorage(pdfB64, datos.nroRegistro)
+      .catch(function(e){ console.warn('PDF Storage error (no fatal):', e); return ''; });
+
     // 3. Firestore — escritura inmediata (~200ms)
     // En modo regeneración solo se actualiza el documento existente (no se crea uno nuevo)
     if (_modoRegeneracion) {
@@ -2751,10 +2779,11 @@ async function handleSyncGoogle() {
     updateNotifStep('sync','step-firebase','done');
     updateNotifStep('sync','step-drive','active');
 
-    // 4. Esperar Drive y foto en paralelo
-    var results = await Promise.all([drivePromise, fotoStoragePromise]);
+    // 4. Esperar Drive, foto y PDF Storage en paralelo
+    var results = await Promise.all([drivePromise, fotoStoragePromise, pdfStoragePromise]);
     urlCertificado = results[0];
-    urlFoto = results[1];
+    urlFoto        = results[1];
+    var urlPdfStorage = results[2] || '';
     updateNotifStep('sync','step-drive', urlCertificado ? 'done' : 'warn');
     updateNotifStep('sync','step-sheets','active');
 
@@ -2776,7 +2805,8 @@ async function handleSyncGoogle() {
     // 6. Actualizar Firestore con URLs si se obtuvieron
     var fsUpdate = {};
     if (urlCertificado) fsUpdate.urlCertificado = urlCertificado;
-    if (urlFoto)        fsUpdate.urlFoto = urlFoto;
+    if (urlFoto)        fsUpdate.urlFoto        = urlFoto;
+    if (urlPdfStorage)  fsUpdate.urlPdfStorage  = urlPdfStorage;
     // Registrar en historial de auditoría
     fsUpdate.historialEdiciones = firebase.firestore.FieldValue.arrayUnion({
       accion  : _modoRegeneracion ? 'pdf_regenerado' : 'creado',
@@ -2791,7 +2821,7 @@ async function handleSyncGoogle() {
     }, 400);
 
     appState.saved = true;
-    appState.savedData = Object.assign({}, datos, { urlCert: urlCertificado });
+    appState.savedData = Object.assign({}, datos, { urlCert: urlCertificado, urlPdfStorage: urlPdfStorage });
     setBtnGuardar(true);
     limpiarBorrador();
     updateCustomCentroIfNeeded(datos);
@@ -2803,7 +2833,7 @@ async function handleSyncGoogle() {
       resoluciones: buildResExt(datos.resoluciones),
       observaciones: datos.observaciones, tipoObs: datos.tipoObservacion,
       responsable: datos.nombreResponsable, emailResp: emailDest,
-      urlCert: urlCertificado, estado: 'GUARDADO',
+      urlCert: urlCertificado, urlPdfStorage: urlPdfStorage, estado: 'GUARDADO',
       creadoPor: currentUser ? currentUser.email : ''
     });
 
@@ -3146,7 +3176,7 @@ function renderVencer(stats) {
 // =====================================================================
 function cargarHistorico() {
   document.getElementById('hist-tbody').innerHTML =
-    '<tr><td colspan="9" class="hist-empty"><div class="spinner dark" style="margin:0 auto 8px"></div>Cargando registros…</td></tr>';
+    '<tr><td colspan="10" class="hist-empty"><div class="spinner dark" style="margin:0 auto 8px"></div>Cargando registros…</td></tr>';
   document.getElementById('hist-footer').textContent = 'Consultando Firestore…';
 
   pushNotif('hist-load', 'info', '📋 Cargando Histórico…', [
@@ -3177,7 +3207,7 @@ function cargarHistorico() {
 
     if (historicData.length === 0) {
       document.getElementById('hist-tbody').innerHTML =
-        '<tr><td colspan="9" class="hist-empty">' +
+        '<tr><td colspan="10" class="hist-empty">' +
         '<div style="font-size:32px;margin-bottom:10px">📋</div>' +
         'No hay registros aún.<br>' +
         '<span style="font-size:11px;color:var(--text-muted)">Crea tu primer registro con "Nueva Visita"</span>' +
@@ -3200,7 +3230,7 @@ function cargarHistorico() {
       renderHistorico(historicData);
     } else {
       document.getElementById('hist-tbody').innerHTML =
-        '<tr><td colspan="9" class="hist-empty" style="color:var(--error)">⚠️ Sin conexión a Firestore<br>' +
+        '<tr><td colspan="10" class="hist-empty" style="color:var(--error)">⚠️ Sin conexión a Firestore<br>' +
         '<span style="font-size:11px">'+esc(String(e))+'</span><br>' +
         '<span style="font-size:11px;color:var(--text-muted)">Verifica la configuración en FirebaseConfig.html</span></td></tr>';
     }
@@ -3229,7 +3259,7 @@ function renderHistorico(data) {
   var tbody  = document.getElementById('hist-tbody');
   var footer = document.getElementById('hist-footer');
   if (!data || !data.length) {
-    tbody.innerHTML = '<tr><td colspan="9" class="hist-empty">No se encontraron registros</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="10" class="hist-empty">No se encontraron registros</td></tr>';
     footer.textContent = '0 registros';
     return;
   }
@@ -3242,9 +3272,14 @@ function renderHistorico(data) {
     var res      = r.resoluciones || r.resExt || '—';
     var tipoObs  = r.tipoObservacion || r.tipoObs || '—';
     var resp     = r.nombreResponsable || r.responsable || '—';
-    var urlCert  = r.urlCertificado || r.urlCert || '';
-    var estado   = r.estado || 'GUARDADO';
-    var certLink = urlCert ? '<a href="'+esc(urlCert)+'" target="_blank" class="link-cert">📄 Ver PDF</a>' : '—';
+    var urlCert     = r.urlCertificado || r.urlCert || '';
+    var urlPdfSt    = r.urlPdfStorage  || '';
+    var estado      = r.estado || 'GUARDADO';
+    var dlUrl       = urlPdfSt || urlCert;   // Firebase Storage primero, Drive como fallback
+    var certLink    = urlCert || urlPdfSt
+      ? '<a href="'+esc(urlCert || urlPdfSt)+'" target="_blank" class="link-cert">📄 Ver</a> '+
+        (dlUrl ? '<button class="btn-hist-dl" onclick="descargarPDFDirecto('+JSON.stringify(dlUrl)+','+JSON.stringify(nro)+')" title="Descargar PDF">⬇ Descargar</button>' : '')
+      : '—';
     var badgeCls = estado === 'ENVIADO' ? 'badge-ok' : estado === 'ARCHIVADO' ? 'badge-warn' : 'badge-blue';
     var icon     = estado === 'ENVIADO' ? '✉️' : estado === 'ARCHIVADO' ? '📁' : '💾';
     return '<tr>'+
@@ -3265,6 +3300,42 @@ function renderHistorico(data) {
   footer.textContent = 'Mostrando ' + data.length + ' registro' + (data.length!==1?'s':'') + ' · Firestore';
 }
 
+
+// =====================================================================
+//  DESCARGA DIRECTA DE PDF DESDE HISTÓRICO
+//  Usa proxy server-side (UrlFetchApp) para evitar CORS.
+// =====================================================================
+function descargarPDFDirecto(urlPdf, nro) {
+  if (!urlPdf) { toast('No hay PDF disponible para este registro', 'error'); return; }
+  toast('Descargando PDF…', 'info');
+  google.script.run
+    .withSuccessHandler(function(res) {
+      if (!res || !res.ok) {
+        // Fallback: abrir en Drive si el proxy falla
+        window.open(urlPdf, '_blank');
+        toast('Abriendo en nueva pestaña…', 'info');
+        return;
+      }
+      var byteStr = atob(res.b64);
+      var bytes   = new Uint8Array(byteStr.length);
+      for (var i = 0; i < byteStr.length; i++) bytes[i] = byteStr.charCodeAt(i);
+      var blob   = new Blob([bytes], { type: res.mimeType || 'application/pdf' });
+      var objUrl = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = objUrl;
+      a.download = 'CertimarRV_' + nro + '.pdf';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(function(){ URL.revokeObjectURL(objUrl); }, 10000);
+      toast('PDF descargado ✓', 'success');
+    })
+    .withFailureHandler(function(e) {
+      window.open(urlPdf, '_blank');
+      toast('Abriendo en nueva pestaña…', 'info');
+    })
+    .fetchArchivoComoBase64(urlPdf);
+}
 
 function esc(str) {
   return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
@@ -3491,6 +3562,7 @@ async function cargarRegistroParaEdicion(nroRegistro, autoPreview) {
     set('r-nombreResponsable',r.nombreResponsable|| '');
     set('r-emailResponsable', r.emailResponsable || '');
     set('r-nombreCertificador',r.nombreCertificador || r.certNombre || '');
+    set('r-rutCertificador',   r.rutCertificador   || '');
 
     // Resoluciones (checkboxes desde string "1821-CIC E2, 1511, ...")
     var resStr = r.resoluciones || '';
@@ -3515,7 +3587,7 @@ async function cargarRegistroParaEdicion(nroRegistro, autoPreview) {
 
     // Activar modo edición
     appState.modoEdicion = true;
-    appState.savedData   = { urlCert: r.urlCertificado || '' };
+    appState.savedData   = { urlCert: r.urlCertificado || '', urlPdfStorage: r.urlPdfStorage || '' };
 
     // Mostrar banner de edición
     var doc = document.getElementById('registro-documento');
@@ -3555,6 +3627,25 @@ async function cargarRegistroParaEdicion(nroRegistro, autoPreview) {
         checkChecklist();
       };
       imgFirma.src = firmaB64Guardada;
+    }
+
+    // Restaurar foto de evidencia desde Firebase Storage (via proxy server-side, sin CORS)
+    var fotoUrl = r.urlFoto || '';
+    if (fotoUrl) {
+      google.script.run
+        .withSuccessHandler(function(res) {
+          if (!res || !res.ok) return;
+          var dataUri = 'data:' + (res.mimeType || 'image/jpeg') + ';base64,' + res.b64;
+          appState.fotoB64 = dataUri;
+          var imgEl = document.getElementById('photo-img');
+          imgEl.src = dataUri;
+          imgEl.style.display = 'block';
+          document.getElementById('photo-preview').classList.remove('hidden');
+          document.getElementById('foto-badge').classList.remove('hidden');
+          checkChecklist();
+        })
+        .withFailureHandler(function(e){ console.warn('No se pudo restaurar la foto:', e); })
+        .fetchArchivoComoBase64(fotoUrl);
     }
 
     checkChecklist();
@@ -4084,8 +4175,8 @@ function cargarAdmin() {
     var totalMes = 0, enviados = 0, pendientes = 0;
     docs.forEach(function(d) {
       if (d.creadoPor) certs.add(d.creadoPor);
-      var partes = (d.fecha||'').split('-');
-      var f = partes.length===3 ? new Date(partes[2],partes[1]-1,partes[0]) : null;
+      var partes = (d.fecha||'').split(/\s+/)[0].split('-');
+      var f = partes.length===3 ? new Date(parseInt(partes[2],10),parseInt(partes[1],10)-1,parseInt(partes[0],10)) : null;
       if (f && f.getFullYear()===anio && f.getMonth()===mes) totalMes++;
       if (d.estado==='ENVIADO') enviados++;
       if (d.estado==='GUARDADO') pendientes++;
@@ -4241,7 +4332,9 @@ function admReenviarMail(nro, email) {
   var datos = { nroRegistro: r.nroRegistro, fecha: r.fecha, centroCultivo: r.centroCultivo,
     nroCentro: r.nroCentro, acs: r.acs, titular: r.titular, nombreResponsable: r.nombreResponsable,
     emailDestinatario: dest, observaciones: r.observaciones, tipoObservacion: r.tipoObservacion,
-    resoluciones: r.resoluciones || '' };
+    resoluciones: r.resoluciones || '',
+    nombreCertificador: r.nombreCertificador || r.certNombre || '',
+    rutCertificador:    r.rutCertificador    || '' };
   google.script.run
     .withSuccessHandler(function(res) {
       if (res && res.ok) {

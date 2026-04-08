@@ -327,8 +327,11 @@ function obtenerRegistros(filtro) {
     if (lastRow < 2) return { ok: true, data: [] };
 
     // Leer hasta columna U (21) para incluir firma/token
-    const numCols  = Math.min(sheet.getLastColumn(), 21);
-    const valores  = sheet.getRange(2, 1, lastRow - 1, numCols).getValues();
+    const numCols    = Math.min(sheet.getLastColumn(), 21);
+    const valores    = sheet.getRange(2, 1, lastRow - 1, numCols).getValues();
+    // getValues() sobre HYPERLINK devuelve el texto visible ("Ver PDF"), no la URL.
+    // getFormulas() devuelve la fórmula completa, de donde se extrae la URL real.
+    const urlFormulas = sheet.getRange(2, 17, lastRow - 1, 1).getFormulas();
 
     const registros = [];
     for (let i = 0; i < valores.length; i++) {
@@ -345,11 +348,17 @@ function obtenerRegistros(filtro) {
         fecha = String(r[0] || '');
       }
 
-      // urlCert: si es fórmula HYPERLINK extraer la URL
-      let urlCert = String(r[16] || '');
-      if (urlCert.startsWith('=HYPERLINK')) {
-        const m = urlCert.match(/"(https?:\/\/[^"]+)"/);
+      // getValues() retorna el texto visible "Ver PDF", no la fórmula.
+      // Se lee la columna 17 con getFormulas() para extraer la URL real.
+      let urlCert = '';
+      const rawFormula = String(urlFormulas[i][0] || '');
+      if (rawFormula.startsWith('=HYPERLINK')) {
+        const m = rawFormula.match(/"(https?:\/\/[^"]+)"/);
         urlCert = m ? m[1] : '';
+      } else {
+        // Fallback: si la celda contiene directamente una URL (sin fórmula)
+        const rawVal = String(r[16] || '');
+        if (rawVal.startsWith('http')) urlCert = rawVal;
       }
 
       registros.push({
@@ -617,6 +626,28 @@ function _getInternalCopyEmail() {
   }
 }
 
+// ============================================================
+//  PROXY DE DESCARGA — Sirve archivos de Firebase Storage o Drive
+//  sin restricciones CORS (UrlFetchApp corre server-side).
+//  Retorna { ok, b64, mimeType } o { ok: false, error }.
+// ============================================================
+function fetchArchivoComoBase64(url) {
+  try {
+    if (!url) return { ok: false, error: 'URL vacía' };
+    const resp = UrlFetchApp.fetch(url, { muteHttpExceptions: true });
+    if (resp.getResponseCode() !== 200) {
+      return { ok: false, error: 'HTTP ' + resp.getResponseCode() };
+    }
+    const bytes    = resp.getContent();          // number[]
+    const b64      = Utilities.base64Encode(bytes);
+    const mimeType = resp.getHeaders()['Content-Type'] || 'application/octet-stream';
+    return { ok: true, b64, mimeType };
+  } catch(e) {
+    Logger.log('fetchArchivoComoBase64 error: ' + e);
+    return { ok: false, error: String(e) };
+  }
+}
+
 // Resuelve el blob PDF a adjuntar:
 //   - Si viene pdfBlob ya construido → lo usa directamente
 //   - Si viene urlCertificado → lo descarga desde Drive
@@ -654,12 +685,12 @@ function _enviarCorreoRV(datos, urlCertificado, pdfBlob) {
 
   GmailApp.sendEmail(destEmail, asunto, '', opciones);
 
-  // Copia interna al remitente corporativo (sin PDF para no duplicar adjuntos en el hilo)
+  // Copia interna al remitente corporativo — incluye PDF adjunto
   const copiaEmail = _getInternalCopyEmail();
   if (copiaEmail && copiaEmail !== destEmail) {
-    GmailApp.sendEmail(copiaEmail, '[COPIA INTERNA] ' + asunto, '', {
-      htmlBody, replyTo: EMAIL_REMITENTE, name: 'Certimar SpA'
-    });
+    const opsCopia = { htmlBody, replyTo: EMAIL_REMITENTE, name: 'Certimar SpA' };
+    if (blob) opsCopia.attachments = [blob.copyBlob()];
+    GmailApp.sendEmail(copiaEmail, '[COPIA INTERNA] ' + asunto, '', opsCopia);
   } else if (!copiaEmail) {
     Logger.log('_enviarCorreoRV: no se pudo resolver email para copia interna');
   }
@@ -700,6 +731,8 @@ function _plantillaEmail(datos, urlCert) {
     ['Tipo Observaci&oacute;n', datos.tipoObservacion || '&#8212;'],
     ['Resoluciones',       resStr],
     ['Observaciones',      (datos.observaciones || 'S/O').replace(/\n/g,'<br>')],
+    ['Certificador',       datos.nombreCertificador || '&#8212;'],
+    ['RUT Certificador',   datos.rutCertificador   || '&#8212;'],
   ].map(function(r, i) {
     const bg = i % 2 === 0 ? '#ffffff' : '#f1f5f9';
     return `<tr style="background:${bg}">
@@ -893,9 +926,11 @@ function getRegistroParaFirma(nroRegistro, token) {
 
     const lastRow = sheet.getLastRow();
     if (lastRow < 2) return { ok: false, error: 'Sin registros' };
-    const valores = sheet.getRange(2, 1, lastRow - 1, 21).getValues();
+    const valores     = sheet.getRange(2, 1, lastRow - 1, 21).getValues();
+    const urlFormulas = sheet.getRange(2, 17, lastRow - 1, 1).getFormulas();
 
-    for (const r of valores) {
+    for (let idx = 0; idx < valores.length; idx++) {
+      const r = valores[idx];
       if (String(r[1]).trim() !== nroRegistro) continue;
       const storedToken = String(r[19] || '').trim();
       if (!storedToken || storedToken !== token) {
@@ -931,12 +966,13 @@ function getRegistroParaFirma(nroRegistro, token) {
           nombreResponsable: String(r[14] || ''),
           emailResponsable : String(r[15] || ''),
           urlCertificado : (() => {
-            let u = String(r[16] || '');
-            if (u.startsWith('=HYPERLINK')) {
-              const m = u.match(/"(https?:\/\/[^"]+)"/);
-              u = m ? m[1] : '';
+            const rawFormula = String(urlFormulas[idx][0] || '');
+            if (rawFormula.startsWith('=HYPERLINK')) {
+              const m = rawFormula.match(/"(https?:\/\/[^"]+)"/);
+              return m ? m[1] : '';
             }
-            return u;
+            const rawVal = String(r[16] || '');
+            return rawVal.startsWith('http') ? rawVal : '';
           })()
         }
       };
@@ -992,8 +1028,9 @@ function submitFirma(nroRegistro, token, firmaB64, nombreResponsable, emailCorre
     const sheet = ss.getSheetByName(SHEET_NAME);
     if (!sheet) return { ok: false, error: 'Hoja no encontrada' };
 
-    const lastRow = sheet.getLastRow();
-    const valores = sheet.getRange(2, 1, lastRow - 1, 21).getValues();
+    const lastRow   = sheet.getLastRow();
+    const valores   = sheet.getRange(2, 1, lastRow - 1, 21).getValues();
+    const urlFormulas = sheet.getRange(2, 17, lastRow - 1, 1).getFormulas();
     let rowIdx = -1, emailResp = '', nroCentro = '', centroCultivo = '', urlCert = '', nombreResp = '';
 
     for (let i = 0; i < valores.length; i++) {
@@ -1012,9 +1049,14 @@ function submitFirma(nroRegistro, token, firmaB64, nombreResponsable, emailCorre
       centroCultivo = String(valores[i][2]  || '');
       nroCentro     = String(valores[i][3]  || '');
       nombreResp    = String(valores[i][14] || '');
-      let u = String(valores[i][16] || '');
-      if (u.startsWith('=HYPERLINK')) { const m = u.match(/"(https?:\/\/[^"]+)"/); u = m ? m[1] : ''; }
-      urlCert = u;
+      const rawFormula = String(urlFormulas[i][0] || '');
+      if (rawFormula.startsWith('=HYPERLINK')) {
+        const m = rawFormula.match(/"(https?:\/\/[^"]+)"/);
+        urlCert = m ? m[1] : '';
+      } else {
+        const rawVal = String(valores[i][16] || '');
+        urlCert = rawVal.startsWith('http') ? rawVal : '';
+      }
       break;
     }
     if (rowIdx < 0) return { ok: false, error: 'Registro no encontrado' };
@@ -1046,6 +1088,9 @@ function submitFirma(nroRegistro, token, firmaB64, nombreResponsable, emailCorre
     // Sincronizar firma + nombre a Firestore para que Regen. PDF los incluya
     _actualizarFirmaEnFirestore(nroRegistro, firmaB64, urlFirma, nombreFinal, emailFinal);
 
+    // Resolver PDF para adjuntar (descarga desde Drive si hay URL)
+    const pdfBlobFirma = _resolverPdfBlob({ nroRegistro, centroCultivo }, null, urlCert);
+
     // Enviar confirmación al responsable + copia a Certimar
     if (emailResp) {
       const asunto = '[Certimar] Conformidad de Visita firmada – ' + centroCultivo;
@@ -1071,9 +1116,9 @@ function submitFirma(nroRegistro, token, firmaB64, nombreResponsable, emailCorre
 </table>
 </td></tr>
 </table></body></html>`;
-      GmailApp.sendEmail(emailResp, asunto, '', {
-        htmlBody: html, replyTo: EMAIL_REMITENTE, name: 'Certimar SpA'
-      });
+      const opsFirma = { htmlBody: html, replyTo: EMAIL_REMITENTE, name: 'Certimar SpA' };
+      if (pdfBlobFirma) opsFirma.attachments = [pdfBlobFirma];
+      GmailApp.sendEmail(emailResp, asunto, '', opsFirma);
     }
 
     // Notificación interna a operaciones@certimar.cl
