@@ -1,15 +1,15 @@
-// ─── REEMPLAZA con tu configuración real ────────────────────────────────────
-// Firebase Console → Project Settings → Your apps → SDK setup and configuration
-const FIREBASE_CONFIG = {
-  apiKey           : 'TU_API_KEY',
-  authDomain       : 'TU_PROJECT.firebaseapp.com',
-  projectId        : 'TU_PROJECT_ID',
-  storageBucket    : 'TU_PROJECT.appspot.com',
-  messagingSenderId: 'TU_SENDER_ID',
-  appId            : 'TU_APP_ID'
+var FIREBASE_CONFIG = {
+  apiKey           : 'AIzaSyBVKhR5iqXFCW7OQjH2bMvn2nfrh4PjXgQ',
+  authDomain       : 'certimar-rv.firebaseapp.com',
+  projectId        : 'certimar-rv',
+  storageBucket    : 'certimar-rv.firebasestorage.app',
+  messagingSenderId: '272750169092',
+  appId            : '1:272750169092:web:14e734d16daaf3f070f951'
 };
 
-// Emails con acceso de administrador
-const ADMIN_EMAILS = [
-  'admin@certimar.cl'
+// Emails con rol administrador
+var ADMIN_EMAILS = [
+  'operaciones@certimar.cl',
+  'eflores@certimar.cl'
 ];
+
