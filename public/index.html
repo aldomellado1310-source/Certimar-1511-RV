@@ -4,9 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Registro de Visita – Certimar</title>
-<!-- jsPDF + html2canvas para generar PDF en el cliente -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#003366">
+<!-- jsPDF + html2canvas cargados bajo demanda (lazy-load) -->
 <!-- Chart.js para gráficos del dashboard -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <!-- Firebase SDK (compat v9) -->
@@ -2049,9 +2049,25 @@ function handleGuardar() {
 // =====================================================================
 //  DESCARGAR PDF
 // =====================================================================
+function loadScript(src) {
+  return new Promise(function(resolve, reject) {
+    var s = document.createElement('script');
+    s.src = src; s.onload = resolve; s.onerror = reject;
+    document.head.appendChild(s);
+  });
+}
+
+async function cargarLibsPDF() {
+  if (window.jspdf && window.html2canvas) return;
+  await Promise.all([
+    loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'),
+    loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js')
+  ]);
+}
+
 async function handleDescargarPDF() {
-  if (!window.jspdf || !window.html2canvas) { window.print(); return; }
   try {
+    await cargarLibsPDF();
     setBtnLoading('btn-pdf', true);
     pushNotif('pdf-dl', 'info', '📄 Generando PDF…', [
       { id:'pdf-render', label:'Capturando formulario en alta resolución', state:'active' },
@@ -2086,7 +2102,7 @@ async function generarPDF() {
     logging: false
   });
   var { jsPDF } = window.jspdf;
-  var pdf    = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
+  var pdf    = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4', compress:true });
   // JPEG 88% = mucho más liviano que PNG y suficiente para impresión
   var imgData = canvas.toDataURL('image/jpeg', 0.88);
   var pdfW    = pdf.internal.pageSize.getWidth();
@@ -2133,17 +2149,16 @@ async function handleSyncGoogle() {
   // 1. Generar PDF (cliente, rápido)
   var pdfB64 = null;
   try {
-    if (window.jspdf && window.html2canvas) {
-      pushNotif('pdf', 'info', '📄 Generando PDF', [
-        { id:'pdf-render', label:'Renderizando formulario', state:'active' }
-      ]);
-      var pdf = await generarPDF();
-      // datauristring es el método correcto de jsPDF — evita problemas con btoa + binario
-      pdfB64 = pdf.output('datauristring');
-      appState.pdfB64 = pdfB64;
-      updateNotifStep('pdf', 'pdf-render', 'done');
-      removeNotif('pdf');
-    }
+    pushNotif('pdf', 'info', '📄 Generando PDF', [
+      { id:'pdf-render', label:'Renderizando formulario', state:'active' }
+    ]);
+    await cargarLibsPDF();
+    var pdf = await generarPDF();
+    // datauristring es el método correcto de jsPDF — evita problemas con btoa + binario
+    pdfB64 = pdf.output('datauristring');
+    appState.pdfB64 = pdfB64;
+    updateNotifStep('pdf', 'pdf-render', 'done');
+    removeNotif('pdf');
   } catch(e) {
     updateNotifCard('pdf','error','❌ Error al generar PDF', String(e));
     return;
@@ -2382,39 +2397,41 @@ function handleEnviarMail() {
 
   setTimeout(function() { updateNotifStep('mail-send','m1','done'); updateNotifStep('mail-send','m2','active'); }, 800);
 
-  google.script.run
-    .withSuccessHandler(function(res) {
-      setBtnLoading('btn-enviar-mail', false);
-      if (res && res.ok) {
-        updateNotifStep('mail-send','m2','done');
-        updateNotifStep('mail-send','m3','done');
-        setTimeout(function() {
-          updateNotifCard('mail-send', 'success', '✉️ Correo enviado correctamente',
-            'Para: ' + emailDest + (emailCC ? ' · CC: ' + emailCC : ''));
-        }, 500);
+  firebase.functions().httpsCallable('enviarNotificacion')({
+    datos         : datos,
+    urlCertificado: appState.savedData ? appState.savedData.urlCert : '',
+    pdfB64        : appState.pdfB64
+  }).then(function(result) {
+    setBtnLoading('btn-enviar-mail', false);
+    var res = result.data;
+    if (res && res.ok) {
+      updateNotifStep('mail-send','m2','done');
+      updateNotifStep('mail-send','m3','done');
+      setTimeout(function() {
+        updateNotifCard('mail-send', 'success', '✉️ Correo enviado correctamente',
+          'Para: ' + emailDest + (emailCC ? ' · CC: ' + emailCC : ''));
+      }, 500);
 
-        appState.sent = true;
-        var nro = datos.nroRegistro;
-        for (var i=0; i<localRecords.length; i++) {
-          if (localRecords[i].nroReg === nro) {
-            localRecords[i].estado = 'ENVIADO';
-            localRecords[i].emailResp = emailDest;
-            break;
-          }
+      appState.sent = true;
+      var nro = datos.nroRegistro;
+      for (var i=0; i<localRecords.length; i++) {
+        if (localRecords[i].nroReg === nro) {
+          localRecords[i].estado = 'ENVIADO';
+          localRecords[i].emailResp = emailDest;
+          break;
         }
-        lockForm(true);
-        showCompletionDialog(nro, true, emailDest);
-      } else {
-        updateNotifCard('mail-send', 'error', '❌ Error al enviar', res ? (res.error||'Error desconocido') : 'Sin respuesta del servidor');
-        toast('Error al enviar: '+(res && res.error ? res.error : 'sin respuesta'),'error');
       }
-    })
-    .withFailureHandler(function(e) {
-      setBtnLoading('btn-enviar-mail', false);
-      updateNotifCard('mail-send', 'error', '❌ Error de conexión', String(e||'Verifica permisos del script'));
-      toast('Error al enviar correo','error');
-    })
-    .enviarNotificacion(datos, appState.savedData ? appState.savedData.urlCert : '', appState.pdfB64);
+      lockForm(true);
+      showCompletionDialog(nro, true, emailDest);
+    } else {
+      updateNotifCard('mail-send', 'error', '❌ Error al enviar', res ? (res.error||'Error desconocido') : 'Sin respuesta del servidor');
+      toast('Error al enviar: '+(res && res.error ? res.error : 'sin respuesta'),'error');
+    }
+  }).catch(function(e) {
+    setBtnLoading('btn-enviar-mail', false);
+    updateNotifCard('mail-send', 'error', '❌ Error de conexión', String(e && e.message ? e.message : e));
+    toast('Error al enviar correo','error');
+  });
 }
 
 // =====================================================================
@@ -3380,21 +3397,22 @@ function admReenviarMail(nro, email) {
   var datos = { nroRegistro: r.nroRegistro, fecha: r.fecha, centroCultivo: r.centroCultivo,
     nroCentro: r.nroCentro, acs: r.acs, titular: r.titular, nombreResponsable: r.nombreResponsable,
     emailDestinatario: dest, observaciones: r.observaciones, tipoObservacion: r.tipoObservacion };
-  google.script.run
-    .withSuccessHandler(function(res) {
-      if (res && res.ok) {
-        updateNotifCard('adm-mail','success','✉️ Reenviado correctamente','Para: '+dest);
-        fbActualizarEstado(nro, 'ENVIADO', { emailResponsable: dest }).catch(function(){});
-        // Actualizar UI
-        var idx = _adminAll.findIndex(function(x){ return x.nroRegistro === nro; });
-        if (idx >= 0) { _adminAll[idx].estado = 'ENVIADO'; _adminAll[idx].emailResponsable = dest; }
-        filtrarAdmin();
-      } else {
-        updateNotifCard('adm-mail','error','❌ Error al reenviar', res ? res.error : 'Sin respuesta');
-      }
-    })
-    .withFailureHandler(function(e){ updateNotifCard('adm-mail','error','❌ Error',String(e)); })
-    .enviarNotificacion(datos, r.urlCertificado||'', null);
+  firebase.functions().httpsCallable('enviarNotificacion')({
+    datos         : datos,
+    urlCertificado: r.urlCertificado || '',
+    pdfB64        : null
+  }).then(function(result) {
+    var res = result.data;
+    if (res && res.ok) {
+      updateNotifCard('adm-mail','success','✉️ Reenviado correctamente','Para: '+dest);
+      fbActualizarEstado(nro, 'ENVIADO', { emailResponsable: dest }).catch(function(){});
+      var idx = _adminAll.findIndex(function(x){ return x.nroRegistro === nro; });
+      if (idx >= 0) { _adminAll[idx].estado = 'ENVIADO'; _adminAll[idx].emailResponsable = dest; }
+      filtrarAdmin();
+    } else {
+      updateNotifCard('adm-mail','error','❌ Error al reenviar', res ? res.error : 'Sin respuesta');
+    }
+  }).catch(function(e){ updateNotifCard('adm-mail','error','❌ Error',String(e && e.message ? e.message : e)); });
 }
 
 function exportarCSV() {
@@ -3428,5 +3446,14 @@ function toast(msg, type) {
 <!-- Dropdown autocomplete global (fuera de doc-paper para evitar overflow:hidden) -->
 <div id="ac-dropdown" class="autocomplete-dropdown" style="display:none;position:fixed"></div>
 
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function() {
+    navigator.serviceWorker.register('/sw.js').catch(function(e) {
+      console.warn('SW register failed:', e);
+    });
+  });
+}
+</script>
 </body>
 </html>

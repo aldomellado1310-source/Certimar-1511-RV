@@ -370,3 +370,130 @@ exports.enviarNotificacion = functions
 
   return { ok: true };
 });
+
+// ════════════════════════════════════════════════════════════════════════════
+//  FUNCIÓN 3 — generarLinkFirma
+//  Genera un token único y retorna la URL de firma para el cliente
+// ════════════════════════════════════════════════════════════════════════════
+exports.generarLinkFirma = functions
+  .runWith({ timeoutSeconds: 30, memory: '128MB' })
+  .https.onCall(async (data, context) => {
+
+  if (!context.auth) {
+    throw new functions.https.HttpsError('unauthenticated', 'Debes iniciar sesión.');
+  }
+
+  const { nro } = data;
+  if (!nro) {
+    throw new functions.https.HttpsError('invalid-argument', 'nro es requerido.');
+  }
+
+  const crypto = require('crypto');
+  const token  = crypto.randomUUID ? crypto.randomUUID() : crypto.randomBytes(16).toString('hex');
+
+  await db.collection('registros_visita').doc(nro).update({
+    tokenFirma  : token,
+    estadoFirma : 'PENDIENTE'
+  });
+
+  const projectId = process.env.GCLOUD_PROJECT || admin.app().options.projectId || 'certimar-rv';
+  const url = `https://${projectId}.web.app/firma?nro=${encodeURIComponent(nro)}&token=${encodeURIComponent(token)}`;
+
+  functions.logger.info('generarLinkFirma OK:', nro, url);
+  return { ok: true, url };
+});
+
+// ════════════════════════════════════════════════════════════════════════════
+//  FUNCIÓN 4 — procesarFirmaCliente
+//  Verifica token, sube firma a Storage y actualiza Firestore
+// ════════════════════════════════════════════════════════════════════════════
+exports.procesarFirmaCliente = functions
+  .runWith({ timeoutSeconds: 60, memory: '256MB' })
+  .https.onCall(async (data, context) => {
+
+  const { nro, firmaB64, token } = data;
+  if (!nro || !firmaB64 || !token) {
+    throw new functions.https.HttpsError('invalid-argument', 'nro, firmaB64 y token son requeridos.');
+  }
+
+  // Verificar token en Firestore
+  const docRef  = db.collection('registros_visita').doc(nro);
+  const docSnap = await docRef.get();
+  if (!docSnap.exists) {
+    throw new functions.https.HttpsError('not-found', 'Registro no encontrado.');
+  }
+  const registroData = docSnap.data();
+  if (registroData.tokenFirma !== token) {
+    throw new functions.https.HttpsError('permission-denied', 'Token de firma inválido o ya utilizado.');
+  }
+
+  // Subir firma a Storage
+  const bucket  = admin.storage().bucket();
+  const rawB64  = firmaB64.replace(/^data:image\/\w+;base64,/, '');
+  const buffer  = Buffer.from(rawB64, 'base64');
+  const filePath = `firmas/Firma_${nro}.png`;
+  const file    = bucket.file(filePath);
+
+  await file.save(buffer, { contentType: 'image/png', public: false });
+  const [url] = await file.getSignedUrl({
+    action : 'read',
+    expires: '2099-01-01'
+  });
+
+  // Actualizar Firestore
+  await docRef.update({
+    urlFirmaCliente: url,
+    estadoFirma    : 'FIRMADO',
+    tokenFirma     : ''
+  });
+
+  functions.logger.info('procesarFirmaCliente OK:', nro);
+  return { ok: true, urlFirmaCliente: url };
+});
+
+// ════════════════════════════════════════════════════════════════════════════
+//  FUNCIÓN 5 — migrarPDFsDrive  (TEMPORAL — eliminar post-migración)
+//  Descarga PDFs de Google Drive y los sube a Firebase Storage
+// ════════════════════════════════════════════════════════════════════════════
+exports.migrarPDFsDrive = functions
+  .runWith({ timeoutSeconds: 540, memory: '512MB' })
+  .https.onCall(async (data, context) => {
+
+  if (!context.auth) {
+    throw new functions.https.HttpsError('unauthenticated', 'Debes iniciar sesión.');
+  }
+
+  const { registros } = data;
+  if (!Array.isArray(registros) || !registros.length) {
+    throw new functions.https.HttpsError('invalid-argument', 'registros debe ser un arreglo no vacío.');
+  }
+
+  const fetch  = (...args) => import('node-fetch').then(({ default: f }) => f(...args));
+  const bucket = admin.storage().bucket();
+  const results = [];
+
+  for (const r of registros) {
+    const { nro, urlCertificado } = r;
+    if (!nro || !urlCertificado) {
+      results.push({ nro, ok: false, error: 'nro o urlCertificado faltante' });
+      continue;
+    }
+    try {
+      const resp = await fetch(urlCertificado);
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const buffer   = Buffer.from(await resp.arrayBuffer());
+      const filePath = `certificados/CertimarRV_${nro}.pdf`;
+      const file     = bucket.file(filePath);
+      await file.save(buffer, { contentType: 'application/pdf', public: false });
+      const [downloadURL] = await file.getSignedUrl({ action: 'read', expires: '2099-01-01' });
+      await db.collection('registros_visita').doc(nro).update({ urlPdfStorage: downloadURL });
+      functions.logger.info('migrarPDFsDrive OK:', nro);
+      results.push({ nro, ok: true, urlPdfStorage: downloadURL });
+    } catch (e) {
+      functions.logger.warn('migrarPDFsDrive ERROR:', nro, e.message);
+      results.push({ nro, ok: false, error: e.message });
+    }
+  }
+
+  return { ok: true, results };
+});
