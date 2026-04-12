@@ -322,6 +322,10 @@ input::placeholder,textarea::placeholder{color:var(--text-muted)}
 .admin-action-btn{background:none;border:1px solid var(--border);color:var(--text-sec);border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer;transition:.15s;display:inline-flex;align-items:center;gap:4px}
 .admin-action-btn:hover{background:var(--surface-2);color:var(--text-pri)}
 .admin-action-btn.danger:hover{background:var(--error-bg);color:var(--error);border-color:var(--error)}
+.admin-action-btn.warn{color:#d97706;border-color:#fbbf24}
+.admin-action-btn.warn:hover{background:#fffbeb;color:#b45309;border-color:#d97706}
+.admin-action-btn.ok{color:#059669;border-color:#6ee7b7}
+.admin-action-btn.ok:hover{background:#ecfdf5;color:#047857;border-color:#059669}
 .admin-empty{text-align:center;padding:48px;color:var(--text-muted);font-size:14px}
 .admin-footer{padding:12px 16px;background:var(--surface-2);border-top:1px solid var(--border);font-size:12px;color:var(--text-muted);display:flex;justify-content:space-between;align-items:center}
 
@@ -1155,6 +1159,10 @@ video{width:100%;border-radius:8px;background:black}
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
         Notificar Cliente
       </button>
+      <button class="btn-action" style="border-color:var(--border);color:var(--text-sec)" onclick="handleImprimir()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6,9 6,2 18,2 18,9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+        Imprimir
+      </button>
     </div>
     <p class="warn-msg hidden" id="warn-checklist">
       ⚠️ Complete el checklist de bloqueo para habilitar las acciones.
@@ -1168,6 +1176,12 @@ video{width:100%;border-radius:8px;background:black}
         <h1>Histórico de Registros</h1>
         <p style="font-size:13px;color:#64748b;margin-top:4px">Revise y administre los registros de visita anteriores</p>
       </div>
+      <div style="display:flex;gap:10px;align-items:center">
+        <button class="btn-action" style="border-color:var(--border);color:var(--text-sec);font-size:12px;padding:7px 14px" onclick="exportarCSVHistorico()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7,10 12,15 17,10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Exportar CSV
+        </button>
+      </div>
     </div>
     <div class="hist-table-wrap">
       <div class="hist-search-bar">
@@ -1175,6 +1189,12 @@ video{width:100%;border-radius:8px;background:black}
         <div style="display:flex;gap:8px">
           <input type="date" id="hist-desde" class="filtro-input" style="width:140px" onchange="filtrarHistorico()">
           <input type="date" id="hist-hasta" class="filtro-input" style="width:140px" onchange="filtrarHistorico()">
+          <select id="hist-estado" class="filtro-input" style="width:130px" onchange="filtrarHistorico()">
+            <option value="">Todos los estados</option>
+            <option value="GUARDADO">Guardado</option>
+            <option value="ENVIADO">Enviado</option>
+            <option value="ARCHIVADO">Archivado</option>
+          </select>
         </div>
       </div>
       <div style="overflow-x:auto">
@@ -1182,11 +1202,11 @@ video{width:100%;border-radius:8px;background:black}
           <thead>
             <tr>
               <th>ID Registro</th><th>Fecha</th><th>Centro</th><th>Titular</th>
-              <th>Res. Ext.</th><th>Tipo Obs.</th><th>Responsable</th><th>Estado</th><th>Certificado</th>
+              <th>Res. Ext.</th><th>Tipo Obs.</th><th>Responsable</th><th>Estado</th><th>Certificado</th><th>Acciones</th>
             </tr>
           </thead>
           <tbody id="hist-tbody">
-            <tr><td colspan="8" class="hist-empty">
+            <tr><td colspan="10" class="hist-empty">
               <div class="spinner dark" style="margin:0 auto 8px"></div>
               Cargando registros...
             </td></tr>
@@ -1206,7 +1226,12 @@ video{width:100%;border-radius:8px;background:black}
       </div>
       <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
         <button class="btn-action" style="border-color:var(--border);color:var(--text-sec);font-size:12px;padding:7px 14px" onclick="exportarCSV()">
-          ⬇️ Exportar CSV
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7,10 12,15 17,10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Exportar CSV
+        </button>
+        <button class="btn-action" style="border-color:#16a34a;color:#15803d;font-size:12px;padding:7px 14px" onclick="exportarExcel()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+          Exportar Excel
         </button>
         <button class="btn-nueva" onclick="showView('registro')">+ Nueva Visita</button>
       </div>
@@ -1318,6 +1343,29 @@ video{width:100%;border-radius:8px;background:black}
       <button class="btn-archive" id="btn-confirmar-archive" onclick="handleConfirmarArchive()">
         📁 Confirmar Archivo
       </button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== MODAL ELIMINAR ===================== -->
+<div class="modal-overlay hidden" id="modal-eliminar">
+  <div class="modal-box" style="max-width:420px">
+    <div class="modal-header">
+      <h2>Eliminar registro</h2>
+      <button class="modal-close" onclick="closeModalEliminar()">×</button>
+    </div>
+    <div style="padding:20px 24px">
+      <p style="font-size:13px;color:#374151;margin-bottom:6px">
+        ¿Eliminar definitivamente el registro <strong id="eliminar-nro"></strong>?
+      </p>
+      <p style="font-size:12px;color:#dc2626;margin-bottom:20px">Esta acción no se puede deshacer. El documento se borrará de Firestore.</p>
+      <div style="display:flex;gap:10px;justify-content:flex-end">
+        <button class="btn-action btn-save" onclick="closeModalEliminar()" style="border-color:#d1d5db;color:#374151;font-size:13px;padding:8px 16px">Cancelar</button>
+        <button class="btn-danger" id="btn-confirmar-eliminar" onclick="handleConfirmarEliminar()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3,6 5,6 21,6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
+          Eliminar
+        </button>
+      </div>
     </div>
   </div>
 </div>
@@ -2174,23 +2222,28 @@ async function handleSyncGoogle() {
 
   // Generar correlativo atómico justo antes de guardar (evita huecos por formularios abiertos sin guardar)
   var nroGenerado;
-  try {
-    nroGenerado = await fbGenerarNroRegistro();
-    set('r-nroRegistro', nroGenerado);
+  if (appState.editMode && appState.editNro) {
+    // Modo edición: conservar el N° de registro existente
+    nroGenerado = appState.editNro;
     updateNotifStep('sync','step-nro','done');
     updateNotifStep('sync','step-firebase','active');
-  } catch(e) {
-    // Fallback a Apps Script si Firebase falla
+  } else {
     try {
-      // Reintentar Firestore una vez más
       nroGenerado = await fbGenerarNroRegistro();
       set('r-nroRegistro', nroGenerado);
       updateNotifStep('sync','step-nro','done');
       updateNotifStep('sync','step-firebase','active');
-    } catch(e2) {
-      updateNotifCard('sync','error','❌ No se pudo obtener correlativo', String(e2));
-      setBtnLoading('btn-sync', false);
-      return;
+    } catch(e) {
+      try {
+        nroGenerado = await fbGenerarNroRegistro();
+        set('r-nroRegistro', nroGenerado);
+        updateNotifStep('sync','step-nro','done');
+        updateNotifStep('sync','step-firebase','active');
+      } catch(e2) {
+        updateNotifCard('sync','error','❌ No se pudo obtener correlativo', String(e2));
+        setBtnLoading('btn-sync', false);
+        return;
+      }
     }
   }
 
@@ -2622,7 +2675,7 @@ function renderVencer(stats) {
 // =====================================================================
 function cargarHistorico() {
   document.getElementById('hist-tbody').innerHTML =
-    '<tr><td colspan="9" class="hist-empty"><div class="spinner dark" style="margin:0 auto 8px"></div>Cargando registros…</td></tr>';
+    '<tr><td colspan="10" class="hist-empty"><div class="spinner dark" style="margin:0 auto 8px"></div>Cargando registros…</td></tr>';
   document.getElementById('hist-footer').textContent = 'Consultando Firestore…';
 
   pushNotif('hist-load', 'info', '📋 Cargando Histórico…', [
@@ -2653,7 +2706,7 @@ function cargarHistorico() {
 
     if (historicData.length === 0) {
       document.getElementById('hist-tbody').innerHTML =
-        '<tr><td colspan="9" class="hist-empty">' +
+        '<tr><td colspan="10" class="hist-empty">' +
         '<div style="font-size:32px;margin-bottom:10px">📋</div>' +
         'No hay registros aún.<br>' +
         '<span style="font-size:11px;color:var(--text-muted)">Crea tu primer registro con "Nueva Visita"</span>' +
@@ -2676,7 +2729,7 @@ function cargarHistorico() {
       renderHistorico(historicData);
     } else {
       document.getElementById('hist-tbody').innerHTML =
-        '<tr><td colspan="9" class="hist-empty" style="color:var(--error)">⚠️ Sin conexión a Firestore<br>' +
+        '<tr><td colspan="10" class="hist-empty" style="color:var(--error)">⚠️ Sin conexión a Firestore<br>' +
         '<span style="font-size:11px">'+esc(String(e))+'</span><br>' +
         '<span style="font-size:11px;color:var(--text-muted)">Verifica la configuración en FirebaseConfig.html</span></td></tr>';
     }
@@ -2685,13 +2738,18 @@ function cargarHistorico() {
 
 
 function filtrarHistorico() {
-  var q      = document.getElementById('hist-search').value.toLowerCase();
+  var q      = (document.getElementById('hist-search').value || '').toLowerCase();
   var desde  = document.getElementById('hist-desde').value;
   var hasta  = document.getElementById('hist-hasta').value;
+  var est    = (document.getElementById('hist-estado') || {}).value || '';
   var filtered = historicData.filter(function(r) {
-    var ok = (!q || r.centro.toLowerCase().includes(q) || r.titular.toLowerCase().includes(q) || r.nroReg.toLowerCase().includes(q));
-    if (desde && r.fecha < desde) ok = false;
-    if (hasta && r.fecha > hasta) ok = false;
+    var nro    = (r.nroRegistro||r.nroReg||'').toLowerCase();
+    var centro = (r.centroCultivo||r.centro||'').toLowerCase();
+    var tit    = (r.titular||'').toLowerCase();
+    var ok = !q || nro.includes(q) || centro.includes(q) || tit.includes(q);
+    if (est && r.estado !== est) ok = false;
+    if (desde && fechaToISO(r.fecha) < desde) ok = false;
+    if (hasta && fechaToISO(r.fecha) > hasta) ok = false;
     return ok;
   });
   renderHistorico(filtered);
@@ -2701,7 +2759,7 @@ function renderHistorico(data) {
   var tbody  = document.getElementById('hist-tbody');
   var footer = document.getElementById('hist-footer');
   if (!data || !data.length) {
-    tbody.innerHTML = '<tr><td colspan="9" class="hist-empty">No se encontraron registros</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="10" class="hist-empty">No se encontraron registros</td></tr>';
     footer.textContent = '0 registros';
     return;
   }
@@ -2716,9 +2774,11 @@ function renderHistorico(data) {
     var resp     = r.nombreResponsable || r.responsable || '—';
     var urlCert  = r.urlCertificado || r.urlCert || '';
     var estado   = r.estado || 'GUARDADO';
-    var certLink = urlCert ? '<a href="'+esc(urlCert)+'" target="_blank" class="link-cert">📄 Ver PDF</a>' : '—';
+    var certLink = urlCert ? '<a href="'+esc(urlCert)+'" target="_blank" class="link-cert"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/></svg> PDF</a>' : '<span style="color:var(--text-muted);font-size:11px">—</span>';
     var badgeCls = estado === 'ENVIADO' ? 'badge-ok' : estado === 'ARCHIVADO' ? 'badge-warn' : 'badge-blue';
-    var icon     = estado === 'ENVIADO' ? '✉️' : estado === 'ARCHIVADO' ? '📁' : '💾';
+    var rJson    = esc(JSON.stringify(r).replace(/'/g,"\\'"));
+    var canEdit  = estado === 'GUARDADO';
+    var hasPdf   = !urlCert;
     return '<tr>'+
       '<td style="font-weight:600;color:var(--brand)">'+esc(nro)+'</td>'+
       '<td>'+esc(fecha)+'</td>'+
@@ -2727,8 +2787,19 @@ function renderHistorico(data) {
       '<td><span class="badge badge-blue" style="font-size:10px">'+esc(res)+'</span></td>'+
       '<td>'+esc(tipoObs)+'</td>'+
       '<td>'+esc(resp)+'</td>'+
-      '<td><span class="badge '+badgeCls+'">'+icon+' '+estado+'</span></td>'+
+      '<td><span class="badge '+badgeCls+'">'+estado+'</span></td>'+
       '<td>'+certLink+'</td>'+
+      '<td style="white-space:nowrap">'+
+        '<button class="admin-action-btn ok" title="Ver detalle" onclick="verRegistroHistorico(\''+esc(nro)+'\')">'+
+          '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>'+
+        '</button> '+
+        (canEdit ? '<button class="admin-action-btn" title="Editar" onclick="editarRegistroHistorico(\''+esc(nro)+'\')">'+
+          '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>'+
+        '</button> ' : '')+
+        (hasPdf ? '<button class="admin-action-btn warn" title="Regenerar PDF" onclick="regenerarPDFHistorico(\''+esc(nro)+'\')">'+
+          '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>'+
+        '</button>' : '')+
+      '</td>'+
       '</tr>';
   }).join('');
   footer.textContent = 'Mostrando ' + data.length + ' registro' + (data.length!==1?'s':'') + ' · Firestore';
@@ -3326,9 +3397,12 @@ function renderAdminTabla() {
       '<td>'+esc(r.nombreResponsable||'—')+'</td>'+
       '<td><span class="badge '+bdg+'">'+icon+' '+estado+'</span></td>'+
       '<td><div class="admin-cert-chip"><div class="admin-cert-avatar">'+certIni+'</div><span style="max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+esc(certNom)+'">'+esc(certNom)+'</span></div></td>'+
-      '<td style="white-space:nowrap">'+
-        (urlCert ? '<a href="'+esc(urlCert)+'" target="_blank" class="admin-action-btn">📄</a> ' : '')+
-        '<button class="admin-action-btn" onclick="admReenviarMail(\''+esc(r.nroRegistro||'')+'\',\''+esc(r.emailResponsable||'')+'\')">✉️</button>'+
+      '<td style="white-space:nowrap;display:flex;gap:4px;flex-wrap:wrap">'+
+        (urlCert ? '<a href="'+esc(urlCert)+'" target="_blank" class="admin-action-btn ok" title="Ver PDF"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/></svg></a> ' : '')+
+        (!urlCert ? '<button class="admin-action-btn warn" title="Regenerar PDF" onclick="regenerarPDFAdmin(\''+esc(r.nroRegistro||'')+'\')"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg></button> ' : '')+
+        '<button class="admin-action-btn" title="Reenviar correo" onclick="admReenviarMail(\''+esc(r.nroRegistro||'')+'\',\''+esc(r.emailResponsable||'')+'\')"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></button> '+
+        '<button class="admin-action-btn" title="Editar" onclick="editarRegistroAdmin(\''+esc(r.nroRegistro||'')+'\')"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button> '+
+        '<button class="admin-action-btn danger" title="Eliminar" onclick="openModalEliminar(\''+esc(r.nroRegistro||'')+'\')"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3,6 5,6 21,6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg></button>'+
       '</td>'+
       '</tr>';
   }).join('');
@@ -3432,6 +3506,267 @@ function exportarCSV() {
   a.click(); URL.revokeObjectURL(url);
   toast('CSV exportado ✓','success');
   pushNotif('export','success','⬇️ CSV Exportado', data.length+' registros · '+a.download, 4000);
+}
+
+// =====================================================================
+//  CARGAR REGISTRO EN FORMULARIO (editar / ver detalle)
+// =====================================================================
+function cargarRegistroEnFormulario(r, modoLectura) {
+  showView('registro'); // resetFormulario() se llama aquí
+
+  // Campos de texto
+  set('r-fecha',             r.fecha             || '');
+  set('r-nroRegistro',       r.nroRegistro       || r.nroReg || '');
+  set('r-centroCultivo',     r.centroCultivo      || r.centro || '');
+  set('r-nroCentro',         r.nroCentro          || '');
+  set('r-acs',               r.acs               || '');
+  set('r-titular',           r.titular           || '');
+  set('r-ubicacion',         r.ubicacion         || '');
+  set('r-fechaSiembra',      r.fechaSiembra      || '');
+  set('r-tamanoPeces',       r.tamanoPeces       || '');
+  set('r-latitud',           r.latitud           || '');
+  set('r-longitud',          r.longitud          || '');
+  set('r-norte',             r.norte             || '');
+  set('r-este',              r.este              || '');
+  set('r-observaciones',     r.observaciones     || '');
+  set('r-nombreResponsable', r.nombreResponsable || '');
+  set('r-emailResponsable',  r.emailResponsable  || '');
+
+  // Resoluciones → checkboxes
+  var res = r.resoluciones || '';
+  var chk = function(id, cond) { var el = document.getElementById(id); if (el) el.checked = cond; };
+  chk('r-cicE2',        res.includes('CIC E2'));
+  chk('r-ca',           res.includes('1821-CA'));
+  chk('r-vs',           res.includes('1821-VS'));
+  chk('r-res1511',      res.includes('1511') && !res.includes('CIC'));
+  chk('r-desinfeccion', res.includes('DESINF'));
+
+  // Tipo observación
+  var tipoObs = r.tipoObservacion || r.tipoObs || '';
+  if (tipoObs) {
+    document.getElementById('r-obs-si').checked = true;
+    document.querySelectorAll('input[name="tipoObs"]').forEach(function(rd) {
+      rd.checked = rd.value === tipoObs;
+    });
+  } else {
+    document.getElementById('r-obs-no').checked = true;
+  }
+  toggleTipoObs();
+
+  // AppState
+  appState = {
+    saved: true, sent: r.estado === 'ENVIADO',
+    archived: r.estado === 'ARCHIVADO',
+    pdfB64: null, fotoB64: null, savedData: r,
+    editMode: !modoLectura,
+    editNro: r.nroRegistro || r.nroReg || ''
+  };
+  checkChecklist();
+  setBtnGuardar(true);
+
+  if (modoLectura) {
+    lockForm(r.estado === 'ENVIADO' || r.estado === 'ARCHIVADO');
+  } else {
+    // Mostrar banner de edición
+    var existingBanner = document.getElementById('lock-banner');
+    if (existingBanner) existingBanner.remove();
+    var banner = document.createElement('div');
+    banner.id = 'lock-banner';
+    banner.className = 'lock-overlay-banner';
+    banner.innerHTML = '<span>✏️ Editando — <strong>' + (r.nroRegistro||r.nroReg||'') + '</strong></span>'+
+      '<span style="font-size:11px;opacity:.8">Modifica los datos y guarda para actualizar el registro</span>';
+    var viewReg = document.getElementById('view-registro');
+    viewReg.insertBefore(banner, viewReg.firstChild);
+  }
+}
+
+// =====================================================================
+//  ACCIONES DESDE HISTÓRICO
+// =====================================================================
+function _getFromHistorico(nro) {
+  return historicData.find(function(x){ return (x.nroRegistro||x.nroReg) === nro; });
+}
+function verRegistroHistorico(nro) {
+  var r = _getFromHistorico(nro);
+  if (!r) { toast('Registro no encontrado','error'); return; }
+  cargarRegistroEnFormulario(r, true);
+}
+function editarRegistroHistorico(nro) {
+  var r = _getFromHistorico(nro);
+  if (!r) { toast('Registro no encontrado','error'); return; }
+  cargarRegistroEnFormulario(r, false);
+}
+function regenerarPDFHistorico(nro) {
+  var r = _getFromHistorico(nro);
+  if (!r) { toast('Registro no encontrado','error'); return; }
+  _lanzarRegenPDF(r);
+}
+
+// =====================================================================
+//  ACCIONES DESDE ADMIN
+// =====================================================================
+function _getFromAdmin(nro) {
+  return _adminAll.find(function(x){ return x.nroRegistro === nro; });
+}
+function editarRegistroAdmin(nro) {
+  var r = _getFromAdmin(nro);
+  if (!r) { toast('Registro no encontrado','error'); return; }
+  cargarRegistroEnFormulario(r, false);
+}
+function regenerarPDFAdmin(nro) {
+  var r = _getFromAdmin(nro);
+  if (!r) { toast('Registro no encontrado','error'); return; }
+  _lanzarRegenPDF(r);
+}
+
+// =====================================================================
+//  REGENERAR PDF (carga form + genera + sube a Storage)
+// =====================================================================
+async function subirPDFAlStorage(pdfB64, nroRegistro, centroCultivo) {
+  var raw   = pdfB64.replace(/^data:application\/pdf;base64,/, '');
+  var bytes = Uint8Array.from(atob(raw), function(c){ return c.charCodeAt(0); });
+  var nombre = 'CertimarRV_' + nroRegistro + '_' + (centroCultivo||'').replace(/\s+/g,'_') + '.pdf';
+  var ref    = firebase.storage().ref('certificados/' + nombre);
+  await ref.put(bytes.buffer, { contentType: 'application/pdf' });
+  return await ref.getDownloadURL();
+}
+
+function _lanzarRegenPDF(r) {
+  cargarRegistroEnFormulario(r, false);
+  setTimeout(function() {
+    (async function() {
+      var nid = 'regen-' + (r.nroRegistro||r.nroReg);
+      try {
+        await cargarLibsPDF();
+        pushNotif(nid, 'info', 'Regenerando PDF…', [
+          { id:'rg1', label:'Generando PDF',         state:'active'  },
+          { id:'rg2', label:'Subiendo a Storage',    state:'pending' },
+          { id:'rg3', label:'Actualizando Firestore',state:'pending' }
+        ]);
+        var pdf   = await generarPDF();
+        var b64   = pdf.output('datauristring');
+        updateNotifStep(nid,'rg1','done');
+        updateNotifStep(nid,'rg2','active');
+        var url   = await subirPDFAlStorage(b64, r.nroRegistro||r.nroReg, r.centroCultivo||r.centro);
+        updateNotifStep(nid,'rg2','done');
+        updateNotifStep(nid,'rg3','active');
+        await fbActualizarEstado(r.nroRegistro||r.nroReg, r.estado||'GUARDADO', { urlCertificado: url });
+        updateNotifStep(nid,'rg3','done');
+        setTimeout(function(){ updateNotifCard(nid,'success','PDF regenerado ✓', r.nroRegistro||r.nroReg); },200);
+        toast('PDF regenerado y subido ✓','success');
+        // Actualizar cachés en memoria
+        [_adminAll, _adminFiltered].forEach(function(arr) {
+          var i = arr.findIndex(function(x){ return x.nroRegistro === (r.nroRegistro||r.nroReg); });
+          if (i >= 0) arr[i].urlCertificado = url;
+        });
+        var hi = historicData.findIndex(function(x){ return (x.nroRegistro||x.nroReg) === (r.nroRegistro||r.nroReg); });
+        if (hi >= 0) historicData[hi].urlCertificado = url;
+      } catch(e) {
+        updateNotifCard(nid,'error','Error al regenerar',String(e));
+        toast('Error: '+String(e),'error');
+      }
+    })();
+  }, 600);
+}
+
+// =====================================================================
+//  ELIMINAR REGISTRO (admin)
+// =====================================================================
+var _eliminarNro = null;
+function openModalEliminar(nro) {
+  _eliminarNro = nro;
+  document.getElementById('eliminar-nro').textContent = nro;
+  document.getElementById('modal-eliminar').classList.remove('hidden');
+}
+function closeModalEliminar() {
+  document.getElementById('modal-eliminar').classList.add('hidden');
+  _eliminarNro = null;
+}
+async function handleConfirmarEliminar() {
+  if (!_eliminarNro) return;
+  var btn = document.getElementById('btn-confirmar-eliminar');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Eliminando…';
+  try {
+    var db = initFirebase();
+    await db.collection('registros_visita').doc(_eliminarNro).delete();
+    _adminAll      = _adminAll.filter(function(x){ return x.nroRegistro !== _eliminarNro; });
+    _adminFiltered = _adminFiltered.filter(function(x){ return x.nroRegistro !== _eliminarNro; });
+    renderAdminTabla();
+    closeModalEliminar();
+    toast('Registro eliminado','success');
+  } catch(e) {
+    toast('Error: '+String(e),'error');
+    btn.disabled = false;
+    btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3,6 5,6 21,6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg> Eliminar';
+  }
+}
+
+// =====================================================================
+//  EXPORTAR EXCEL (admin)
+// =====================================================================
+async function exportarExcel() {
+  var data = _adminFiltered.length ? _adminFiltered : _adminAll;
+  if (!data.length) { toast('No hay datos para exportar','error'); return; }
+  if (!window.XLSX) {
+    await loadScript('https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js');
+  }
+  var rows = data.map(function(r) {
+    return {
+      'N° Registro'    : r.nroRegistro   || '',
+      'Fecha'          : r.fecha         || '',
+      'Centro Cultivo' : r.centroCultivo || '',
+      'N° Centro'      : r.nroCentro     || '',
+      'Titular'        : r.titular       || '',
+      'ACS'            : r.acs           || '',
+      'Resoluciones'   : r.resoluciones  || '',
+      'Responsable'    : r.nombreResponsable || '',
+      'Email'          : r.emailResponsable  || '',
+      'Estado'         : r.estado        || '',
+      'Certificador'   : r.certNombre    || r.creadoPor || ''
+    };
+  });
+  var ws  = XLSX.utils.json_to_sheet(rows);
+  var wb  = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Registros');
+  var fname = 'certimar_registros_' + new Date().toISOString().split('T')[0] + '.xlsx';
+  XLSX.writeFile(wb, fname);
+  toast('Excel exportado ✓','success');
+  pushNotif('export-xl','success','Excel exportado', data.length+' registros · '+fname, 4000);
+}
+
+// =====================================================================
+//  EXPORTAR CSV HISTÓRICO
+// =====================================================================
+function exportarCSVHistorico() {
+  var data = historicData;
+  if (!data || !data.length) { toast('No hay datos para exportar','error'); return; }
+  var headers = ['N° Registro','Fecha','Centro','Titular','Resoluciones','Tipo Obs.','Responsable','Estado','PDF'];
+  var rows = data.map(function(r) {
+    return [
+      r.nroRegistro||r.nroReg, r.fecha,
+      r.centroCultivo||r.centro, r.titular,
+      r.resoluciones||r.resExt, r.tipoObservacion||r.tipoObs,
+      r.nombreResponsable||r.responsable, r.estado,
+      r.urlCertificado||r.urlCert||''
+    ].map(function(v){ return '"'+(v||'').replace(/"/g,'""')+'"'; }).join(',');
+  });
+  var csv  = [headers.map(function(h){ return '"'+h+'"'; }).join(',')].concat(rows).join('\n');
+  var blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8'});
+  var url  = URL.createObjectURL(blob);
+  var a    = document.createElement('a');
+  a.href = url;
+  a.download = 'certimar_historico_' + new Date().toISOString().split('T')[0] + '.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('CSV exportado ✓','success');
+}
+
+// =====================================================================
+//  IMPRIMIR FORMULARIO
+// =====================================================================
+function handleImprimir() {
+  window.print();
 }
 
 var toastTimer;
