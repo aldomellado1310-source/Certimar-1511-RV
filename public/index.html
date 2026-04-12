@@ -310,7 +310,7 @@ input::placeholder,textarea::placeholder{color:var(--text-muted)}
 .admin-stat-lbl{font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-top:2px}
 .admin-filters{max-width:1200px;margin:16px auto 0;padding:0 24px;background:var(--surface);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
 .admin-filters-inner{padding:14px 0;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-.admin-table-wrap{max-width:1200px;margin:20px auto 40px;padding:0 24px}
+.admin-table-wrap{margin:20px 24px 40px;padding:0}
 .admin-table-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;box-shadow:var(--shadow-sm)}
 .admin-table{width:100%;border-collapse:collapse;font-size:12px}
 .admin-table th{background:var(--surface-2);color:var(--text-sec);font-size:10px;text-transform:uppercase;letter-spacing:.6px;padding:10px 12px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap;font-weight:700}
@@ -471,7 +471,7 @@ video{width:100%;border-radius:8px;background:black}
 .btn-success{background:#10b981;color:white;border:none;padding:8px 20px;border-radius:8px;font-size:13px;font-weight:600;display:inline-flex;align-items:center;gap:6px}
 .btn-success:hover{background:#059669}
 /* Histórico */
-#view-historico{max-width:1100px;margin:0 auto;padding:28px 20px}
+#view-historico{padding:28px 24px}
 .hist-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px;flex-wrap:wrap;gap:12px}
 .hist-header h1{font-size:26px;font-weight:700;color:#003366}
 .hist-table-wrap{background:white;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden}
@@ -559,7 +559,7 @@ video{width:100%;border-radius:8px;background:black}
   /* --- Admin --- */
   .admin-header{padding:16px 12px 0;flex-direction:column}
   .admin-stats{padding:0 12px}
-  .admin-table-wrap{padding:0 12px}
+  .admin-table-wrap{margin:12px 8px 32px;padding:0}
 
   /* --- Modales --- */
   .modal-box{border-radius:12px 12px 0 0;position:fixed;bottom:0;left:0;right:0;max-height:90vh;max-width:100%}
@@ -2789,17 +2789,17 @@ function renderHistorico(data) {
       '<td>'+esc(resp)+'</td>'+
       '<td><span class="badge '+badgeCls+'">'+estado+'</span></td>'+
       '<td>'+certLink+'</td>'+
-      '<td style="white-space:nowrap">'+
-        '<button class="admin-action-btn ok" title="Ver detalle" onclick="verRegistroHistorico(\''+esc(nro)+'\')">'+
-          '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>'+
+      '<td><div style="display:flex;gap:4px;flex-wrap:wrap;align-items:center">'+
+        '<button class="admin-action-btn ok" onclick="verRegistroHistorico(\''+esc(nro)+'\')">'+
+          '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> Ver'+
         '</button> '+
-        (canEdit ? '<button class="admin-action-btn" title="Editar" onclick="editarRegistroHistorico(\''+esc(nro)+'\')">'+
-          '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>'+
+        (canEdit ? '<button class="admin-action-btn" onclick="editarRegistroHistorico(\''+esc(nro)+'\')">'+
+          '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Editar'+
         '</button> ' : '')+
-        (hasPdf ? '<button class="admin-action-btn warn" title="Regenerar PDF" onclick="regenerarPDFHistorico(\''+esc(nro)+'\')">'+
-          '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>'+
+        (hasPdf ? '<button class="admin-action-btn warn" onclick="regenerarPDFHistorico(\''+esc(nro)+'\')">'+
+          '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg> Regen. PDF'+
         '</button>' : '')+
-      '</td>'+
+      '</div></td>'+
       '</tr>';
   }).join('');
   footer.textContent = 'Mostrando ' + data.length + ' registro' + (data.length!==1?'s':'') + ' · Firestore';
@@ -3397,13 +3397,13 @@ function renderAdminTabla() {
       '<td>'+esc(r.nombreResponsable||'—')+'</td>'+
       '<td><span class="badge '+bdg+'">'+icon+' '+estado+'</span></td>'+
       '<td><div class="admin-cert-chip"><div class="admin-cert-avatar">'+certIni+'</div><span style="max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+esc(certNom)+'">'+esc(certNom)+'</span></div></td>'+
-      '<td style="white-space:nowrap;display:flex;gap:4px;flex-wrap:wrap">'+
-        (urlCert ? '<a href="'+esc(urlCert)+'" target="_blank" class="admin-action-btn ok" title="Ver PDF"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/></svg></a> ' : '')+
-        (!urlCert ? '<button class="admin-action-btn warn" title="Regenerar PDF" onclick="regenerarPDFAdmin(\''+esc(r.nroRegistro||'')+'\')"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg></button> ' : '')+
-        '<button class="admin-action-btn" title="Reenviar correo" onclick="admReenviarMail(\''+esc(r.nroRegistro||'')+'\',\''+esc(r.emailResponsable||'')+'\')"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></button> '+
-        '<button class="admin-action-btn" title="Editar" onclick="editarRegistroAdmin(\''+esc(r.nroRegistro||'')+'\')"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button> '+
-        '<button class="admin-action-btn danger" title="Eliminar" onclick="openModalEliminar(\''+esc(r.nroRegistro||'')+'\')"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3,6 5,6 21,6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg></button>'+
-      '</td>'+
+      '<td><div style="display:flex;gap:4px;flex-wrap:wrap;align-items:center">'+
+        (urlCert ? '<a href="'+esc(urlCert)+'" target="_blank" class="admin-action-btn ok"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/></svg> Ver PDF</a> ' : '')+
+        (!urlCert ? '<button class="admin-action-btn warn" onclick="regenerarPDFAdmin(\''+esc(r.nroRegistro||'')+'\')"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg> Regen. PDF</button> ' : '')+
+        '<button class="admin-action-btn" onclick="admReenviarMail(\''+esc(r.nroRegistro||'')+'\',\''+esc(r.emailResponsable||'')+'\')"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg> Reenviar</button> '+
+        '<button class="admin-action-btn" onclick="editarRegistroAdmin(\''+esc(r.nroRegistro||'')+'\')"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Editar</button> '+
+        '<button class="admin-action-btn danger" onclick="openModalEliminar(\''+esc(r.nroRegistro||'')+'\')"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3,6 5,6 21,6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg> Eliminar</button>'+
+      '</div></td>'+
       '</tr>';
   }).join('');
 
