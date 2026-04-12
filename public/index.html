@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Registro de Visita – Certimar</title>
 <link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
 <meta name="theme-color" content="#003366">
 <!-- jsPDF + html2canvas cargados bajo demanda (lazy-load) -->
 <!-- Chart.js para gráficos del dashboard -->
@@ -1534,8 +1535,8 @@ async function fbObtenerEstadisticas() {
 
   registros.forEach(function(r) {
     if (!ultima) ultima = r;
-    var partes = (r.fecha || '').split('-');
-    var d = partes.length === 3 ? new Date(partes[2], partes[1]-1, partes[0]) : null;
+    var partes = (r.fecha || '').split(/\s+/)[0].split('-');
+    var d = partes.length === 3 ? new Date(parseInt(partes[2],10), parseInt(partes[1],10)-1, parseInt(partes[0],10)) : null;
     if (r.centroCultivo) centros.add(r.centroCultivo);
     if (d && d.getFullYear() === anio) {
       var mes = d.toLocaleDateString('es-CL', { month: 'short' });
@@ -3254,8 +3255,8 @@ function cargarAdmin() {
     var totalMes = 0, enviados = 0, pendientes = 0;
     docs.forEach(function(d) {
       if (d.creadoPor) certs.add(d.creadoPor);
-      var partes = (d.fecha||'').split('-');
-      var f = partes.length===3 ? new Date(partes[2],partes[1]-1,partes[0]) : null;
+      var partes = (d.fecha||'').split(/\s+/)[0].split('-');
+      var f = partes.length===3 ? new Date(parseInt(partes[2],10),parseInt(partes[1],10)-1,parseInt(partes[0],10)) : null;
       if (f && f.getFullYear()===anio && f.getMonth()===mes) totalMes++;
       if (d.estado==='ENVIADO') enviados++;
       if (d.estado==='GUARDADO') pendientes++;
@@ -3355,19 +3356,19 @@ function filtrarAdmin() {
                 (r.certNombre||'').toLowerCase().includes(q) )) return false;
     if (est  && r.estado !== est)         return false;
     if (cert && r.creadoPor !== cert)     return false;
-    if (desde && r.fecha < convertDateFilter(desde)) return false;
-    if (hasta && r.fecha > convertDateFilter(hasta)) return false;
+    if (desde && fechaToISO(r.fecha) < desde) return false;
+    if (hasta && fechaToISO(r.fecha) > hasta) return false;
     return true;
   });
   _adminPage = 0;
   renderAdminTabla();
 }
 
-function convertDateFilter(isoDate) {
-  // ISO input: yyyy-mm-dd → convert to dd-mm-yyyy stored format
-  if (!isoDate) return '';
-  var p = isoDate.split('-');
-  return p[2]+'-'+p[1]+'-'+p[0];
+function fechaToISO(fecha) {
+  // "DD-MM-YYYY  HH:MM..." → "YYYY-MM-DD" for safe lexicographic comparison
+  var tok = (fecha || '').split(/\s+/)[0].split('-');
+  if (tok.length !== 3) return '';
+  return tok[2] + '-' + tok[1] + '-' + tok[0];
 }
 
 function limpiarFiltrosAdmin() {
@@ -3394,7 +3395,8 @@ function admReenviarMail(nro, email) {
   if (!r) { updateNotifCard('adm-mail','error','❌ Registro no encontrado',''); return; }
   var datos = { nroRegistro: r.nroRegistro, fecha: r.fecha, centroCultivo: r.centroCultivo,
     nroCentro: r.nroCentro, acs: r.acs, titular: r.titular, nombreResponsable: r.nombreResponsable,
-    emailDestinatario: dest, observaciones: r.observaciones, tipoObservacion: r.tipoObservacion };
+    emailDestinatario: dest, observaciones: r.observaciones, tipoObservacion: r.tipoObservacion,
+    nombreCertificador: r.nombreCertificador || r.certNombre || '', rutCertificador: r.rutCertificador || '' };
   firebase.functions().httpsCallable('enviarNotificacion')({
     datos         : datos,
     urlCertificado: r.urlCertificado || '',

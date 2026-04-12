@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <rect width="32" height="32" rx="6" fill="#1e3a5f"/>
+  <!-- Documento -->
+  <rect x="8" y="6" width="14" height="18" rx="2" fill="white" opacity="0.15"/>
+  <rect x="8" y="6" width="14" height="18" rx="2" fill="none" stroke="white" stroke-width="1.5"/>
+  <!-- Líneas del documento -->
+  <line x1="11" y1="12" x2="19" y2="12" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+  <line x1="11" y1="16" x2="19" y2="16" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+  <line x1="11" y1="20" x2="16" y2="20" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+  <!-- Check badge -->
+  <circle cx="22" cy="22" r="6" fill="#16a34a"/>
+  <polyline points="19,22 21,24 25,20" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

@@ -1,6 +1,6 @@
 // Certimar RV — Service Worker
 // Estrategia: Cache First para assets estáticos, Network First para API/Firebase
-const CACHE_NAME    = 'certimar-rv-v1';
+const CACHE_NAME    = 'certimar-rv-v2';
 const CACHE_ASSETS  = ['/', '/index.html', '/firebaseConfig.js', '/concesiones.js'];
 
 self.addEventListener('install', function(event) {
