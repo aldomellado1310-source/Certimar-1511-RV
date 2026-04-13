@@ -1059,7 +1059,6 @@ video{width:100%;border-radius:8px;background:black}
           </div>
           <!-- Cliente -->
           <div class="firma-col" style="position:relative">
-            <button onclick="clearFirmaCliente()" style="position:absolute;top:0;right:4px;background:none;border:none;color:#ef4444;padding:4px;border-radius:4px;cursor:pointer;font-size:16px" title="Borrar firma">✕</button>
             <div style="position:relative">
               <div id="firma-placeholder" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;opacity:.2;pointer-events:none">
                 <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
@@ -1068,6 +1067,7 @@ video{width:100%;border-radius:8px;background:black}
                 </svg>
               </div>
               <canvas id="firma-cliente" width="280" height="90" class="firma-canvas"></canvas>
+              <button onclick="clearFirmaCliente()" style="position:absolute;top:4px;right:4px;z-index:10;background:rgba(255,255,255,.85);border:1px solid #fecaca;color:#ef4444;padding:3px 7px;border-radius:5px;cursor:pointer;font-size:13px;font-weight:700;line-height:1" title="Borrar firma">✕</button>
             </div>
             <div class="firma-line"></div>
             <input type="text" id="r-nombreResponsable" class="firma-input-name" placeholder="Nombre Responsable" oninput="checkChecklist()">
@@ -1902,6 +1902,8 @@ function clearFirmaCliente() {
   canvas.getContext('2d').clearRect(0,0,canvas.width,canvas.height);
   firmaClienteHasData = false;
   document.getElementById('firma-placeholder').style.display = '';
+  // Si el form estaba bloqueado parcialmente, reactivar el canvas para poder refirmar
+  canvas.style.pointerEvents = '';
   checkChecklist();
 }
 
