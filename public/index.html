@@ -534,6 +534,13 @@ video{width:100%;border-radius:8px;background:black}
 @media(max-width:600px){
   /* --- Documento (no tocar layout interno) --- */
   .doc-header{flex-direction:column;gap:12px}
+  /* Fila Centro de Cultivo + N° de Centro: apila en 2 líneas en móvil */
+  .tr-centro-nro{display:flex;flex-wrap:wrap}
+  .tr-centro-nro td{box-sizing:border-box;border:1px solid #94a3b8}
+  .tr-centro-nro .td-centro-label{width:30%;flex-shrink:0}
+  .tr-centro-nro .td-centro-val{width:70%;flex-shrink:0}
+  .tr-centro-nro .td-nro-label{width:30%;flex-shrink:0}
+  .tr-centro-nro .td-nro-val{width:70%;flex-shrink:0}
   .firma-section{flex-direction:column}
   .firma-col{width:100%;border-right:none!important;border-bottom:1px solid #94a3b8;padding-bottom:16px;margin-bottom:16px}
   .tipo-obs-row{flex-wrap:wrap;gap:12px}
@@ -969,11 +976,11 @@ video{width:100%;border-radius:8px;background:black}
         <!-- DATOS CENTRO -->
         <table class="doc-table">
           <tbody>
-            <tr>
-              <td class="label-cell">Centro de Cultivo</td>
-              <td style="width:50%"><input type="text" id="r-centroCultivo" class="doc-input" placeholder="—"></td>
-              <td class="label-cell" style="width:15%">N° de Centro</td>
-              <td style="position:relative">
+            <tr class="tr-centro-nro">
+              <td class="label-cell td-centro-label">Centro de Cultivo</td>
+              <td class="td-centro-val"><input type="text" id="r-centroCultivo" class="doc-input" placeholder="—"></td>
+              <td class="label-cell td-nro-label">N° de Centro</td>
+              <td class="td-nro-val" style="position:relative">
                 <input type="text" id="r-nroCentro" class="doc-input" placeholder="—" oninput="onNroCentroInput(this.value)" onblur="setTimeout(closeAcDropdown,200)">
               </td>
             </tr>
