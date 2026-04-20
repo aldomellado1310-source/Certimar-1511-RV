@@ -811,6 +811,9 @@ video{width:100%;border-radius:8px;background:black}
         <div class="user-chip hidden" id="user-chip">
           <div class="user-avatar" id="user-avatar">U</div>
           <span id="user-name-chip">Usuario</span>
+          <button onclick="cerrarSesion()" title="Cerrar sesión" style="background:none;border:none;cursor:pointer;padding:2px 0 2px 6px;color:var(--text-sec);display:flex;align-items:center;border-left:1px solid var(--border);margin-left:4px">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          </button>
         </div>
         <button class="btn-nueva" onclick="showView('registro')">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
@@ -1508,13 +1511,29 @@ video{width:100%;border-radius:8px;background:black}
     <div class="cl-toast-head">
       <div>
         <div class="cl-toast-title">Novedades del sistema</div>
-        <span class="cl-toast-ver">v2026.04.20b</span>
+        <span class="cl-toast-ver">v2026.04.20c</span>
       </div>
       <button class="cl-toast-close" onclick="closeChangelog()" aria-label="Cerrar">
         <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="1" y1="1" x2="13" y2="13"/><line x1="13" y1="1" x2="1" y2="13"/></svg>
       </button>
     </div>
     <div class="cl-toast-body">
+
+      <div class="cl-card">
+        <div class="cl-card-icon fix">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="2,9 6,13 14,3"/></svg>
+        </div>
+        <div class="cl-card-title">N° de registro aparece en el PDF</div>
+        <div class="cl-card-desc">El correlativo (RV-XXXX) ahora se genera <em>antes</em> de capturar el PDF, por lo que siempre queda impreso correctamente en el encabezado del documento.</div>
+      </div>
+
+      <div class="cl-card">
+        <div class="cl-card-icon fix">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="2,9 6,13 14,3"/></svg>
+        </div>
+        <div class="cl-card-title">Edición admin conserva imágenes</div>
+        <div class="cl-card-desc">Al editar un registro desde el panel de administración ya no se pierden la foto de evidencia, la firma ni el PDF original adjunto al registro.</div>
+      </div>
 
       <div class="cl-card">
         <div class="cl-card-icon new">
@@ -1726,16 +1745,18 @@ async function fbGuardarRegistro(datos, urlCertificado, urlFoto) {
     nombreResponsable: datos.nombreResponsable || '',
     emailResponsable : datos.emailDestinatario || '',
     nombreCertificador: datos.nombreCertificador || '',
-    urlCertificado   : urlCertificado || '',
-    urlFoto          : urlFoto        || '',
     estado           : 'GUARDADO',
     creadoPor        : currentUser ? currentUser.email : '',
     certNombre       : currentUser ? currentUser.name  : '',
     creadoEn         : firebase.firestore.FieldValue.serverTimestamp()
   };
 
-  // Usar nroRegistro como document ID para idempotencia
-  await db.collection('registros_visita').doc(datos.nroRegistro).set(docData);
+  // Solo incluir URLs si tienen valor, para no sobreescribir con vacío al editar
+  if (urlCertificado) docData.urlCertificado = urlCertificado;
+  if (urlFoto)        docData.urlFoto        = urlFoto;
+
+  // merge:true preserva campos existentes (urlFirmaCliente, pdfStoragePath, etc.) al editar
+  await db.collection('registros_visita').doc(datos.nroRegistro).set(docData, { merge: true });
   return docData;
 }
 
@@ -1864,6 +1885,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   initFirmaCertificador();
   initFirmaCliente();
+
   initChecklist();
   resetFormulario();
   generarParticulas();
@@ -1872,6 +1894,14 @@ document.addEventListener('DOMContentLoaded', function() {
 // =====================================================================
 //  PARTÍCULAS SPLASH
 // =====================================================================
+function cerrarSesion() {
+  firebase.auth().signOut().then(function() {
+    currentUser = null;
+    document.getElementById('user-chip').classList.add('hidden');
+    document.getElementById('view-login').classList.remove('hidden');
+  });
+}
+
 function generarParticulas() {
   var cont = document.getElementById('splash-particles');
   if (!cont) return;
@@ -1928,7 +1958,7 @@ function showApp() {
   if (ocean) ocean.classList.remove('hidden');
 
   // Mostrar changelog si no fue visto en esta versión
-  var CL_KEY = 'certimar_changelog_v20260420b';
+  var CL_KEY = 'certimar_changelog_v20260420c';
   if (!localStorage.getItem(CL_KEY)) {
     setTimeout(function() {
       document.getElementById('modal-changelog').classList.remove('hidden');
@@ -2458,26 +2488,9 @@ async function generarPDF() {
 async function handleSyncGoogle() {
   if (!checkChecklist()) { toast('Complete el checklist primero','error'); return; }
 
-  // 1. Generar PDF (cliente, rápido)
-  var pdfB64 = null;
-  try {
-    pushNotif('pdf', 'info', '📄 Generando PDF', [
-      { id:'pdf-render', label:'Renderizando formulario', state:'active' }
-    ]);
-    await cargarLibsPDF();
-    var pdf = await generarPDF();
-    pdfB64 = pdf.output('datauristring');
-    appState.pdfB64 = pdfB64;
-    appState.pdfArrayBuffer = pdf.output('arraybuffer');
-    updateNotifStep('pdf', 'pdf-render', 'done');
-    removeNotif('pdf');
-  } catch(e) {
-    updateNotifCard('pdf','error','❌ Error al generar PDF', String(e));
-    return;
-  }
-
   pushNotif('sync', 'info', '☁️ Guardando en Firebase…', [
     { id:'step-nro',      label:'Generando N° correlativo',   state:'active' },
+    { id:'step-pdf',      label:'Generando PDF',              state:'pending' },
     { id:'step-firebase', label:'Escribiendo en Firestore',   state:'pending' },
     { id:'step-drive',    label:'Subiendo archivos a Storage', state:'pending' },
     { id:'step-update',   label:'Actualizando registro',      state:'pending' }
@@ -2485,31 +2498,44 @@ async function handleSyncGoogle() {
 
   setBtnLoading('btn-sync', true);
 
-  // Generar correlativo atómico justo antes de guardar (evita huecos por formularios abiertos sin guardar)
+  // 1. Generar correlativo primero para que aparezca en el PDF
   var nroGenerado;
   if (appState.editMode && appState.editNro) {
-    // Modo edición: conservar el N° de registro existente
     nroGenerado = appState.editNro;
     updateNotifStep('sync','step-nro','done');
-    updateNotifStep('sync','step-firebase','active');
   } else {
     try {
       nroGenerado = await fbGenerarNroRegistro();
       set('r-nroRegistro', nroGenerado);
       updateNotifStep('sync','step-nro','done');
-      updateNotifStep('sync','step-firebase','active');
     } catch(e) {
       try {
         nroGenerado = await fbGenerarNroRegistro();
         set('r-nroRegistro', nroGenerado);
         updateNotifStep('sync','step-nro','done');
-        updateNotifStep('sync','step-firebase','active');
       } catch(e2) {
         updateNotifCard('sync','error','❌ No se pudo obtener correlativo', String(e2));
         setBtnLoading('btn-sync', false);
         return;
       }
     }
+  }
+
+  // 2. Generar PDF (ya con el correlativo visible en el DOM)
+  var pdfB64 = null;
+  try {
+    updateNotifStep('sync','step-pdf','active');
+    await cargarLibsPDF();
+    var pdf = await generarPDF();
+    pdfB64 = pdf.output('datauristring');
+    appState.pdfB64 = pdfB64;
+    appState.pdfArrayBuffer = pdf.output('arraybuffer');
+    updateNotifStep('sync','step-pdf','done');
+    updateNotifStep('sync','step-firebase','active');
+  } catch(e) {
+    updateNotifCard('sync','error','❌ Error al generar PDF', String(e));
+    setBtnLoading('btn-sync', false);
+    return;
   }
 
   var datos = getDatos();
