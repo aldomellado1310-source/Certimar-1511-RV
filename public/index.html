@@ -2437,18 +2437,22 @@ async function generarPDF() {
   // html2canvas no renderiza bien el texto de textareas (puede cortar en horizontal).
   // Reemplazamos temporalmente cada textarea visible por un div equivalente.
   el.querySelectorAll('textarea').forEach(function(ta) {
+    var saved = ta.value;
+    var cs = window.getComputedStyle(ta);
     var div = document.createElement('div');
-    div.textContent = ta.value;
-    div.style.cssText = window.getComputedStyle(ta).cssText;
+    div.textContent = saved;
+    div.style.width = cs.width;
+    div.style.padding = cs.padding;
+    div.style.fontSize = cs.fontSize;
+    div.style.fontFamily = cs.fontFamily;
+    div.style.lineHeight = cs.lineHeight;
     div.style.whiteSpace = 'pre-wrap';
     div.style.wordBreak = 'break-word';
     div.style.overflowWrap = 'break-word';
-    div.style.overflow = 'visible';
-    div.style.height = 'auto';
-    div.style.minHeight = ta.offsetHeight + 'px';
+    div.style.boxSizing = 'border-box';
     ta.parentNode.insertBefore(div, ta);
-    ta.style.display = 'none';
-    textareaReplacements.push({ ta: ta, div: div });
+    ta.value = '';
+    textareaReplacements.push({ ta: ta, div: div, saved: saved });
   });
   await new Promise(function(r){ requestAnimationFrame(r); });
   canvas = await html2canvas(el, {
@@ -2498,7 +2502,7 @@ async function generarPDF() {
   } finally {
     if (prevTheme === 'dark') root.setAttribute('data-theme', 'dark');
     textareaReplacements.forEach(function(r) {
-      r.ta.style.display = '';
+      r.ta.value = r.saved;
       if (r.div.parentNode) r.div.parentNode.removeChild(r.div);
     });
   }
