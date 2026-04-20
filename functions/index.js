@@ -1,35 +1,24 @@
 // ============================================================
-//  CERTIMAR — Firebase Functions
-//  Reemplaza el backend de Google Apps Script
+//  CERTIMAR — Firebase Functions  (sin Google Sheets / Drive)
 // ============================================================
 'use strict';
 
 const functions  = require('firebase-functions');
 const admin      = require('firebase-admin');
 const nodemailer = require('nodemailer');
-const { google } = require('googleapis');
-const path       = require('path');
-const fs         = require('fs');
+const crypto     = require('crypto');
 
 admin.initializeApp();
 const db = admin.firestore();
 
 // ─── Configuración ────────────────────────────────────────────────────────────
-// Establecer con:
-//   firebase functions:config:set \
-//     mail.user="operaciones@certimar.cl" \
-//     mail.pass="APP_PASSWORD_GMAIL" \
-//     sheets.id="ID_DE_TU_PLANILLA" \
-//     sheets.name="RV"
 const cfg = () => ({
-  mailUser   : (functions.config().mail  || {}).user  || 'operaciones@certimar.cl',
-  mailPass   : (functions.config().mail  || {}).pass  || '',
-  sheetsId   : (functions.config().sheets|| {}).id    || '1Gq_8OBd75OnSzk9e6GXtOjhs8nhL9fKrlFzs_w4MezM',
-  sheetsName : (functions.config().sheets|| {}).name  || 'RV',
-  timezone   : 'America/Santiago'
+  mailUser: (functions.config().mail || {}).user || 'operaciones@certimar.cl',
+  mailPass: (functions.config().mail || {}).pass || '',
+  timezone: 'America/Santiago'
 });
 
-// ─── Transporte de correo (Gmail App Password) ───────────────────────────────
+// ─── Transporte de correo ─────────────────────────────────────────────────────
 function getTransporter() {
   const c = cfg();
   return nodemailer.createTransport({
@@ -38,23 +27,7 @@ function getTransporter() {
   });
 }
 
-// ─── Google Sheets — autenticación con Service Account ───────────────────────
-function getSheetsClient() {
-  const keyPath = path.join(__dirname, 'serviceAccount.json');
-  if (!fs.existsSync(keyPath)) {
-    throw new Error(
-      'No se encontró functions/serviceAccount.json. ' +
-      'Descárgalo desde Google Cloud Console → IAM → Service Accounts.'
-    );
-  }
-  const auth = new google.auth.GoogleAuth({
-    keyFile: keyPath,
-    scopes : ['https://www.googleapis.com/auth/spreadsheets']
-  });
-  return google.sheets({ version: 'v4', auth });
-}
-
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 function buildResExt(resoluciones) {
   if (!resoluciones) return '';
   const arr = [];
@@ -64,106 +37,6 @@ function buildResExt(resoluciones) {
   if (resoluciones.res1511)      arr.push('1511');
   if (resoluciones.desinfeccion) arr.push('DESINFECCIÓN');
   return arr.join(', ');
-}
-
-function nowFormatted(timezone) {
-  return new Intl.DateTimeFormat('es-CL', {
-    timeZone: timezone || 'America/Santiago',
-    day: '2-digit', month: '2-digit', year: 'numeric',
-    hour: '2-digit', minute: '2-digit'
-  }).format(new Date()).replace(',', '');
-}
-
-// ─── Crear encabezados si la hoja está vacía ─────────────────────────────────
-async function crearEncabezadosSiNecesario(sheets, spreadsheetId, sheetName) {
-  try {
-    const res = await sheets.spreadsheets.values.get({
-      spreadsheetId, range: `${sheetName}!A1:R1`
-    });
-    if (!res.data.values || !res.data.values.length) {
-      await sheets.spreadsheets.values.update({
-        spreadsheetId,
-        range           : `${sheetName}!A1`,
-        valueInputOption: 'RAW',
-        requestBody     : { values: [[
-          'Fecha', 'N° Registro', 'Centro', 'N° Centro', 'ACS', 'Titular',
-          'Área', 'Fecha última siembra', 'Tamaño peces', 'Ubicación',
-          'Lat Long', 'Res ext', 'Observaciones', 'Tipo de observación',
-          'Nombre responsable', 'Correo responsable', 'Hipervínculo al certificado',
-          'Estado'
-        ]] }
-      });
-      functions.logger.info('Encabezados creados en hoja:', sheetName);
-    }
-  } catch (e) {
-    functions.logger.warn('crearEncabezados error (no fatal):', e.message);
-  }
-}
-
-// ─── Escribir fila en Google Sheets ──────────────────────────────────────────
-async function appendRowSheets(datos, urlCertificado, estado) {
-  const c       = cfg();
-  const sheets  = getSheetsClient();
-  const { sheetsId: spreadsheetId, sheetsName: sheetName } = c;
-
-  await crearEncabezadosSiNecesario(sheets, spreadsheetId, sheetName);
-
-  // Verificar si ya existe (evitar duplicados)
-  const colB = await sheets.spreadsheets.values.get({
-    spreadsheetId, range: `${sheetName}!B:B`
-  });
-  const filas  = (colB.data.values || []).flat();
-  const rowIdx = filas.findIndex(v => String(v).trim() === String(datos.nroRegistro).trim());
-
-  if (rowIdx >= 1) {
-    // Ya existe: actualizar URL y estado
-    if (urlCertificado || estado) {
-      await sheets.spreadsheets.values.update({
-        spreadsheetId,
-        range           : `${sheetName}!P${rowIdx + 1}:R${rowIdx + 1}`,
-        valueInputOption: 'RAW',
-        requestBody     : { values: [[
-          datos.emailDestinatario || '',
-          urlCertificado || '',
-          estado || 'GUARDADO'
-        ]] }
-      });
-    }
-    return { accion: 'actualizado', fila: rowIdx + 1 };
-  }
-
-  // Insertar nueva fila
-  const resExt  = buildResExt(datos.resoluciones);
-  const latLong = [datos.latitud, datos.longitud].filter(Boolean).join(', ');
-
-  await sheets.spreadsheets.values.append({
-    spreadsheetId,
-    range              : `${sheetName}!A1`,
-    valueInputOption   : 'RAW',
-    insertDataOption   : 'INSERT_ROWS',
-    requestBody        : { values: [[
-      nowFormatted(c.timezone),
-      datos.nroRegistro       || '',
-      datos.centroCultivo     || '',
-      datos.nroCentro         || '',
-      datos.acs               || '',
-      datos.titular           || '',
-      datos.area              || '',
-      datos.fechaSiembra      || '',
-      datos.tamanoPeces       || '',
-      datos.ubicacion         || '',
-      latLong,
-      resExt,
-      datos.observaciones     || '',
-      datos.tipoObservacion   || '',
-      datos.nombreResponsable || '',
-      datos.emailDestinatario || '',
-      urlCertificado          || '',
-      estado                  || 'GUARDADO'
-    ]] }
-  });
-
-  return { accion: 'insertado' };
 }
 
 // ─── Plantilla HTML del correo ────────────────────────────────────────────────
@@ -183,7 +56,9 @@ function plantillaEmail(datos, urlCert) {
     ['Responsable',       datos.nombreResponsable|| '—'],
     ['Tipo Observación',  datos.tipoObservacion  || '—'],
     ['Resoluciones',      resoluciones],
-    ['Observaciones',     (datos.observaciones   || 'S/O').replace(/\n/g, '<br>')]
+    ['Observaciones',     (datos.observaciones   || 'S/O').replace(/\n/g, '<br>')],
+    ['Certificador',      datos.nombreCertificador || '—'],
+    ['N° Registro Cert.', datos.rutCertificador    || '—']
   ].map((r, i) => {
     const bg = i % 2 === 0 ? '#ffffff' : '#f1f5f9';
     return `<tr style="background:${bg}">
@@ -237,38 +112,8 @@ function plantillaEmail(datos, urlCert) {
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-//  FUNCIÓN 1 — registrarEnSheets
-//  Llamada desde el cliente al guardar (sin enviar correo)
-// ════════════════════════════════════════════════════════════════════════════
-exports.registrarEnSheets = functions
-  .runWith({ timeoutSeconds: 60, memory: '256MB' })
-  .https.onCall(async (data, context) => {
-
-  if (!context.auth) {
-    throw new functions.https.HttpsError('unauthenticated', 'Debes iniciar sesión.');
-  }
-
-  try {
-    const { datos, urlCertificado } = data;
-
-    if (!datos || !datos.nroRegistro) {
-      throw new Error('datos.nroRegistro es requerido');
-    }
-
-    const result = await appendRowSheets(datos, urlCertificado || '', 'GUARDADO');
-    functions.logger.info('registrarEnSheets OK:', datos.nroRegistro, result.accion);
-    return { ok: true, accion: result.accion };
-
-  } catch (e) {
-    functions.logger.error('registrarEnSheets ERROR:', e.message);
-    // No lanzar HttpsError para no bloquear el flujo — el cliente maneja el fallo
-    return { ok: false, error: e.message };
-  }
-});
-
-// ════════════════════════════════════════════════════════════════════════════
-//  FUNCIÓN 2 — enviarNotificacion
-//  Envía correo + actualiza Firestore + actualiza Sheets
+//  FUNCIÓN 1 — enviarNotificacion
+//  Envía correo + adjunto PDF + copia interna + actualiza Firestore
 // ════════════════════════════════════════════════════════════════════════════
 exports.enviarNotificacion = functions
   .runWith({ timeoutSeconds: 120, memory: '512MB' })
@@ -278,17 +123,15 @@ exports.enviarNotificacion = functions
     throw new functions.https.HttpsError('unauthenticated', 'Debes iniciar sesión.');
   }
 
-  const { datos, urlCertificado, pdfB64 } = data;
+  const { datos, urlCertificado, pdfStoragePath } = data;
   const destEmail = datos && datos.emailDestinatario;
 
   if (!destEmail) {
     throw new functions.https.HttpsError('invalid-argument', 'Email destinatario vacío.');
   }
 
-  const c = cfg();
-
-  // ─── 1. Enviar correo al destinatario ──────────────────────────────────
-  const asunto   = `[Certimar] Registro de Visita – ${datos.centroCultivo} – ${datos.fecha}`;
+  const c       = cfg();
+  const asunto  = `[Certimar] Registro de Visita – ${datos.centroCultivo} – ${datos.fecha}`;
   const htmlBody = plantillaEmail(datos, urlCertificado || '');
 
   const mailOpts = {
@@ -302,78 +145,56 @@ exports.enviarNotificacion = functions
   if (datos.emailCC  && datos.emailCC.trim())  mailOpts.cc  = datos.emailCC.trim();
   if (datos.emailCCO && datos.emailCCO.trim()) mailOpts.bcc = datos.emailCCO.trim();
 
-  // Adjuntar PDF si viene en base64
-  if (pdfB64) {
-    const raw = pdfB64.replace(/^data:application\/pdf;base64,/, '');
-    mailOpts.attachments = [{
-      filename   : `CertimarRV_${datos.nroRegistro}_${(datos.centroCultivo||'').replace(/[^a-zA-Z0-9]/g,'_')}.pdf`,
-      content    : Buffer.from(raw, 'base64'),
-      contentType: 'application/pdf'
-    }];
+  if (pdfStoragePath) {
+    try {
+      const bucket = admin.storage().bucket();
+      const [pdfBuffer] = await bucket.file(pdfStoragePath).download();
+      mailOpts.attachments = [{
+        filename   : `CertimarRV_${datos.nroRegistro}_${(datos.centroCultivo || '').replace(/[^a-zA-Z0-9]/g, '_')}.pdf`,
+        content    : pdfBuffer,
+        contentType: 'application/pdf'
+      }];
+    } catch (ePdf) {
+      functions.logger.warn('No se pudo adjuntar PDF desde Storage (no fatal):', ePdf.message);
+    }
   }
 
   const transporter = getTransporter();
   await transporter.sendMail(mailOpts);
   functions.logger.info('Correo enviado a:', destEmail, '| Registro:', datos.nroRegistro);
 
-  // Copia interna al certificador (sin PDF para no duplicar adjunto)
+  // Copia interna al certificador
   const certEmail = context.auth.token.email;
   if (certEmail && certEmail !== destEmail) {
     try {
       await transporter.sendMail({
-        from   : mailOpts.from,
-        to     : certEmail,
-        subject: `[COPIA INTERNA] ${asunto}`,
-        html   : htmlBody
+        from       : mailOpts.from,
+        to         : certEmail,
+        subject    : `[COPIA INTERNA] ${asunto}`,
+        html       : htmlBody,
+        attachments: mailOpts.attachments || []
       });
     } catch (eCopia) {
       functions.logger.warn('Copia interna error (no fatal):', eCopia.message);
     }
   }
 
-  // ─── 2. Actualizar estado en Firestore ─────────────────────────────────
+  // Actualizar estado en Firestore
   try {
     await db.collection('registros_visita').doc(datos.nroRegistro).update({
       estado          : 'ENVIADO',
       emailResponsable: destEmail
     });
   } catch (eFs) {
-    functions.logger.warn('Firestore update ENVIADO error (no fatal):', eFs.message);
-  }
-
-  // ─── 3. Actualizar estado y email en Google Sheets ─────────────────────
-  try {
-    const sheets = getSheetsClient();
-    const { sheetsId: spreadsheetId, sheetsName: sheetName } = c;
-
-    const colB   = await sheets.spreadsheets.values.get({
-      spreadsheetId, range: `${sheetName}!B:B`
-    });
-    const filas  = (colB.data.values || []).flat();
-    const rowIdx = filas.findIndex(v => String(v).trim() === String(datos.nroRegistro).trim());
-
-    if (rowIdx >= 1) {
-      await sheets.spreadsheets.values.update({
-        spreadsheetId,
-        range           : `${sheetName}!P${rowIdx + 1}:R${rowIdx + 1}`,
-        valueInputOption: 'RAW',
-        requestBody     : { values: [[destEmail, urlCertificado || '', 'ENVIADO']] }
-      });
-      functions.logger.info('Sheets actualizado ENVIADO, fila:', rowIdx + 1);
-    } else {
-      // Si no existe la fila aún (raro), insertarla
-      await appendRowSheets(datos, urlCertificado || '', 'ENVIADO');
-    }
-  } catch (eSh) {
-    functions.logger.warn('Sheets actualizar ENVIADO error (no fatal):', eSh.message);
+    functions.logger.warn('Firestore update error (no fatal):', eFs.message);
   }
 
   return { ok: true };
 });
 
 // ════════════════════════════════════════════════════════════════════════════
-//  FUNCIÓN 3 — generarLinkFirma
-//  Genera un token único y retorna la URL de firma para el cliente
+//  FUNCIÓN 2 — generarLinkFirma
+//  Genera token UUID y retorna URL de firma para el cliente
 // ════════════════════════════════════════════════════════════════════════════
 exports.generarLinkFirma = functions
   .runWith({ timeoutSeconds: 30, memory: '128MB' })
@@ -388,23 +209,22 @@ exports.generarLinkFirma = functions
     throw new functions.https.HttpsError('invalid-argument', 'nro es requerido.');
   }
 
-  const crypto = require('crypto');
-  const token  = crypto.randomUUID ? crypto.randomUUID() : crypto.randomBytes(16).toString('hex');
+  const token = crypto.randomUUID();
 
   await db.collection('registros_visita').doc(nro).update({
-    tokenFirma  : token,
-    estadoFirma : 'PENDIENTE'
+    tokenFirma : token,
+    estadoFirma: 'PENDIENTE'
   });
 
-  const projectId = process.env.GCLOUD_PROJECT || admin.app().options.projectId || 'certimar-rv';
+  const projectId = process.env.GCLOUD_PROJECT || 'certimar-rv';
   const url = `https://${projectId}.web.app/firma?nro=${encodeURIComponent(nro)}&token=${encodeURIComponent(token)}`;
 
-  functions.logger.info('generarLinkFirma OK:', nro, url);
+  functions.logger.info('generarLinkFirma OK:', nro);
   return { ok: true, url };
 });
 
 // ════════════════════════════════════════════════════════════════════════════
-//  FUNCIÓN 4 — procesarFirmaCliente
+//  FUNCIÓN 3 — procesarFirmaCliente
 //  Verifica token, sube firma a Storage y actualiza Firestore
 // ════════════════════════════════════════════════════════════════════════════
 exports.procesarFirmaCliente = functions
@@ -416,31 +236,24 @@ exports.procesarFirmaCliente = functions
     throw new functions.https.HttpsError('invalid-argument', 'nro, firmaB64 y token son requeridos.');
   }
 
-  // Verificar token en Firestore
   const docRef  = db.collection('registros_visita').doc(nro);
   const docSnap = await docRef.get();
   if (!docSnap.exists) {
     throw new functions.https.HttpsError('not-found', 'Registro no encontrado.');
   }
-  const registroData = docSnap.data();
-  if (registroData.tokenFirma !== token) {
-    throw new functions.https.HttpsError('permission-denied', 'Token de firma inválido o ya utilizado.');
+  if (docSnap.data().tokenFirma !== token) {
+    throw new functions.https.HttpsError('permission-denied', 'Token de firma inválido.');
   }
 
-  // Subir firma a Storage
-  const bucket  = admin.storage().bucket();
-  const rawB64  = firmaB64.replace(/^data:image\/\w+;base64,/, '');
-  const buffer  = Buffer.from(rawB64, 'base64');
+  const bucket   = admin.storage().bucket();
+  const rawB64   = firmaB64.replace(/^data:image\/\w+;base64,/, '');
+  const buffer   = Buffer.from(rawB64, 'base64');
   const filePath = `firmas/Firma_${nro}.png`;
-  const file    = bucket.file(filePath);
+  const file     = bucket.file(filePath);
 
   await file.save(buffer, { contentType: 'image/png', public: false });
-  const [url] = await file.getSignedUrl({
-    action : 'read',
-    expires: '2099-01-01'
-  });
+  const [url] = await file.getSignedUrl({ action: 'read', expires: '2099-01-01' });
 
-  // Actualizar Firestore
   await docRef.update({
     urlFirmaCliente: url,
     estadoFirma    : 'FIRMADO',
@@ -452,8 +265,8 @@ exports.procesarFirmaCliente = functions
 });
 
 // ════════════════════════════════════════════════════════════════════════════
-//  FUNCIÓN 5 — migrarPDFsDrive  (TEMPORAL — eliminar post-migración)
-//  Descarga PDFs de Google Drive y los sube a Firebase Storage
+//  FUNCIÓN 4 — migrarPDFsDrive  (TEMPORAL — eliminar post-migración)
+//  Descarga PDFs de URL pública y los sube a Firebase Storage
 // ════════════════════════════════════════════════════════════════════════════
 exports.migrarPDFsDrive = functions
   .runWith({ timeoutSeconds: 540, memory: '512MB' })
@@ -468,8 +281,7 @@ exports.migrarPDFsDrive = functions
     throw new functions.https.HttpsError('invalid-argument', 'registros debe ser un arreglo no vacío.');
   }
 
-  const fetch  = (...args) => import('node-fetch').then(({ default: f }) => f(...args));
-  const bucket = admin.storage().bucket();
+  const bucket  = admin.storage().bucket();
   const results = [];
 
   for (const r of registros) {
@@ -487,7 +299,6 @@ exports.migrarPDFsDrive = functions
       await file.save(buffer, { contentType: 'application/pdf', public: false });
       const [downloadURL] = await file.getSignedUrl({ action: 'read', expires: '2099-01-01' });
       await db.collection('registros_visita').doc(nro).update({ urlPdfStorage: downloadURL });
-      functions.logger.info('migrarPDFsDrive OK:', nro);
       results.push({ nro, ok: true, urlPdfStorage: downloadURL });
     } catch (e) {
       functions.logger.warn('migrarPDFsDrive ERROR:', nro, e.message);

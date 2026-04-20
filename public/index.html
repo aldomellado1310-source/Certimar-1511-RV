@@ -436,7 +436,7 @@ label.filtro-label{font-size:11px;font-weight:600;color:#64748b;text-transform:u
 .firma-section{display:flex;border-top:3px solid #94a3b8;padding-top:16px;margin-top:24px}
 .firma-col{width:50%;display:flex;flex-direction:column;align-items:center;padding:0 16px}
 .firma-col:first-child{border-right:1px solid #94a3b8}
-.firma-canvas{border:1px solid transparent;border-radius:4px;cursor:crosshair;touch-action:none}
+.firma-canvas{border:1px solid transparent;border-radius:4px;cursor:crosshair;touch-action:none;background:#ffffff}
 .firma-canvas:hover{border-color:#d1d5db}
 .firma-line{width:80%;border-top:1px solid black;margin:6px 0}
 .firma-input-name{font-weight:700;font-size:13px;text-align:center;border:none;background:transparent;outline:none;width:100%}
@@ -2157,8 +2157,16 @@ async function handleDescargarPDF() {
 
 async function generarPDF() {
   var el = document.getElementById('registro-documento');
+  // Forzar modo claro para que el PDF siempre sea fondo blanco
+  var root = document.documentElement;
+  var prevTheme = root.getAttribute('data-theme');
+  if (prevTheme === 'dark') root.setAttribute('data-theme', 'light');
+  // Esperar un frame para que CSS variables se apliquen antes de capturar
+  await new Promise(function(r){ requestAnimationFrame(function(){ requestAnimationFrame(r); }); });
+  var canvas;
+  try {
   // scale 1.5 en JPEG = 60% menos datos que scale:2 PNG, misma calidad visual para A4
-  var canvas = await html2canvas(el, {
+  canvas = await html2canvas(el, {
     scale: 1.5,
     backgroundColor: '#ffffff',
     useCORS: true,
@@ -2202,6 +2210,9 @@ async function generarPDF() {
     } catch(e) { /* si la foto falla, continuar */ }
   }
   return pdf;
+  } finally {
+    if (prevTheme === 'dark') root.setAttribute('data-theme', 'dark');
+  }
 }
 
 // =====================================================================
@@ -2231,8 +2242,8 @@ async function handleSyncGoogle() {
   pushNotif('sync', 'info', '☁️ Guardando en Firebase…', [
     { id:'step-nro',      label:'Generando N° correlativo',   state:'active' },
     { id:'step-firebase', label:'Escribiendo en Firestore',   state:'pending' },
-    { id:'step-drive',    label:'Subiendo PDF a Drive',       state:'pending' },
-    { id:'step-sheets',   label:'Registrando en Hoja RV',     state:'pending' }
+    { id:'step-drive',    label:'Subiendo archivos a Storage', state:'pending' },
+    { id:'step-update',   label:'Actualizando registro',      state:'pending' }
   ]);
 
   setBtnLoading('btn-sync', true);
@@ -2272,17 +2283,19 @@ async function handleSyncGoogle() {
     var urlCertificado = '';
     var urlFoto = '';
 
-    // Subir PDF a Firebase Storage
+    // Subir PDF + foto + firma a Firebase Storage
     var drivePromise = (async function() {
-      if (!pdfB64) return '';
+      if (!pdfB64) return { urlCert: '', urlFoto: '', urlFirma: '', pdfStoragePath: '' };
       try {
         var raw    = pdfB64.replace(/^data:application\/pdf;base64,/, '');
         var bytes  = Uint8Array.from(atob(raw), function(c){ return c.charCodeAt(0); });
         var nombre = 'CertimarRV_' + datos.nroRegistro + '_' +
                      (datos.centroCultivo || '').replace(/\s+/g,'_') + '.pdf';
-        var ref    = firebase.storage().ref('certificados/' + nombre);
+        var storagePath = 'certificados/' + nombre;
+        var ref    = firebase.storage().ref(storagePath);
         await ref.put(bytes.buffer, { contentType: 'application/pdf' });
         var url = await ref.getDownloadURL();
+        var fotoUrl = '';
         // Subir foto de evidencia si existe
         if (appState.fotoB64 && !appState.fotoB64.startsWith('data:application/pdf')) {
           try {
@@ -2292,12 +2305,26 @@ async function handleSyncGoogle() {
             var ext  = mt.split('/')[1] || 'jpg';
             var refF = firebase.storage().ref('fotos/Foto_' + datos.nroRegistro + '.' + ext);
             await refF.put(bytF.buffer, { contentType: mt });
+            fotoUrl = await refF.getDownloadURL();
           } catch(eFoto) { console.warn('Foto upload error (no fatal):', eFoto); }
         }
-        return url;
+        var firmaUrl = '';
+        // Subir firma del cliente si fue dibujada localmente
+        if (firmaClienteHasData) {
+          try {
+            var firmaCanvas = document.getElementById('firma-cliente');
+            var firmaDataUrl = firmaCanvas.toDataURL('image/png');
+            var rawFirma = firmaDataUrl.replace(/^data:image\/png;base64,/, '');
+            var bytFirma = Uint8Array.from(atob(rawFirma), function(c){ return c.charCodeAt(0); });
+            var refFirma = firebase.storage().ref('firmas/Firma_' + datos.nroRegistro + '.png');
+            await refFirma.put(bytFirma.buffer, { contentType: 'image/png' });
+            firmaUrl = await refFirma.getDownloadURL();
+          } catch(eFirma) { console.warn('Firma upload error (no fatal):', eFirma); }
+        }
+        return { urlCert: url, urlFoto: fotoUrl, urlFirma: firmaUrl, pdfStoragePath: storagePath };
       } catch(eStorage) {
         console.error('Storage upload error:', eStorage);
-        return '';
+        return { urlCert: '', urlFoto: '', urlFirma: '', pdfStoragePath: '' };
       }
     })()
 
@@ -2306,37 +2333,33 @@ async function handleSyncGoogle() {
     updateNotifStep('sync','step-firebase','done');
     updateNotifStep('sync','step-drive','active');
 
-    // 4. Esperar Drive
+    // 4. Esperar Storage uploads (PDF + foto + firma)
     var driveRes = await drivePromise;
-    urlCertificado = driveRes;
+    urlCertificado = driveRes.urlCert;
+    urlFoto        = driveRes.urlFoto;
+    var urlFirmaCliente = driveRes.urlFirma || '';
+    var pdfStoragePath  = driveRes.pdfStoragePath || '';
     updateNotifStep('sync','step-drive', urlCertificado ? 'done' : 'warn');
-    updateNotifStep('sync','step-sheets','active');
+    updateNotifStep('sync','step-update','active');
 
-    // 5. Registrar en Google Sheets via Firebase Function
-    await new Promise(function(resolve) {
-      firebase.functions().httpsCallable('registrarEnSheets')({
-        datos: datos, urlCertificado: urlCertificado
-      }).then(function(res) {
-        updateNotifStep('sync','step-sheets', res && res.data && res.data.ok ? 'done' : 'fail');
-        resolve(res.data);
-      }).catch(function(e) {
-        updateNotifStep('sync','step-sheets','fail');
-        console.error('registrarEnSheets error:', e);
-        resolve(null);
-      });
-    });
-
-    // 6. Actualizar Firestore con URL del PDF si se obtuvo
-    if (urlCertificado) {
-      await fbActualizarEstado(datos.nroRegistro, 'GUARDADO', { urlCertificado });
+    // 5. Actualizar Firestore con URLs obtenidas
+    var urlUpdate = {};
+    if (urlCertificado)   urlUpdate.urlCertificado   = urlCertificado;
+    if (urlFoto)          urlUpdate.urlFoto           = urlFoto;
+    if (urlFirmaCliente)  urlUpdate.urlFirmaCliente   = urlFirmaCliente;
+    if (pdfStoragePath)   urlUpdate.pdfStoragePath    = pdfStoragePath;
+    if (Object.keys(urlUpdate).length) {
+      await fbActualizarEstado(datos.nroRegistro, 'GUARDADO', urlUpdate);
     }
+    updateNotifStep('sync','step-update','done');
     updateNotifProgress('sync', 100);
 
     setTimeout(function() {
-      updateNotifCard('sync', 'success', '✅ Guardado en Firestore + Drive + Sheets', datos.nroRegistro);
+      updateNotifCard('sync', 'success', '✅ Guardado en Firebase Storage + Firestore', datos.nroRegistro);
     }, 400);
 
     appState.saved = true;
+    appState.pdfStoragePath = pdfStoragePath;
     appState.savedData = Object.assign({}, datos, { urlCert: urlCertificado });
     setBtnGuardar(true);
     updateCustomCentroIfNeeded(datos);
@@ -2467,9 +2490,9 @@ function handleEnviarMail() {
   setTimeout(function() { updateNotifStep('mail-send','m1','done'); updateNotifStep('mail-send','m2','active'); }, 800);
 
   firebase.functions().httpsCallable('enviarNotificacion')({
-    datos         : datos,
-    urlCertificado: appState.savedData ? appState.savedData.urlCert : '',
-    pdfB64        : appState.pdfB64
+    datos           : datos,
+    urlCertificado  : appState.savedData ? appState.savedData.urlCert : '',
+    pdfStoragePath  : appState.pdfStoragePath || ''
   }).then(function(result) {
     setBtnLoading('btn-enviar-mail', false);
     var res = result.data;
@@ -3255,9 +3278,9 @@ function handleCompletionEnviar() {
   ]);
 
   firebase.functions().httpsCallable('enviarNotificacion')({
-    datos         : datos,
-    urlCertificado: appState.savedData ? appState.savedData.urlCert : '',
-    pdfB64        : appState.pdfB64
+    datos           : datos,
+    urlCertificado  : appState.savedData ? appState.savedData.urlCert : '',
+    pdfStoragePath  : appState.pdfStoragePath || ''
   }).then(function(result) {
     var res = result.data;
     if (res && res.ok) {
@@ -3489,9 +3512,9 @@ function admReenviarMail(nro, email) {
     emailDestinatario: dest, observaciones: r.observaciones, tipoObservacion: r.tipoObservacion,
     nombreCertificador: r.nombreCertificador || r.certNombre || '', rutCertificador: r.rutCertificador || '' };
   firebase.functions().httpsCallable('enviarNotificacion')({
-    datos         : datos,
-    urlCertificado: r.urlCertificado || '',
-    pdfB64        : null
+    datos          : datos,
+    urlCertificado : r.urlCertificado || '',
+    pdfStoragePath : r.pdfStoragePath || ''
   }).then(function(result) {
     var res = result.data;
     if (res && res.ok) {
@@ -3576,10 +3599,52 @@ function cargarRegistroEnFormulario(r, modoLectura) {
     archived: r.estado === 'ARCHIVADO',
     pdfB64: null, fotoB64: null, savedData: r,
     editMode: !modoLectura,
-    editNro: r.nroRegistro || r.nroReg || ''
+    editNro: r.nroRegistro || r.nroReg || '',
+    pdfStoragePath: r.pdfStoragePath || ''
   };
   checkChecklist();
   setBtnGuardar(true);
+
+  // Cargar firma del cliente desde Storage (si existe)
+  if (r.urlFirmaCliente) {
+    (function(url) {
+      var img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = function() {
+        var c = document.getElementById('firma-cliente');
+        if (!c) return;
+        var ctx = c.getContext('2d');
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, c.width, c.height);
+        ctx.drawImage(img, 0, 0, c.width, c.height);
+        firmaClienteHasData = true;
+        var ph = document.getElementById('firma-placeholder');
+        if (ph) ph.style.display = 'none';
+        checkChecklist();
+      };
+      img.src = url;
+    })(r.urlFirmaCliente);
+  }
+
+  // Cargar foto de evidencia desde Storage (si existe)
+  if (r.urlFoto) {
+    (async function(url) {
+      try {
+        var resp = await fetch(url);
+        var blob = await resp.blob();
+        var dataUrl = await new Promise(function(res, rej) {
+          var fr = new FileReader();
+          fr.onload = function(e) { res(e.target.result); };
+          fr.onerror = rej;
+          fr.readAsDataURL(blob);
+        });
+        appState.fotoB64 = dataUrl;
+        var imgEl = document.getElementById('photo-img');
+        if (imgEl) { imgEl.src = dataUrl; imgEl.style.display = 'block'; }
+        _showPhotoPreview();
+      } catch(e) { console.warn('No se pudo cargar foto:', e); }
+    })(r.urlFoto);
+  }
 
   if (modoLectura) {
     lockForm(r.estado === 'ENVIADO' || r.estado === 'ARCHIVADO');
@@ -3655,6 +3720,18 @@ function _lanzarRegenPDF(r) {
       var nid = 'regen-' + (r.nroRegistro||r.nroReg);
       try {
         await cargarLibsPDF();
+        // Restaurar foto desde urlFoto si existe
+        if (r.urlFoto && !appState.fotoB64) {
+          try {
+            var resp = await fetch(r.urlFoto);
+            var blob = await resp.blob();
+            await new Promise(function(res) {
+              var fr = new FileReader();
+              fr.onload = function(e) { appState.fotoB64 = e.target.result; res(); };
+              fr.readAsDataURL(blob);
+            });
+          } catch(eFetch) { console.warn('No se pudo cargar foto para regen:', eFetch); }
+        }
         pushNotif(nid, 'info', 'Regenerando PDF…', [
           { id:'rg1', label:'Generando PDF',         state:'active'  },
           { id:'rg2', label:'Subiendo a Storage',    state:'pending' },
