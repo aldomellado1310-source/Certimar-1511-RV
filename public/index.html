@@ -3731,12 +3731,14 @@ function regenerarPDFAdmin(nro) {
 // =====================================================================
 //  REGENERAR PDF (carga form + genera + sube a Storage)
 // =====================================================================
-async function subirPDFAlStorage(pdfB64, nroRegistro, centroCultivo) {
-  var raw   = pdfB64.replace(/^data:application\/pdf;base64,/, '');
-  var bytes = Uint8Array.from(atob(raw), function(c){ return c.charCodeAt(0); });
+async function subirPDFAlStorage(pdfData, nroRegistro, centroCultivo) {
   var nombre = 'CertimarRV_' + nroRegistro + '_' + (centroCultivo||'').replace(/\s+/g,'_') + '.pdf';
   var ref    = firebase.storage().ref('certificados/' + nombre);
-  await ref.put(bytes.buffer, { contentType: 'application/pdf' });
+  // Acepta ArrayBuffer (jsPDF) o data URI base64 (legacy)
+  var buffer = (pdfData instanceof ArrayBuffer)
+    ? pdfData
+    : Uint8Array.from(atob(pdfData.replace(/^data:application\/pdf;base64,/, '').replace(/[\s\r\n]/g,'')), function(c){ return c.charCodeAt(0); }).buffer;
+  await ref.put(buffer, { contentType: 'application/pdf' });
   return await ref.getDownloadURL();
 }
 
@@ -3765,10 +3767,9 @@ function _lanzarRegenPDF(r) {
           { id:'rg3', label:'Actualizando Firestore',state:'pending' }
         ]);
         var pdf   = await generarPDF();
-        var b64   = pdf.output('datauristring');
         updateNotifStep(nid,'rg1','done');
         updateNotifStep(nid,'rg2','active');
-        var url   = await subirPDFAlStorage(b64, r.nroRegistro||r.nroReg, r.centroCultivo||r.centro);
+        var url   = await subirPDFAlStorage(pdf.output('arraybuffer'), r.nroRegistro||r.nroReg, r.centroCultivo||r.centro);
         updateNotifStep(nid,'rg2','done');
         updateNotifStep(nid,'rg3','active');
         await fbActualizarEstado(r.nroRegistro||r.nroReg, r.estado||'GUARDADO', { urlCertificado: url });
