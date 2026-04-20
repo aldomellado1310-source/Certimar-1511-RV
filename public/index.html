@@ -1478,6 +1478,27 @@ function dbCol() {
 }
 
 // =====================================================================
+//  CLOUD FUNCTIONS — llamada via Hosting rewrite (evita CORS de org policy)
+// =====================================================================
+async function callFn(name, payload) {
+  var user = firebase.auth().currentUser;
+  if (!user) throw new Error('No autenticado');
+  var idToken = await user.getIdToken();
+  var resp = await fetch('/api/' + name, {
+    method : 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + idToken },
+    body   : JSON.stringify({ data: payload })
+  });
+  var json = await resp.json();
+  if (json.error) {
+    var err = new Error(json.error.message || json.error.status || 'Error en función');
+    err.code = json.error.status;
+    throw err;
+  }
+  return { data: json.result };
+}
+
+// =====================================================================
 //  FIREBASE — GUARDAR REGISTRO
 // =====================================================================
 async function fbGuardarRegistro(datos, urlCertificado, urlFoto) {
@@ -2229,9 +2250,9 @@ async function handleSyncGoogle() {
     ]);
     await cargarLibsPDF();
     var pdf = await generarPDF();
-    // datauristring es el método correcto de jsPDF — evita problemas con btoa + binario
     pdfB64 = pdf.output('datauristring');
     appState.pdfB64 = pdfB64;
+    appState.pdfArrayBuffer = pdf.output('arraybuffer');
     updateNotifStep('pdf', 'pdf-render', 'done');
     removeNotif('pdf');
   } catch(e) {
@@ -2287,13 +2308,12 @@ async function handleSyncGoogle() {
     var drivePromise = (async function() {
       if (!pdfB64) return { urlCert: '', urlFoto: '', urlFirma: '', pdfStoragePath: '' };
       try {
-        var raw    = pdfB64.replace(/^data:application\/pdf;base64,/, '');
-        var bytes  = Uint8Array.from(atob(raw), function(c){ return c.charCodeAt(0); });
         var nombre = 'CertimarRV_' + datos.nroRegistro + '_' +
                      (datos.centroCultivo || '').replace(/\s+/g,'_') + '.pdf';
         var storagePath = 'certificados/' + nombre;
         var ref    = firebase.storage().ref(storagePath);
-        await ref.put(bytes.buffer, { contentType: 'application/pdf' });
+        // Usar ArrayBuffer directo de jsPDF — evita problemas de atob con base64 multi-línea
+        await ref.put(appState.pdfArrayBuffer, { contentType: 'application/pdf' });
         var url = await ref.getDownloadURL();
         var fotoUrl = '';
         // Subir foto de evidencia si existe
@@ -2489,7 +2509,7 @@ function handleEnviarMail() {
 
   setTimeout(function() { updateNotifStep('mail-send','m1','done'); updateNotifStep('mail-send','m2','active'); }, 800);
 
-  firebase.functions().httpsCallable('enviarNotificacion')({
+  callFn('enviarNotificacion', {
     datos           : datos,
     urlCertificado  : appState.savedData ? appState.savedData.urlCert : '',
     pdfStoragePath  : appState.pdfStoragePath || ''
@@ -3277,7 +3297,7 @@ function handleCompletionEnviar() {
     { id:'mail-send', label:'Enviando a ' + email, state:'active' }
   ]);
 
-  firebase.functions().httpsCallable('enviarNotificacion')({
+  callFn('enviarNotificacion', {
     datos           : datos,
     urlCertificado  : appState.savedData ? appState.savedData.urlCert : '',
     pdfStoragePath  : appState.pdfStoragePath || ''
@@ -3511,7 +3531,7 @@ function admReenviarMail(nro, email) {
     nroCentro: r.nroCentro, acs: r.acs, titular: r.titular, nombreResponsable: r.nombreResponsable,
     emailDestinatario: dest, observaciones: r.observaciones, tipoObservacion: r.tipoObservacion,
     nombreCertificador: r.nombreCertificador || r.certNombre || '', rutCertificador: r.rutCertificador || '' };
-  firebase.functions().httpsCallable('enviarNotificacion')({
+  callFn('enviarNotificacion', {
     datos          : datos,
     urlCertificado : r.urlCertificado || '',
     pdfStoragePath : r.pdfStoragePath || ''

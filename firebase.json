@@ -7,6 +7,9 @@
       "**/node_modules/**"
     ],
     "rewrites": [
+      { "source": "/api/enviarNotificacion",   "function": "enviarNotificacion",   "region": "us-central1" },
+      { "source": "/api/generarLinkFirma",     "function": "generarLinkFirma",     "region": "us-central1" },
+      { "source": "/api/procesarFirmaCliente", "function": "procesarFirmaCliente", "region": "us-central1" },
       {
         "source": "**",
         "destination": "/index.html"
@@ -15,7 +18,7 @@
   },
   "functions": {
     "source": "functions",
-    "runtime": "nodejs18"
+    "runtime": "nodejs20"
   },
   "firestore": {
     "rules": "firestore.rules"
