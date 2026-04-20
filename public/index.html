@@ -2431,8 +2431,26 @@ async function generarPDF() {
   // Esperar un frame para que CSS variables se apliquen antes de capturar
   await new Promise(function(r){ requestAnimationFrame(function(){ requestAnimationFrame(r); }); });
   var canvas;
+  var textareaReplacements = [];
   try {
   // scale 1.5 en JPEG = 60% menos datos que scale:2 PNG, misma calidad visual para A4
+  // html2canvas no renderiza bien el texto de textareas (puede cortar en horizontal).
+  // Reemplazamos temporalmente cada textarea visible por un div equivalente.
+  el.querySelectorAll('textarea').forEach(function(ta) {
+    var div = document.createElement('div');
+    div.textContent = ta.value;
+    div.style.cssText = window.getComputedStyle(ta).cssText;
+    div.style.whiteSpace = 'pre-wrap';
+    div.style.wordBreak = 'break-word';
+    div.style.overflowWrap = 'break-word';
+    div.style.overflow = 'visible';
+    div.style.height = 'auto';
+    div.style.minHeight = ta.offsetHeight + 'px';
+    ta.parentNode.insertBefore(div, ta);
+    ta.style.display = 'none';
+    textareaReplacements.push({ ta: ta, div: div });
+  });
+  await new Promise(function(r){ requestAnimationFrame(r); });
   canvas = await html2canvas(el, {
     scale: 1.5,
     backgroundColor: '#ffffff',
@@ -2479,6 +2497,10 @@ async function generarPDF() {
   return pdf;
   } finally {
     if (prevTheme === 'dark') root.setAttribute('data-theme', 'dark');
+    textareaReplacements.forEach(function(r) {
+      r.ta.style.display = '';
+      if (r.div.parentNode) r.div.parentNode.removeChild(r.div);
+    });
   }
 }
 
