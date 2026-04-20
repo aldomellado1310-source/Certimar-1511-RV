@@ -141,6 +141,8 @@ input::placeholder,textarea::placeholder{color:var(--text-muted)}
 .mobile-tab-bar .mtab.active{color:var(--brand)}
 .mobile-tab-bar .mtab.admin-tab{color:#7c3aed}
 .mobile-tab-bar .mtab.admin-tab.active{color:#7c3aed}
+.mobile-tab-bar .mtab.mtab-nueva{color:#0099CC}
+.mobile-tab-bar .mtab.mtab-nueva.active{color:#0077aa}
 .user-chip{display:flex;align-items:center;gap:8px;background:var(--surface-2);border:1px solid var(--border);border-radius:20px;padding:4px 12px 4px 4px;font-size:12px;color:var(--text-sec)}
 .user-avatar{width:26px;height:26px;border-radius:50%;background:var(--brand);color:white;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center}
 
@@ -439,7 +441,7 @@ label.filtro-label{font-size:11px;font-weight:600;color:#64748b;text-transform:u
 .obs-textarea{width:100%;min-height:160px;height:auto;padding:12px;border:none;outline:none;font-size:13px;font-family:inherit;resize:vertical;line-height:1.8;box-sizing:border-box;display:block}
 .tipo-obs-row{display:flex;gap:20px;padding:10px 16px;border-top:1px solid #94a3b8}
 .tipo-obs-label{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.5px}
-.firma-section{display:flex;border-top:3px solid #94a3b8;padding-top:16px;margin-top:24px}
+.firma-section{display:flex;border-top:3px solid #94a3b8;padding-top:16px;padding-bottom:12px;margin-top:24px}
 .firma-col{width:50%;display:flex;flex-direction:column;align-items:center;padding:0 16px}
 .firma-col:first-child{border-right:1px solid #94a3b8}
 .firma-canvas{border:1px solid transparent;border-radius:4px;cursor:crosshair;touch-action:none;background:#ffffff}
@@ -516,6 +518,28 @@ video{width:100%;border-radius:8px;background:black}
 .modal-close:hover{background:#f1f5f9;color:#374151}
 .modal-body{flex:1;overflow-y:auto;padding:20px 24px}
 .modal-footer{padding:14px 24px;border-top:1px solid #f1f5f9;background:#f8fafc;display:flex;justify-content:flex-end;gap:12px}
+/* ── Changelog toast ── */
+.cl-overlay{position:fixed;inset:0;z-index:300;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(0,0,30,.45);backdrop-filter:blur(5px)}
+.cl-overlay.hidden{display:none}
+@keyframes clIn{from{opacity:0;transform:scale(.93) translateY(-18px)}to{opacity:1;transform:scale(1) translateY(0)}}
+.cl-toast{background:#fff;border-radius:20px;max-width:560px;width:100%;max-height:90vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 28px 72px rgba(0,0,40,.28);animation:clIn .3s cubic-bezier(.22,1,.36,1) both}
+.cl-toast-head{background:linear-gradient(135deg,#002855 0%,#005a9e 100%);padding:22px 24px 18px;display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
+.cl-toast-title{color:#fff;font-size:17px;font-weight:700;letter-spacing:-.3px;margin-bottom:6px}
+.cl-toast-ver{display:inline-block;background:rgba(255,255,255,.15);color:rgba(255,255,255,.8);font-size:10px;font-weight:600;padding:2px 9px;border-radius:20px;letter-spacing:.5px}
+.cl-toast-close{background:rgba(255,255,255,.12);border:none;color:rgba(255,255,255,.7);width:30px;height:30px;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s,color .15s}
+.cl-toast-close:hover{background:rgba(255,255,255,.22);color:#fff}
+.cl-toast-body{flex:1;overflow-y:auto;padding:18px 20px;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.cl-card{background:#f8fafc;border-radius:13px;padding:14px;display:flex;flex-direction:column;gap:8px;border:1px solid #e8edf4}
+.cl-card-icon{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.cl-card-icon.fix{background:#dcfce7;color:#16a34a}
+.cl-card-icon.new{background:#dbeafe;color:#2563eb}
+.cl-card-icon.ux{background:#fef3c7;color:#d97706}
+.cl-card-icon svg{width:15px;height:15px;display:block}
+.cl-card-title{font-size:12.5px;font-weight:700;color:#0f172a;line-height:1.35}
+.cl-card-desc{font-size:11.5px;color:#64748b;line-height:1.55}
+.cl-toast-foot{padding:14px 20px;border-top:1px solid #f1f5f9;display:flex;justify-content:flex-end}
+.cl-btn-ok{background:#002855;color:#fff;border:none;border-radius:10px;padding:10px 32px;font-size:13px;font-weight:600;cursor:pointer;transition:background .15s}
+.cl-btn-ok:hover{background:#003f80}
 .email-preview{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:16px;font-family:monospace;font-size:12px;color:#374151;margin-bottom:16px}
 .email-row{display:grid;grid-template-columns:56px 1fr;gap:8px;align-items:center;margin-bottom:8px}
 .email-label{color:#94a3b8;font-size:12px}
@@ -582,7 +606,14 @@ video{width:100%;border-radius:8px;background:black}
   /* --- Admin --- */
   .admin-header{padding:16px 12px 0;flex-direction:column}
   .admin-stats{padding:0 12px}
-  .admin-table-wrap{margin:12px 8px 32px;padding:0}
+  .admin-table-wrap{margin:12px 8px 32px;padding:0;overflow-x:auto}
+  .admin-table{min-width:700px}
+  .hist-table-wrap{overflow-x:auto}
+  .hist-table{min-width:600px}
+
+  /* --- Changelog toast --- */
+  .cl-toast-body{grid-template-columns:1fr}
+  .cl-toast-title{font-size:15px}
 
   /* --- Modales --- */
   .modal-box{border-radius:12px 12px 0 0;position:fixed;bottom:0;left:0;right:0;max-height:90vh;max-width:100%}
@@ -619,7 +650,7 @@ video{width:100%;border-radius:8px;background:black}
   <div class="completion-box">
     <span class="completion-icon" id="cd-icon">✅</span>
     <div class="completion-title" id="cd-title">Registro Guardado</div>
-    <div class="completion-nro" id="cd-nro">RV-2026-0001</div>
+    <div class="completion-nro" id="cd-nro">RV-0001</div>
     <div class="completion-sub" id="cd-sub">El registro fue guardado exitosamente en Drive y Google Sheets.</div>
     <div id="cd-email-section" style="margin-bottom:16px">
       <div style="font-size:12px;font-weight:700;color:#374151;text-align:left;margin-bottom:6px">Notificar responsable del centro:</div>
@@ -799,6 +830,10 @@ video{width:100%;border-radius:8px;background:black}
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>
       Histórico
     </button>
+    <button class="mtab mtab-nueva" id="mtab-registro" onclick="showView('registro')">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+      Nueva
+    </button>
     <button class="mtab hidden" id="mtab-admin" onclick="showView('admin')">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
       Admin
@@ -828,7 +863,7 @@ video{width:100%;border-radius:8px;background:black}
         <div><label class="filtro-label">Fecha desde</label><input type="date" id="f-desde" class="filtro-input" onchange="filtrarDashboard()"></div>
         <div><label class="filtro-label">Fecha hasta</label><input type="date" id="f-hasta" class="filtro-input" onchange="filtrarDashboard()"></div>
         <div><label class="filtro-label">Centro</label><input type="text" id="f-centro" placeholder="Nombre del centro" class="filtro-input" oninput="filtrarDashboard()"></div>
-        <div><label class="filtro-label">N° Registro</label><input type="text" id="f-nreg" placeholder="Ej: RV-2026-0001" class="filtro-input" oninput="filtrarDashboard()"></div>
+        <div><label class="filtro-label">N° Registro</label><input type="text" id="f-nreg" placeholder="Ej: RV-0001" class="filtro-input" oninput="filtrarDashboard()"></div>
       </div>
     </div>
 
@@ -996,7 +1031,7 @@ video{width:100%;border-radius:8px;background:black}
             <tr>
               <td class="label-cell">N° de Centro</td>
               <td colspan="3" style="position:relative">
-                <input type="text" id="r-nroCentro" class="doc-input" placeholder="—" style="max-width:220px" oninput="onNroCentroInput(this.value)" onblur="setTimeout(closeAcDropdown,200)">
+                <input type="text" id="r-nroCentro" class="doc-input" placeholder="—" oninput="onNroCentroInput(this.value)" onblur="setTimeout(closeAcDropdown,200)">
               </td>
             </tr>
             <tr>
@@ -1029,11 +1064,11 @@ video{width:100%;border-radius:8px;background:black}
         <!-- RESOLUCIONES -->
         <div class="section-title">Norma aplicable:</div>
         <div class="res-grid">
-          <label class="res-label"><input type="checkbox" id="r-cicE2"> 1821 – CIC E2</label>
-          <label class="res-label"><input type="checkbox" id="r-ca"> 1821 – CA</label>
-          <label class="res-label"><input type="checkbox" id="r-vs"> 1821 – VS</label>
-          <label class="res-label"><input type="checkbox" id="r-res1511"> 1511</label>
-          <label class="res-label"><input type="checkbox" id="r-desinfeccion"> DESINFECCIÓN</label>
+          <label class="res-label"><input type="checkbox" id="r-cicE2" onchange="checkChecklist()"> 1821 – CIC E2</label>
+          <label class="res-label"><input type="checkbox" id="r-ca" onchange="checkChecklist()"> 1821 – CA</label>
+          <label class="res-label"><input type="checkbox" id="r-vs" onchange="checkChecklist()"> 1821 – VS</label>
+          <label class="res-label"><input type="checkbox" id="r-res1511" onchange="checkChecklist()"> 1511</label>
+          <label class="res-label"><input type="checkbox" id="r-desinfeccion" onchange="checkChecklist()"> DESINFECCIÓN</label>
         </div>
 
         <!-- COORDENADAS -->
@@ -1467,6 +1502,99 @@ video{width:100%;border-radius:8px;background:black}
   </div>
 </div>
 
+<!-- ── CHANGELOG TOAST ── -->
+<div class="cl-overlay hidden" id="modal-changelog">
+  <div class="cl-toast">
+    <div class="cl-toast-head">
+      <div>
+        <div class="cl-toast-title">Novedades del sistema</div>
+        <span class="cl-toast-ver">v2026.04.20b</span>
+      </div>
+      <button class="cl-toast-close" onclick="closeChangelog()" aria-label="Cerrar">
+        <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="1" y1="1" x2="13" y2="13"/><line x1="13" y1="1" x2="1" y2="13"/></svg>
+      </button>
+    </div>
+    <div class="cl-toast-body">
+
+      <div class="cl-card">
+        <div class="cl-card-icon new">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H2v12l3-3h9V2z"/><line x1="5" y1="6" x2="11" y2="6"/><line x1="5" y1="9" x2="8" y2="9"/></svg>
+        </div>
+        <div class="cl-card-title">Copia a operaciones y eflores</div>
+        <div class="cl-card-desc">Cada notificación enviada al cliente incluye copia automática a <em>operaciones@certimar.cl</em> y <em>eflores@certimar.cl</em>.</div>
+      </div>
+
+      <div class="cl-card">
+        <div class="cl-card-icon fix">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="2,9 6,13 14,3"/></svg>
+        </div>
+        <div class="cl-card-title">Firma del certificador visible</div>
+        <div class="cl-card-desc">La firma del certificador ahora aparece siempre al abrir el formulario, incluso al cargar registros del historial o regenerar el PDF.</div>
+      </div>
+
+      <div class="cl-card">
+        <div class="cl-card-icon fix">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="2,9 6,13 14,3"/></svg>
+        </div>
+        <div class="cl-card-title">Email responsable no se corta</div>
+        <div class="cl-card-desc">El correo del responsable del centro ya no queda cortado en la sección de firmas del formulario ni en el PDF generado.</div>
+      </div>
+
+      <div class="cl-card">
+        <div class="cl-card-icon fix">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="2,9 6,13 14,3"/></svg>
+        </div>
+        <div class="cl-card-title">Envío de correo activado</div>
+        <div class="cl-card-desc">Al presionar <strong>Notificar</strong>, el correo sale desde <em>operaciones@certimar.cl</em> con el PDF adjunto. El certificador recibe copia interna.</div>
+      </div>
+
+      <div class="cl-card">
+        <div class="cl-card-icon new">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="8" y1="2" x2="8" y2="14"/><line x1="2" y1="8" x2="14" y2="8"/></svg>
+        </div>
+        <div class="cl-card-title">N° de Centro va primero</div>
+        <div class="cl-card-desc">El formulario muestra <strong>N° de Centro</strong> antes del nombre. Ambos campos se completan entre sí al seleccionar una concesión.</div>
+      </div>
+
+      <div class="cl-card">
+        <div class="cl-card-icon new">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2 8h12M10 4l4 4-4 4"/></svg>
+        </div>
+        <div class="cl-card-title">Autocompletado bidireccional</div>
+        <div class="cl-card-desc">Escribe el código <em>o</em> el nombre del centro — el sistema sugiere y rellena ambos campos automáticamente.</div>
+      </div>
+
+      <div class="cl-card">
+        <div class="cl-card-icon fix">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="2,9 6,13 14,3"/></svg>
+        </div>
+        <div class="cl-card-title">Firma e imagen en histórico</div>
+        <div class="cl-card-desc">La firma del certificador y la foto adjunta ahora se muestran correctamente al revisar registros desde el historial.</div>
+      </div>
+
+      <div class="cl-card">
+        <div class="cl-card-icon ux">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="14" height="9" rx="2"/><path d="M5 4V3a3 3 0 016 0v1"/><line x1="8" y1="8" x2="8" y2="10"/></svg>
+        </div>
+        <div class="cl-card-title">Checklist ampliado</div>
+        <div class="cl-card-desc">El checklist lateral verifica N° centro, nombre, norma aplicable y orden de completación del formulario.</div>
+      </div>
+
+      <div class="cl-card">
+        <div class="cl-card-icon fix">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="2,9 6,13 14,3"/></svg>
+        </div>
+        <div class="cl-card-title">Eliminación corregida</div>
+        <div class="cl-card-desc">Se resolvió el bloqueo al eliminar registros desde el panel de administración. Responde en menos de 10 segundos.</div>
+      </div>
+
+    </div>
+    <div class="cl-toast-foot">
+      <button class="cl-btn-ok" onclick="closeChangelog()">Entendido</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // =====================================================================
 //  ESTADO GLOBAL
@@ -1529,6 +1657,8 @@ async function callFn(name, payload) {
 function enviarMailQueue(payload) {
   return new Promise(function(resolve, reject) {
     var queueRef = firebase.firestore().collection('mail_queue').doc();
+    var docId = queueRef.id;
+    console.log('[mail_queue] Escribiendo doc:', docId, '| dest:', payload.datos && payload.datos.emailDestinatario, '| url:', payload.urlCertificado || '(sin url)');
     queueRef.set({
       datos          : payload.datos,
       pdfStoragePath : payload.pdfStoragePath || '',
@@ -1536,20 +1666,27 @@ function enviarMailQueue(payload) {
       estado         : 'PENDIENTE',
       creadoEn       : firebase.firestore.FieldValue.serverTimestamp()
     }).then(function() {
-      // Resolver inmediatamente — no esperar a que la función termine
+      console.log('[mail_queue] Doc creado OK:', docId, '— esperando procesamiento...');
       resolve({ data: { ok: true } });
-      // Escuchar errores en background (sin bloquear UI)
       var unsub = queueRef.onSnapshot(function(snap) {
         var d = snap.data();
         if (!d) return;
+        console.log('[mail_queue] Estado ->', d.estado, d.error ? '| error completo: ' + d.error : '');
+        if (d.error) console.groupCollapsed('[mail_queue] Detalle error'); if (d.error) { console.log('estado Firestore:', d.estado); console.log('error:', d.error); console.groupEnd(); }
         if (d.estado === 'ENVIADO' || d.estado === 'ERROR') {
           unsub();
           if (d.estado === 'ERROR') {
+            console.error('[mail_queue] ERROR FINAL:', d.error);
             toast('Error al enviar correo: ' + (d.error || 'desconocido'), 'error');
+          } else {
+            console.log('[mail_queue] Correo ENVIADO correctamente');
           }
         }
       });
-    }).catch(reject);
+    }).catch(function(e) {
+      console.error('[mail_queue] Error al escribir doc:', e);
+      reject(e);
+    });
   });
 }
 
@@ -1639,6 +1776,7 @@ async function fbObtenerTodos(filtros) {
   var snap = await q.get();
   var docs = [];
   snap.forEach(function(d) { docs.push(Object.assign({ id: d.id }, d.data())); });
+  console.log('[admin] fbObtenerTodos:', docs.length, 'registros en Firestore');
   return docs;
 }
 
@@ -1647,16 +1785,15 @@ async function fbObtenerTodos(filtros) {
 // =====================================================================
 async function fbGenerarNroRegistro() {
   var db = initFirebase();
-  if (!db) return 'RV-' + new Date().getFullYear() + '-' + Date.now();
-  var year   = new Date().getFullYear();
-  var cntRef = db.collection('meta').doc('contador_' + year);
+  if (!db) return 'RV-' + Date.now();
+  var cntRef = db.collection('meta').doc('contador');
   var newNum = await db.runTransaction(async function(tx) {
     var doc = await tx.get(cntRef);
     var n   = doc.exists ? (doc.data().count + 1) : 1;
     tx.set(cntRef, { count: n });
     return n;
   });
-  return 'RV-' + year + '-' + String(newNum).padStart(4, '0');
+  return 'RV-' + String(newNum).padStart(4, '0');
 }
 
 // =====================================================================
@@ -1789,6 +1926,19 @@ function showApp() {
   initFishIfNeeded();
   var ocean = document.getElementById('dash-ocean');
   if (ocean) ocean.classList.remove('hidden');
+
+  // Mostrar changelog si no fue visto en esta versión
+  var CL_KEY = 'certimar_changelog_v20260420b';
+  if (!localStorage.getItem(CL_KEY)) {
+    setTimeout(function() {
+      document.getElementById('modal-changelog').classList.remove('hidden');
+    }, 800);
+  }
+}
+
+function closeChangelog() {
+  document.getElementById('modal-changelog').classList.add('hidden');
+  localStorage.setItem('certimar_changelog_v20260420', '1');
 }
 
 // =====================================================================
@@ -1830,6 +1980,7 @@ function resetFormulario() {
     if (el) el.checked = false;
   });
   document.querySelectorAll('input[name="tipoObs"]').forEach(function(r){ r.checked = false; });
+  initFirmaCertificador();
   clearFirmaCliente();
   clearPhoto();
   clearConcesionFill();
@@ -1860,14 +2011,15 @@ function get(id) {
 //  CHECKLIST
 // =====================================================================
 var checkItems = [
-  { id:'ck-datos',      text:'¿La información del formulario digital coincide con los datos físicos?', auto:false },
-  { id:'ck-centro',     text:'¿Se ingresó el nombre del centro de cultivo?', auto:true },
   { id:'ck-nrocentro',  text:'¿Se ingresó el N° (código) del centro?', auto:true },
+  { id:'ck-centro',     text:'¿Se ingresó el nombre del centro de cultivo?', auto:true },
   { id:'ck-fecha',      text:'¿Se completó la fecha de última siembra y tamaño peces?', auto:true },
+  { id:'ck-norma',      text:'¿Se seleccionó al menos una norma aplicable?', auto:true },
   { id:'ck-obs',        text:'¿Se han registrado las observaciones y su tipo correspondiente?', auto:true },
   { id:'ck-responsable',text:'¿Se completó el nombre del responsable del centro?', auto:true },
   { id:'ck-firma',      text:'¿El responsable del centro ha firmado digitalmente?', auto:true },
   { id:'ck-foto',       text:'¿Se tomó la fotografía de evidencia?', auto:true },
+  { id:'ck-datos',      text:'¿La información del formulario digital coincide con los datos físicos?', auto:false },
 ];
 
 function initChecklist() {
@@ -1906,14 +2058,15 @@ function toggleTipoObs() {
 
 function checkChecklist() {
   var checks = {
-    'ck-datos':       !!manualChecks['ck-datos'],
-    'ck-centro':      !!(get('r-centroCultivo') || '').trim(),
     'ck-nrocentro':   !!(get('r-nroCentro') || '').trim(),
+    'ck-centro':      !!(get('r-centroCultivo') || '').trim(),
     'ck-fecha':       !!get('r-fechaSiembra') && !!get('r-tamanoPeces'),
+    'ck-norma':       ['r-cicE2','r-ca','r-vs','r-res1511','r-desinfeccion'].some(function(id){ return document.getElementById(id) && document.getElementById(id).checked; }),
     'ck-obs':         !!get('r-observaciones') && (document.getElementById('r-obs-no').checked || !!getSelectedRadio('tipoObs')),
     'ck-responsable': !!get('r-nombreResponsable'),
     'ck-firma':       firmaClienteHasData,
     'ck-foto':        !!appState.fotoB64,
+    'ck-datos':       !!manualChecks['ck-datos'],
   };
   var allDone = true;
   checkItems.forEach(function(item) {

@@ -90,7 +90,10 @@ function doPost(e) {
       const asunto   = '[Certimar] Registro de Visita \u2013 ' + datos.centroCultivo + ' \u2013 ' + (datos.fecha || '');
       const htmlBody = _plantillaEmail(datos, urlCertificado || '');
       const opts     = { htmlBody, replyTo: EMAIL_REMITENTE, name: 'Certimar SpA' };
-      if (datos.emailCC  && datos.emailCC.trim())  opts.cc  = datos.emailCC.trim();
+      const _ccFijos = [EMAIL_REMITENTE, EMAIL_COPIA_FIRMA].filter(function(e) { return e && e !== datos.emailDestinatario; });
+      const _ccExtra = (datos.emailCC && datos.emailCC.trim()) ? datos.emailCC.trim().split(',').map(function(e){ return e.trim(); }) : [];
+      const _ccAll   = Array.from(new Set(_ccFijos.concat(_ccExtra).filter(Boolean)));
+      if (_ccAll.length) opts.cc = _ccAll.join(',');
       if (datos.emailCCO && datos.emailCCO.trim()) opts.bcc = datos.emailCCO.trim();
       if (pdfBlob) opts.attachments = [pdfBlob];
       GmailApp.sendEmail(datos.emailDestinatario, asunto, '', opts);
@@ -155,11 +158,9 @@ function getUserInfo() {
 function _generarNroRegistro() {
   const ss     = SpreadsheetApp.openById(SPREADSHEET_ID);
   const sheet  = ss.getSheetByName(SHEET_NAME) || ss.insertSheet(SHEET_NAME);
-  const year   = new Date().getFullYear();
-  const prefix = 'RV-' + year + '-';
+  const prefix = 'RV-';
 
   // Buscar el máximo secuencial existente en la columna B (N° Registro).
-  // Usar lastRow puro es frágil: filas vacías/limpiadas sin eliminar inflan el conteo.
   let maxSeq = 0;
   if (sheet.getLastRow() >= 2) {
     sheet.getRange(2, 2, sheet.getLastRow() - 1, 1).getValues().forEach(function([val]) {
@@ -727,7 +728,10 @@ function _enviarCorreoRV(datos, urlCertificado, pdfBlob) {
   const blob       = _resolverPdfBlob(datos, pdfBlob, urlCertificado);
 
   const opciones = { htmlBody, replyTo: EMAIL_REMITENTE, name: 'Certimar SpA' };
-  if (datos.emailCC  && datos.emailCC.trim())  opciones.cc  = datos.emailCC.trim();
+  const _ccFijos = [EMAIL_REMITENTE, EMAIL_COPIA_FIRMA].filter(function(e) { return e && e !== destEmail; });
+  const _ccExtra = (datos.emailCC && datos.emailCC.trim()) ? datos.emailCC.trim().split(',').map(function(e){ return e.trim(); }) : [];
+  const _ccAll   = Array.from(new Set(_ccFijos.concat(_ccExtra).filter(Boolean)));
+  if (_ccAll.length) opciones.cc = _ccAll.join(',');
   if (datos.emailCCO && datos.emailCCO.trim()) opciones.bcc = datos.emailCCO.trim();
   if (blob) opciones.attachments = [blob];
 
