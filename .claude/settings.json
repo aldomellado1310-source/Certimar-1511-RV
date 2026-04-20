@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(clasp --version)",
+      "Bash(clasp whoami *)"
+    ]
+  }
+}

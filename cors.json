@@ -1,0 +1,15 @@
+[
+  {
+    "origin": [
+      "https://certimar-rv.web.app",
+      "https://certimar-rv.firebaseapp.com",
+      "https://script.googleusercontent.com",
+      "https://script.google.com",
+      "http://localhost:5000",
+      "http://localhost:5002"
+    ],
+    "method": ["GET", "HEAD", "PUT"],
+    "responseHeader": ["Content-Type", "Content-Disposition", "Authorization"],
+    "maxAgeSeconds": 3600
+  }
+]

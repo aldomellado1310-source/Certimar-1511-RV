@@ -135,6 +135,12 @@ input::placeholder,textarea::placeholder{color:var(--text-muted)}
 .btn-theme{background:var(--surface-2);border:1px solid var(--border);color:var(--text-sec);border-radius:8px;padding:7px 10px;font-size:16px;display:flex;align-items:center;transition:.2s;margin-left:8px}
 .btn-theme:hover{background:var(--surface-3);color:var(--text-pri)}
 .nav-right{display:flex;align-items:center;gap:8px}
+.mobile-tab-bar{display:none;position:fixed;bottom:0;left:0;right:0;height:60px;background:var(--surface-1);border-top:1px solid var(--border);z-index:200;padding:0 8px}
+.mobile-tab-bar .mtab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;background:none;border:none;color:var(--text-sec);font-size:10px;font-weight:500;padding:6px 4px;border-radius:8px;transition:.15s}
+.mobile-tab-bar .mtab svg{flex-shrink:0}
+.mobile-tab-bar .mtab.active{color:var(--brand)}
+.mobile-tab-bar .mtab.admin-tab{color:#7c3aed}
+.mobile-tab-bar .mtab.admin-tab.active{color:#7c3aed}
 .user-chip{display:flex;align-items:center;gap:8px;background:var(--surface-2);border:1px solid var(--border);border-radius:20px;padding:4px 12px 4px 4px;font-size:12px;color:var(--text-sec)}
 .user-avatar{width:26px;height:26px;border-radius:50%;background:var(--brand);color:white;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center}
 
@@ -534,13 +540,6 @@ video{width:100%;border-radius:8px;background:black}
 @media(max-width:600px){
   /* --- Documento (no tocar layout interno) --- */
   .doc-header{flex-direction:column;gap:12px}
-  /* Fila Centro de Cultivo + N° de Centro: apila en 2 líneas en móvil */
-  .tr-centro-nro{display:flex;flex-wrap:wrap}
-  .tr-centro-nro td{box-sizing:border-box;border:1px solid #94a3b8}
-  .tr-centro-nro .td-centro-label{width:30%;flex-shrink:0}
-  .tr-centro-nro .td-centro-val{width:70%;flex-shrink:0}
-  .tr-centro-nro .td-nro-label{width:30%;flex-shrink:0}
-  .tr-centro-nro .td-nro-val{width:70%;flex-shrink:0}
   .firma-section{flex-direction:column}
   .firma-col{width:100%;border-right:none!important;border-bottom:1px solid #94a3b8;padding-bottom:16px;margin-bottom:16px}
   .tipo-obs-row{flex-wrap:wrap;gap:12px}
@@ -552,6 +551,8 @@ video{width:100%;border-radius:8px;background:black}
   .btn-nueva span{display:none}
   .btn-nueva{padding:8px 12px}
   .user-chip{display:none}
+  .mobile-tab-bar{display:flex}
+  body{padding-bottom:64px}
 
   /* --- Vista registro --- */
   #view-registro{padding:10px}
@@ -788,6 +789,22 @@ video{width:100%;border-radius:8px;background:black}
     </div>
   </nav>
 
+  <!-- ============== BOTTOM TAB BAR (móvil) ============== -->
+  <div class="mobile-tab-bar" id="mobile-tab-bar">
+    <button class="mtab active" id="mtab-dashboard" onclick="showView('dashboard')">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+      Dashboard
+    </button>
+    <button class="mtab" id="mtab-historico" onclick="showView('historico')">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>
+      Histórico
+    </button>
+    <button class="mtab hidden" id="mtab-admin" onclick="showView('admin')">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      Admin
+    </button>
+  </div>
+
   <!-- ============== DASHBOARD VIEW ============== -->
   <div id="view-dashboard">
     <div class="dash-header">
@@ -976,13 +993,15 @@ video{width:100%;border-radius:8px;background:black}
         <!-- DATOS CENTRO -->
         <table class="doc-table">
           <tbody>
-            <tr class="tr-centro-nro">
-              <td class="label-cell td-centro-label">Centro de Cultivo</td>
-              <td class="td-centro-val"><input type="text" id="r-centroCultivo" class="doc-input" placeholder="—"></td>
-              <td class="label-cell td-nro-label">N° de Centro</td>
-              <td class="td-nro-val" style="position:relative">
-                <input type="text" id="r-nroCentro" class="doc-input" placeholder="—" oninput="onNroCentroInput(this.value)" onblur="setTimeout(closeAcDropdown,200)">
+            <tr>
+              <td class="label-cell">N° de Centro</td>
+              <td colspan="3" style="position:relative">
+                <input type="text" id="r-nroCentro" class="doc-input" placeholder="—" style="max-width:220px" oninput="onNroCentroInput(this.value)" onblur="setTimeout(closeAcDropdown,200)">
               </td>
+            </tr>
+            <tr>
+              <td class="label-cell">Centro de Cultivo</td>
+              <td colspan="3" style="position:relative"><input type="text" id="r-centroCultivo" class="doc-input" placeholder="—" oninput="onCentroCultivoInput(this.value)" onblur="setTimeout(closeAcDropdown,200)"></td>
             </tr>
             <tr>
               <td class="label-cell">A.C.S.</td>
@@ -1505,6 +1524,35 @@ async function callFn(name, payload) {
   return { data: json.result };
 }
 
+// Escribe en mail_queue y resuelve de inmediato (fire-and-forget).
+// Monitorea en background para mostrar toast si hay error.
+function enviarMailQueue(payload) {
+  return new Promise(function(resolve, reject) {
+    var queueRef = firebase.firestore().collection('mail_queue').doc();
+    queueRef.set({
+      datos          : payload.datos,
+      pdfStoragePath : payload.pdfStoragePath || '',
+      urlCertificado : payload.urlCertificado || '',
+      estado         : 'PENDIENTE',
+      creadoEn       : firebase.firestore.FieldValue.serverTimestamp()
+    }).then(function() {
+      // Resolver inmediatamente — no esperar a que la función termine
+      resolve({ data: { ok: true } });
+      // Escuchar errores en background (sin bloquear UI)
+      var unsub = queueRef.onSnapshot(function(snap) {
+        var d = snap.data();
+        if (!d) return;
+        if (d.estado === 'ENVIADO' || d.estado === 'ERROR') {
+          unsub();
+          if (d.estado === 'ERROR') {
+            toast('Error al enviar correo: ' + (d.error || 'desconocido'), 'error');
+          }
+        }
+      });
+    }).catch(reject);
+  });
+}
+
 // =====================================================================
 //  FIREBASE — GUARDAR REGISTRO
 // =====================================================================
@@ -1732,6 +1780,8 @@ function showApp() {
     // Mostrar botón admin si corresponde
     if (currentUser.isAdmin) {
       document.getElementById('nav-admin').classList.remove('hidden');
+      var mtabAdmin = document.getElementById('mtab-admin');
+      if (mtabAdmin) mtabAdmin.classList.remove('hidden');
     }
   }
 
@@ -1751,6 +1801,8 @@ function showView(view) {
     if (el) el.classList.toggle('hidden', v !== view);
     var btn = document.getElementById('nav-'+v);
     if (btn) btn.classList.toggle('active', v === view);
+    var mtab = document.getElementById('mtab-'+v);
+    if (mtab) mtab.classList.toggle('active', v === view);
   });
   var ocean = document.getElementById('dash-ocean');
   if (ocean) ocean.classList.toggle('hidden', view !== 'dashboard');
@@ -1809,6 +1861,8 @@ function get(id) {
 // =====================================================================
 var checkItems = [
   { id:'ck-datos',      text:'¿La información del formulario digital coincide con los datos físicos?', auto:false },
+  { id:'ck-centro',     text:'¿Se ingresó el nombre del centro de cultivo?', auto:true },
+  { id:'ck-nrocentro',  text:'¿Se ingresó el N° (código) del centro?', auto:true },
   { id:'ck-fecha',      text:'¿Se completó la fecha de última siembra y tamaño peces?', auto:true },
   { id:'ck-obs',        text:'¿Se han registrado las observaciones y su tipo correspondiente?', auto:true },
   { id:'ck-responsable',text:'¿Se completó el nombre del responsable del centro?', auto:true },
@@ -1853,6 +1907,8 @@ function toggleTipoObs() {
 function checkChecklist() {
   var checks = {
     'ck-datos':       !!manualChecks['ck-datos'],
+    'ck-centro':      !!(get('r-centroCultivo') || '').trim(),
+    'ck-nrocentro':   !!(get('r-nroCentro') || '').trim(),
     'ck-fecha':       !!get('r-fechaSiembra') && !!get('r-tamanoPeces'),
     'ck-obs':         !!get('r-observaciones') && (document.getElementById('r-obs-no').checked || !!getSelectedRadio('tipoObs')),
     'ck-responsable': !!get('r-nombreResponsable'),
@@ -2516,7 +2572,7 @@ function handleEnviarMail() {
 
   setTimeout(function() { updateNotifStep('mail-send','m1','done'); updateNotifStep('mail-send','m2','active'); }, 800);
 
-  callFn('enviarNotificacion', {
+  enviarMailQueue({
     datos           : datos,
     urlCertificado  : appState.savedData ? appState.savedData.urlCert : '',
     pdfStoragePath  : appState.pdfStoragePath || ''
@@ -2967,14 +3023,48 @@ function initFishIfNeeded() {
   } catch(e) { console.warn('No se pudieron cargar centros custom:', e); }
 })();
 
-function _positionDropdown() {
-  var input = document.getElementById('r-nroCentro');
+function _positionDropdown(anchorId) {
+  var input = document.getElementById(anchorId || 'r-nroCentro');
   var dd = document.getElementById('ac-dropdown');
   if (!input || !dd) return;
   var rect = input.getBoundingClientRect();
   dd.style.top  = (rect.bottom + window.scrollY + 2) + 'px';
   dd.style.left = rect.left + 'px';
   dd.style.width = Math.max(rect.width, 320) + 'px';
+}
+
+function onCentroCultivoInput(val) {
+  checkChecklist();
+  val = val.trim();
+  var dd = document.getElementById('ac-dropdown');
+  if (val.length < 2 || !CONCESIONES_DB) { closeAcDropdown(); return; }
+  var valLow = val.toLowerCase();
+  var matches = Object.entries(CONCESIONES_DB)
+    .filter(function(e) {
+      var name = (e[1].centroCultivo || '').toLowerCase();
+      return name.startsWith(valLow) || name.includes(valLow);
+    }).slice(0, 12);
+  if (!matches.length) { closeAcDropdown(); return; }
+  dd.innerHTML = matches.map(function(e) {
+    var code = e[0], c = e[1];
+    var isCustom = c._custom ? ' <span style="color:#f59e0b;font-size:9px">★ LOCAL</span>' : '';
+    return '<div class="ac-item' + (c._custom ? ' ac-new' : '') + '" onmousedown="selectConcesionByNombre(\'' + code + '\')">' +
+      '<span class="ac-code">' + code + isCustom + '</span>' +
+      '<div><div class="ac-name">' + esc(c.centroCultivo || '—') + '</div>' +
+      '<div class="ac-titular">' + esc(c.titular || '—') + ' · ACS: ' + esc(c.acs || '—') + '</div></div>' +
+      '</div>';
+  }).join('');
+  dd.style.display = 'block';
+  _positionDropdown('r-centroCultivo');
+}
+
+function selectConcesionByNombre(code) {
+  var c = CONCESIONES_DB[code];
+  if (!c) return;
+  if (c.centroCultivo) set('r-centroCultivo', c.centroCultivo);
+  set('r-nroCentro', code);
+  fillConcesion(code, c);
+  closeAcDropdown();
 }
 
 function onNroCentroInput(val) {
@@ -3304,7 +3394,7 @@ function handleCompletionEnviar() {
     { id:'mail-send', label:'Enviando a ' + email, state:'active' }
   ]);
 
-  callFn('enviarNotificacion', {
+  enviarMailQueue({
     datos           : datos,
     urlCertificado  : appState.savedData ? appState.savedData.urlCert : '',
     pdfStoragePath  : appState.pdfStoragePath || ''
@@ -3538,7 +3628,7 @@ function admReenviarMail(nro, email) {
     nroCentro: r.nroCentro, acs: r.acs, titular: r.titular, nombreResponsable: r.nombreResponsable,
     emailDestinatario: dest, observaciones: r.observaciones, tipoObservacion: r.tipoObservacion,
     nombreCertificador: r.nombreCertificador || r.certNombre || '', rutCertificador: r.rutCertificador || '' };
-  callFn('enviarNotificacion', {
+  enviarMailQueue({
     datos          : datos,
     urlCertificado : r.urlCertificado || '',
     pdfStoragePath : r.pdfStoragePath || ''
@@ -3635,21 +3725,32 @@ function cargarRegistroEnFormulario(r, modoLectura) {
   // Cargar firma del cliente desde Storage (si existe)
   if (r.urlFirmaCliente) {
     (function(url) {
-      var img = new Image();
-      img.crossOrigin = 'anonymous';
-      img.onload = function() {
-        var c = document.getElementById('firma-cliente');
-        if (!c) return;
-        var ctx = c.getContext('2d');
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(0, 0, c.width, c.height);
-        ctx.drawImage(img, 0, 0, c.width, c.height);
-        firmaClienteHasData = true;
-        var ph = document.getElementById('firma-placeholder');
-        if (ph) ph.style.display = 'none';
-        checkChecklist();
-      };
-      img.src = url;
+      function dibujarFirma(imgSrc, useCors) {
+        var img = new Image();
+        if (useCors) img.crossOrigin = 'anonymous';
+        img.onload = function() {
+          var c = document.getElementById('firma-cliente');
+          if (!c) return;
+          try {
+            var ctx = c.getContext('2d');
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, c.width, c.height);
+            ctx.drawImage(img, 0, 0, c.width, c.height);
+          } catch(e) {
+            // canvas tainted — reintentar sin crossOrigin para al menos mostrar
+            if (useCors) { dibujarFirma(imgSrc, false); return; }
+          }
+          firmaClienteHasData = true;
+          var ph = document.getElementById('firma-placeholder');
+          if (ph) ph.style.display = 'none';
+          checkChecklist();
+        };
+        img.onerror = function() {
+          if (useCors) dibujarFirma(imgSrc, false);
+        };
+        img.src = imgSrc;
+      }
+      dibujarFirma(url, true);
     })(r.urlFirmaCliente);
   }
 
@@ -3657,6 +3758,11 @@ function cargarRegistroEnFormulario(r, modoLectura) {
   if (r.urlFoto) {
     (async function(url) {
       try {
+        // Mostrar inmediatamente vía src (no bloquea)
+        var imgEl = document.getElementById('photo-img');
+        if (imgEl) { imgEl.src = url; imgEl.style.display = 'block'; }
+        _showPhotoPreview();
+        // Intentar convertir a base64 para que quede disponible en PDF
         var resp = await fetch(url);
         var blob = await resp.blob();
         var dataUrl = await new Promise(function(res, rej) {
@@ -3666,10 +3772,12 @@ function cargarRegistroEnFormulario(r, modoLectura) {
           fr.readAsDataURL(blob);
         });
         appState.fotoB64 = dataUrl;
-        var imgEl = document.getElementById('photo-img');
-        if (imgEl) { imgEl.src = dataUrl; imgEl.style.display = 'block'; }
-        _showPhotoPreview();
-      } catch(e) { console.warn('No se pudo cargar foto:', e); }
+        if (imgEl) imgEl.src = dataUrl;
+      } catch(e) {
+        // CORS falló: la imagen igual se muestra vía src, solo falta el base64
+        console.warn('No se pudo convertir foto a base64 (CORS):', e.message);
+        appState.fotoB64 = url;
+      }
     })(r.urlFoto);
   }
 
@@ -3811,7 +3919,11 @@ async function handleConfirmarEliminar() {
   btn.innerHTML = '<span class="spinner"></span> Eliminando…';
   try {
     var db = initFirebase();
-    await db.collection('registros_visita').doc(_eliminarNro).delete();
+    if (!db) throw new Error('Base de datos no disponible');
+    await Promise.race([
+      db.collection('registros_visita').doc(_eliminarNro).delete(),
+      new Promise(function(_, rej) { setTimeout(function(){ rej(new Error('Tiempo de espera agotado')); }, 10000); })
+    ]);
     _adminAll      = _adminAll.filter(function(x){ return x.nroRegistro !== _eliminarNro; });
     _adminFiltered = _adminFiltered.filter(function(x){ return x.nroRegistro !== _eliminarNro; });
     renderAdminTabla();

@@ -17,6 +17,7 @@
 <!-- Firebase SDK (compat v9) -->
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
 <!-- Configuración Firebase del proyecto -->
 <?!= include('FirebaseConfig') ?>
 <style>
@@ -299,6 +300,62 @@ input::placeholder,textarea::placeholder{color:var(--text-muted)}
 [data-theme="dark"] .ac-item:hover{background:var(--surface-2)}
 [data-theme="dark"] .view-container{background:var(--bg)}
 
+/* ── Formulario: texto hardcodeado ── */
+[data-theme="dark"] .res-label{color:var(--text-pri)}
+[data-theme="dark"] .res-label input{accent-color:var(--brand)}
+[data-theme="dark"] .section-title{color:var(--text-sec)}
+[data-theme="dark"] .firma-role{color:var(--text-sec)}
+[data-theme="dark"] .firma-line{border-top-color:var(--border-2)}
+[data-theme="dark"] .firma-input-name{color:var(--text-pri)}
+[data-theme="dark"] .firma-col:first-child{border-right-color:var(--border)}
+[data-theme="dark"] .firma-section{border-top-color:var(--border)}
+
+/* ── Coordenadas ── */
+[data-theme="dark"] .coord-table .sub-th{background:var(--surface-2);color:var(--text-sec)}
+[data-theme="dark"] .coord-table td{border-color:var(--border)}
+
+/* ── Observaciones ── */
+[data-theme="dark"] .obs-table .obs-header{background:var(--surface-2);color:var(--text-pri);border-color:var(--border)}
+[data-theme="dark"] .obs-table .obs-si-no{background:var(--surface-2);border-color:var(--border)}
+[data-theme="dark"] .obs-radio{color:var(--text-pri)}
+[data-theme="dark"] .tipo-obs-row{border-top-color:var(--border)}
+[data-theme="dark"] .tipo-obs-label{color:var(--text-pri)}
+[data-theme="dark"] .tipo-obs-label input{accent-color:var(--brand)}
+[data-theme="dark"] .obs-textarea{border-color:var(--border)}
+
+/* ── Checklist ── */
+[data-theme="dark"] .checklist-card{background:#1c1a0a;border-color:#856304}
+[data-theme="dark"] .checklist-header h2{color:var(--brand)}
+[data-theme="dark"] .check-item{background:var(--surface-2);border-color:var(--border)}
+[data-theme="dark"] .check-item.done{background:var(--success-bg);border-color:#1a5c34}
+[data-theme="dark"] .check-text{color:var(--text-pri)}
+[data-theme="dark"] .check-text.done{color:#4ade80}
+[data-theme="dark"] .lock-badge.locked{background:#2a1f00;color:var(--warn)}
+[data-theme="dark"] .lock-badge.unlocked{background:var(--success-bg);color:var(--success)}
+
+/* ── Botones de acción ── */
+[data-theme="dark"] .btn-save{background:var(--surface-2);color:var(--text-pri);border-color:var(--border-2)}
+[data-theme="dark"] .btn-save:hover{background:var(--surface-3)}
+[data-theme="dark"] .btn-save.saved{background:var(--success-bg);color:var(--success);border-color:#1a5c34}
+[data-theme="dark"] .btn-pdf{background:var(--surface-2);color:var(--brand);border-color:var(--brand)}
+[data-theme="dark"] .btn-pdf:hover:not(:disabled){background:var(--brand);color:#0d1117}
+[data-theme="dark"] .btn-sync{background:var(--surface-2);color:var(--accent);border-color:var(--accent)}
+[data-theme="dark"] .btn-sync:hover:not(:disabled){background:var(--accent);color:#0d1117}
+
+/* ── Disclaimer ── */
+[data-theme="dark"] .doc-footer-disclaimer{color:var(--text-sec);border-top-color:var(--border-2)}
+[data-theme="dark"] .doc-footer-disclaimer strong{color:var(--text-pri)}
+[data-theme="dark"] .doc-footer-disclaimer .disclaimer-icon{stroke:var(--brand)}
+
+/* ── Tipo observación header ── */
+[data-theme="dark"] .tipo-obs-header{background:var(--surface-2);color:var(--text-pri);border-bottom-color:var(--border)}
+
+/* ── Botón guardar firma ── */
+[data-theme="dark"] .btn-guardar-firma{background:var(--brand-light);color:var(--brand);border-color:var(--brand)}
+
+/* ── Select (área) en dark ── */
+[data-theme="dark"] #r-area-sel{background:var(--surface-2);color:var(--text-pri);border-color:var(--border)}
+
 /* ===================== ADMIN VIEW ===================== */
 #view-admin{background:var(--bg);min-height:calc(100vh - 64px)}
 .admin-header{max-width:1600px;margin:0 auto;padding:28px 24px 0;display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
@@ -416,6 +473,9 @@ label.filtro-label{font-size:11px;font-weight:600;color:#64748b;text-transform:u
 .tipo-obs-row{display:flex;gap:20px;padding:10px 16px;border-top:1px solid #94a3b8}
 .tipo-obs-label{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.5px}
 .firma-section{display:flex;border-top:3px solid #94a3b8;padding-top:16px;margin-top:24px}
+.doc-footer-disclaimer{margin:18px 0 0;padding:10px 16px;border-top:2px solid #003366;display:flex;align-items:flex-start;gap:10px;color:#374151}
+.doc-footer-disclaimer .disclaimer-icon{flex-shrink:0;margin-top:1px;stroke:#003366}
+.tipo-obs-header{font-size:11px;font-weight:700;padding:6px 12px;border-bottom:1px solid #94a3b8;color:#1e293b;background:#e2e8f0}
 .firma-col{width:50%;display:flex;flex-direction:column;align-items:center;padding:0 16px}
 .firma-col:first-child{border-right:1px solid #94a3b8}
 .firma-canvas{border:1px solid transparent;border-radius:4px;cursor:crosshair;touch-action:none}
@@ -972,7 +1032,7 @@ video{width:100%;border-radius:8px;background:black}
           <tbody>
             <tr>
               <td class="label-cell">Centro de Cultivo</td>
-              <td style="width:42%"><input type="text" id="r-centroCultivo" class="doc-input" placeholder="—"></td>
+              <td style="width:42%"><input type="text" id="r-centroCultivo" class="doc-input" placeholder="—" oninput="checkChecklist()"></td>
               <td class="label-cell" style="width:14%">N° de Centro</td>
               <td style="position:relative;width:18%">
                 <input type="text" id="r-nroCentro" class="doc-input" placeholder="—" oninput="onNroCentroInput(this.value)" onblur="setTimeout(closeAcDropdown,200)">
@@ -985,6 +1045,19 @@ video{width:100%;border-radius:8px;background:black}
             <tr>
               <td class="label-cell">Titular Centro de<br>Cultivo</td>
               <td colspan="3"><input type="text" id="r-titular" class="doc-input" placeholder="—"></td>
+            </tr>
+            <tr>
+              <td class="label-cell">Área</td>
+              <td colspan="3">
+                <select id="r-area-sel" class="doc-input" onchange="onAreaChange(this.value); checkChecklist();" style="width:auto;min-width:160px">
+                  <option value="">— Seleccionar —</option>
+                  <option value="Aysén">Aysén</option>
+                  <option value="Melinka">Melinka</option>
+                  <option value="Cisnes">Cisnes</option>
+                  <option value="otro">Otro…</option>
+                </select>
+                <input type="text" id="r-area-otro" class="doc-input" placeholder="Especifique área" style="display:none;width:180px;margin-left:8px" oninput="checkChecklist()">
+              </td>
             </tr>
             <tr>
               <td class="label-cell">Ubicación</td>
@@ -1051,7 +1124,7 @@ video{width:100%;border-radius:8px;background:black}
             </tr>
             <tr id="r-tipo-row">
               <td colspan="2" style="padding:0;border:1px solid #94a3b8">
-                <div style="font-size:11px;font-weight:700;padding:6px 12px;border-bottom:1px solid #94a3b8">TIPO OBSERVACIÓN (MARQUE LAS QUE CORRESPONDAN):</div>
+                <div class="tipo-obs-header">TIPO OBSERVACIÓN (MARQUE LAS QUE CORRESPONDAN):</div>
                 <div class="tipo-obs-row">
                   <label class="tipo-obs-label"><input type="checkbox" class="tipoObsCk" value="EXTRACCION" onchange="checkChecklist()"> EXTRACCION</label>
                   <label class="tipo-obs-label"><input type="checkbox" class="tipoObsCk" value="DESNATURALIZACION" onchange="checkChecklist()"> DESNATURALIZACION</label>
@@ -1074,7 +1147,7 @@ video{width:100%;border-radius:8px;background:black}
             <input type="text" id="r-nombreCertificador" class="firma-input-name" value="Engelbert Flores Carrio" oninput="var s=document.getElementById('disclaimer-cert-nombre');if(s)s.textContent=this.value||'el certificador suscrito'">
             <div class="firma-role">CERTIFICADOR</div>
             <input type="text" id="r-rutCertificador" class="doc-input" style="text-align:center;font-size:11px" value="13.968.696-9">
-            <button onclick="guardarFirmaCertificador()" style="margin-top:6px;background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;border-radius:6px;padding:3px 10px;font-size:10px;font-weight:600;cursor:pointer" title="Guardar firma como predeterminada">💾 Guardar firma</button>
+            <button onclick="guardarFirmaCertificador()" class="btn-guardar-firma" style="margin-top:6px;background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;border-radius:6px;padding:3px 10px;font-size:10px;font-weight:600;cursor:pointer" title="Guardar firma como predeterminada">💾 Guardar firma</button>
           </div>
           <!-- Cliente -->
           <div class="firma-col" style="position:relative">
@@ -1100,9 +1173,9 @@ video{width:100%;border-radius:8px;background:black}
           </div>
         </div>
       <!-- DISCLAIMER -->
-      <div style="margin:18px 0 0;padding:10px 16px;border-top:2px solid #003366;display:flex;align-items:flex-start;gap:10px">
-        <svg style="flex-shrink:0;margin-top:1px" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#003366" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-        <p style="margin:0;font-size:9px;color:#374151;line-height:1.6;font-style:italic">
+      <div class="doc-footer-disclaimer">
+        <svg class="disclaimer-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        <p style="margin:0;font-size:9px;line-height:1.6;font-style:italic">
           El presente Registro de Visita es emitido por <strong><span id="disclaimer-cert-nombre">el certificador suscrito</span></strong>, profesional acreditado inscrito en el Registro de Certificadores DS N°15 de Sernapesca, certificando la revisión documental y verificación en terreno del establecimiento conforme a la normativa vigente.
         </p>
       </div>
@@ -1572,6 +1645,7 @@ async function fbGuardarRegistro(datos, urlCertificado, urlFoto) {
     nroCentro        : datos.nroCentro,
     acs              : datos.acs,
     titular          : datos.titular,
+    area             : datos.area         || '',
     ubicacion        : datos.ubicacion    || '',
     fechaSiembra     : datos.fechaSiembra || '',
     tamanoPeces      : datos.tamanoPeces  || '',
@@ -1840,6 +1914,7 @@ function resetFormulario() {
    'latitud','longitud','norte','este','observaciones','nombreResponsable','emailResponsable'].forEach(function(id) {
     set('r-'+id,'');
   });
+  setArea('');
   document.getElementById('r-obs-si').checked = true;
   toggleTipoObs();
   ['cicE2','ca','vs','res1511','desinfeccion'].forEach(function(id) {
@@ -1875,11 +1950,42 @@ function get(id) {
   return el ? el.value.trim() : '';
 }
 
+function getArea() {
+  var sel = document.getElementById('r-area-sel');
+  if (!sel) return '';
+  if (sel.value === 'otro') return get('r-area-otro') || 'Otro';
+  return sel.value;
+}
+
+function setArea(val) {
+  var sel = document.getElementById('r-area-sel');
+  var inp = document.getElementById('r-area-otro');
+  if (!sel) return;
+  var predefinidas = ['Aysén', 'Melinka', 'Cisnes'];
+  if (!val || predefinidas.indexOf(val) >= 0) {
+    sel.value = val || '';
+    if (inp) { inp.style.display = 'none'; inp.value = ''; }
+  } else {
+    sel.value = 'otro';
+    if (inp) { inp.style.display = ''; inp.value = val; }
+  }
+}
+
+function onAreaChange(val) {
+  var inp = document.getElementById('r-area-otro');
+  if (!inp) return;
+  inp.style.display = val === 'otro' ? '' : 'none';
+  if (val !== 'otro') inp.value = '';
+}
+
 // =====================================================================
 //  CHECKLIST
 // =====================================================================
 var checkItems = [
   { id:'ck-datos',      text:'¿La información del formulario digital coincide con los datos físicos?', auto:false },
+  { id:'ck-centro',     text:'¿Se ingresó el nombre del centro de cultivo?', auto:true },
+  { id:'ck-nrocentro',  text:'¿Se ingresó el número de centro (RNA)?', auto:true },
+  { id:'ck-area',       text:'¿Se seleccionó el área de la visita?', auto:true },
   { id:'ck-fecha',      text:'¿Se completó la fecha de última siembra y tamaño peces?', auto:true },
   { id:'ck-obs',        text:'¿Se han registrado las observaciones y su tipo correspondiente?', auto:true },
   { id:'ck-email',      text:'¿Se ingresó el correo del jefe de centro (destinatario)?', auto:true },
@@ -1925,6 +2031,9 @@ function toggleTipoObs() {
 function checkChecklist() {
   var checks = {
     'ck-datos':       !!manualChecks['ck-datos'],
+    'ck-centro':      !!get('r-centroCultivo'),
+    'ck-nrocentro':   !!get('r-nroCentro'),
+    'ck-area':        !!getArea(),
     'ck-fecha':       !!get('r-fechaSiembra') && !!get('r-tamanoPeces'),
     'ck-obs':         !!get('r-observaciones') && (document.getElementById('r-obs-no').checked || !!getSelectedTipoObs()),
     'ck-email':       (function(){ var v=(get('r-emailResponsable')||'').trim(); return !!v && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v); })(),
@@ -2385,6 +2494,7 @@ async function handleActualizarRegistro() {
       nroCentro         : datos.nroCentro,
       acs               : datos.acs,
       titular           : datos.titular,
+      area              : datos.area         || '',
       ubicacion         : datos.ubicacion    || '',
       fechaSiembra      : datos.fechaSiembra || '',
       tamanoPeces       : datos.tamanoPeces  || '',
@@ -3068,6 +3178,7 @@ function getDatos() {
     nroCentro      : get('r-nroCentro'),
     acs            : get('r-acs'),
     titular        : get('r-titular'),
+    area           : getArea(),
     ubicacion      : get('r-ubicacion'),
     fechaSiembra   : get('r-fechaSiembra'),
     tamanoPeces    : get('r-tamanoPeces'),
@@ -3396,6 +3507,7 @@ function autoGuardarBorrador() {
      'latitud','longitud','norte','este','observaciones','nombreResponsable','emailResponsable'].forEach(function(id) {
       draft.campos[id] = get('r-' + id);
     });
+    draft.campos['area'] = getArea();
     // Checkboxes resoluciones
     ['cicE2','ca','vs','res1511','desinfeccion'].forEach(function(id) {
       var el = document.getElementById('r-' + id);
@@ -3551,6 +3663,7 @@ async function cargarRegistroParaEdicion(nroRegistro, autoPreview) {
     set('r-nroCentro',        r.nroCentro        || '');
     set('r-acs',              r.acs              || '');
     set('r-titular',          r.titular          || '');
+    setArea(r.area || '');
     set('r-ubicacion',        r.ubicacion        || '');
     set('r-fechaSiembra',     r.fechaSiembra     || '');
     set('r-tamanoPeces',      r.tamanoPeces      || '');
@@ -4334,7 +4447,8 @@ function admReenviarMail(nro, email) {
     emailDestinatario: dest, observaciones: r.observaciones, tipoObservacion: r.tipoObservacion,
     resoluciones: r.resoluciones || '',
     nombreCertificador: r.nombreCertificador || r.certNombre || '',
-    rutCertificador:    r.rutCertificador    || '' };
+    rutCertificador:    r.rutCertificador    || '',
+    area:               r.area              || '' };
   google.script.run
     .withSuccessHandler(function(res) {
       if (res && res.ok) {

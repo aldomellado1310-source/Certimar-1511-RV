@@ -68,6 +68,45 @@ function doPost(e) {
       return resp({ ok: true, accion: 'actualizado' });
     }
 
+    if (accion === 'enviarCorreo') {
+      const { datos, urlCertificado, internalCopy } = payload;
+      if (!datos || !datos.emailDestinatario) {
+        return resp({ ok: false, error: 'emailDestinatario vacío' });
+      }
+
+      // Descargar PDF desde Firebase Storage (URL firmada)
+      let pdfBlob = null;
+      if (urlCertificado) {
+        try {
+          const r = UrlFetchApp.fetch(urlCertificado, { muteHttpExceptions: true });
+          if (r.getResponseCode() === 200) {
+            const nombre = 'CertimarRV_' + datos.nroRegistro + '_'
+                         + (datos.centroCultivo || '').replace(/[^a-zA-Z0-9]/g, '_') + '.pdf';
+            pdfBlob = r.getBlob().setName(nombre).setContentType('application/pdf');
+          }
+        } catch(ePdf) { Logger.log('enviarCorreo PDF: ' + ePdf); }
+      }
+
+      const asunto   = '[Certimar] Registro de Visita \u2013 ' + datos.centroCultivo + ' \u2013 ' + (datos.fecha || '');
+      const htmlBody = _plantillaEmail(datos, urlCertificado || '');
+      const opts     = { htmlBody, replyTo: EMAIL_REMITENTE, name: 'Certimar SpA' };
+      if (datos.emailCC  && datos.emailCC.trim())  opts.cc  = datos.emailCC.trim();
+      if (datos.emailCCO && datos.emailCCO.trim()) opts.bcc = datos.emailCCO.trim();
+      if (pdfBlob) opts.attachments = [pdfBlob];
+      GmailApp.sendEmail(datos.emailDestinatario, asunto, '', opts);
+
+      // Copia interna al certificador (email pasado explícitamente desde Firebase)
+      if (internalCopy && internalCopy !== datos.emailDestinatario) {
+        try {
+          const opsCopia = { htmlBody, replyTo: EMAIL_REMITENTE, name: 'Certimar SpA' };
+          if (pdfBlob) opsCopia.attachments = [pdfBlob.copyBlob()];
+          GmailApp.sendEmail(internalCopy, '[COPIA INTERNA] ' + asunto, '', opsCopia);
+        } catch(eCopia) { Logger.log('copia interna error: ' + eCopia); }
+      }
+
+      return resp({ ok: true, accion: 'correoEnviado' });
+    }
+
     return resp({ ok: false, error: 'Acción desconocida: ' + accion });
 
   } catch(err) {
@@ -164,14 +203,23 @@ function guardarYEnviar(datos, pdfB64, fotoB64, emailDestinatario, firmaB64) {
     let urlCertificado = '';
     let pdfBlob = null;           // reutilizado como adjunto de correo (sin re-decodificar)
     if (pdfB64) {
+      // Crear blob PRIMERO — garantiza adjunto en email aunque Drive falle
+      try {
+        const rawBlobBytes = Utilities.base64Decode(pdfB64.replace(/^data:application\/pdf;base64,/, ''));
+        const nombreBlob   = 'CertimarRV_' + datos.nroRegistro + '_' + (datos.centroCultivo || '').replace(/[^a-zA-Z0-9]/g,'_') + '.pdf';
+        pdfBlob = Utilities.newBlob(rawBlobBytes, 'application/pdf', nombreBlob);
+      } catch(eBlobCreate) {
+        Logger.log('guardarYEnviar: no se pudo crear pdfBlob para adjunto: ' + eBlobCreate);
+      }
+      // Luego intentar subir a Drive
       try {
         const driveResult  = _subirPDFDrive(pdfB64, datos.nroRegistro, datos.centroCultivo, carpetaCentro);
         urlCertificado     = driveResult.url;
-        pdfBlob            = driveResult.blob;
         resultado.steps.pdf = 'ok';
       } catch(e) {
-        resultado.steps.pdf = 'error: ' + e.message;
-        // No es fatal — continuamos sin URL
+        resultado.steps.pdf = 'drive_error: ' + e.message;
+        Logger.log('guardarYEnviar: Drive upload falló (no fatal): ' + e);
+        // pdfBlob ya fue creado arriba — email igualmente tendrá adjunto
       }
     }
 
@@ -727,6 +775,7 @@ function _plantillaEmail(datos, urlCert) {
     ['N&deg; Centro',      datos.nroCentro || '&#8212;'],
     ['Titular',            datos.titular || '&#8212;'],
     ['ACS',                datos.acs || '&#8212;'],
+    ['&Aacute;rea',        datos.area || '&#8212;'],
     ['Responsable',        datos.nombreResponsable || '&#8212;'],
     ['Tipo Observaci&oacute;n', datos.tipoObservacion || '&#8212;'],
     ['Resoluciones',       resStr],
