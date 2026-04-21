@@ -2471,16 +2471,36 @@ async function generarPDF() {
   var pdfW    = pdf.internal.pageSize.getWidth();
   var pdfH    = (canvas.height * pdfW) / canvas.width;
 
+  // Posición Y de la sección de firmas en coordenadas PDF (para evitar salto de página en medio)
+  var firmaTopPdf = 0;
+  var firmaSec = el.querySelector('.firma-section');
+  if (firmaSec) {
+    var elR = el.getBoundingClientRect();
+    var fR  = firmaSec.getBoundingClientRect();
+    firmaTopPdf = (fR.top - elR.top) * 1.5 * (pdfW / canvas.width);
+  }
+
   // Paginar si el contenido excede una página A4
   var pageH = pdf.internal.pageSize.getHeight();
   if (pdfH <= pageH) {
     pdf.addImage(imgData, 'JPEG', 0, 0, pdfW, pdfH);
   } else {
     var pos = 0;
+    var firmaBreakDone = false;
     while (pos < pdfH) {
       if (pos > 0) pdf.addPage();
       pdf.addImage(imgData, 'JPEG', 0, -pos, pdfW, pdfH);
-      pos += pageH;
+      var nextPos = pos + pageH;
+      // Si el salto de página caería dentro de la firma-section, blanquear esa área
+      // y forzar que la siguiente página comience desde el inicio de las firmas
+      if (!firmaBreakDone && firmaTopPdf > pos && firmaTopPdf < nextPos && nextPos < pdfH) {
+        pdf.setFillColor(255, 255, 255);
+        pdf.rect(0, firmaTopPdf - pos, pdfW, pageH - (firmaTopPdf - pos), 'F');
+        firmaBreakDone = true;
+        pos = firmaTopPdf;
+      } else {
+        pos = nextPos;
+      }
     }
   }
 
