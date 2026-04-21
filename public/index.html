@@ -2454,14 +2454,18 @@ async function generarPDF() {
     ta.value = '';
     textareaReplacements.push({ ta: ta, div: div, saved: saved });
   });
+  // Añadir padding extra al elemento ANTES del rAF para que el scrollHeight lo incluya
+  // y html2canvas capture el fondo completo de la firma-section
+  var savedPB = el.style.paddingBottom;
+  el.style.paddingBottom = (parseFloat(window.getComputedStyle(el).paddingBottom) + 100) + 'px';
   await new Promise(function(r){ requestAnimationFrame(r); });
   canvas = await html2canvas(el, {
     scale: 1.5,
     backgroundColor: '#ffffff',
     useCORS: true,
     imageTimeout: 0,
-    height: el.scrollHeight + 80,
-    windowHeight: el.scrollHeight + 80,
+    height: el.scrollHeight,
+    windowHeight: el.scrollHeight,
     logging: false
   });
   var { jsPDF } = window.jspdf;
@@ -2521,6 +2525,7 @@ async function generarPDF() {
   return pdf;
   } finally {
     if (prevTheme === 'dark') root.setAttribute('data-theme', 'dark');
+    el.style.paddingBottom = savedPB;
     textareaReplacements.forEach(function(r) {
       r.ta.value = r.saved;
       if (r.div.parentNode) r.div.parentNode.removeChild(r.div);
