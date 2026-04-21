@@ -2460,8 +2460,8 @@ async function generarPDF() {
     backgroundColor: '#ffffff',
     useCORS: true,
     imageTimeout: 0,
-    height: el.scrollHeight,
-    windowHeight: el.scrollHeight,
+    height: el.scrollHeight + 80,
+    windowHeight: el.scrollHeight + 80,
     logging: false
   });
   var { jsPDF } = window.jspdf;
