@@ -438,10 +438,10 @@ label.filtro-label{font-size:11px;font-weight:600;color:#64748b;text-transform:u
 .obs-table .obs-si-no{background:#e2e8f0;border:1px solid #94a3b8;padding:6px 12px}
 .obs-radio-group{display:flex;justify-content:flex-end;gap:16px;padding-right:8px}
 .obs-radio{display:flex;align-items:center;gap:4px;font-size:11px;font-weight:700;cursor:pointer}
-.obs-textarea{width:100%;min-height:160px;height:auto;padding:12px;border:none;outline:none;font-size:13px;font-family:inherit;resize:vertical;line-height:1.8;box-sizing:border-box;display:block}
+.obs-textarea{width:100%;min-height:160px;height:auto;padding:12px;border:none;outline:none;font-size:13px;font-family:inherit;resize:vertical;line-height:1.8;box-sizing:border-box;display:block;word-wrap:break-word;overflow-wrap:break-word;white-space:pre-wrap;overflow-x:hidden}
 .tipo-obs-row{display:flex;gap:20px;padding:10px 16px;border-top:1px solid #94a3b8}
 .tipo-obs-label{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.5px}
-.firma-section{display:flex;border-top:3px solid #94a3b8;padding-top:16px;padding-bottom:24px;margin-top:24px}
+.firma-section{display:flex;border-top:3px solid #94a3b8;padding-top:16px;padding-bottom:64px;margin-top:24px}
 .firma-col{width:50%;display:flex;flex-direction:column;align-items:center;padding:0 16px}
 .firma-col:first-child{border-right:1px solid #94a3b8}
 .firma-canvas{border:1px solid transparent;border-radius:4px;cursor:crosshair;touch-action:none;background:#ffffff}
@@ -773,7 +773,18 @@ video{width:100%;border-radius:8px;background:black}
       Continuar con Google
     </button>
   </div>
-  <div class="login-footer">© <span id="login-year"></span> Certimar SpA. Todos los derechos reservados.</div>
+  <div class="login-footer" style="display:flex;flex-direction:column;align-items:center;gap:6px">
+    <span>© <span id="login-year"></span> Certimar SpA. Todos los derechos reservados.</span>
+    <span style="display:flex;align-items:center;gap:5px;opacity:.7;font-size:11px">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 2C7.5 2 3 5.8 3 10c0 .6.1 1 .3 1.5C4.2 13 6 14 8 14h.5v5a1.5 1.5 0 003 0v-5h1v5a1.5 1.5 0 003 0v-5H16c2 0 3.8-1 4.7-2.5.2-.5.3-.9.3-1.5 0-4.2-4.5-8-9-8z" fill="#7c3aed" opacity=".85"/>
+        <circle cx="9" cy="7.5" r="1.2" fill="white" opacity=".7"/>
+        <circle cx="13.5" cy="6" r=".8" fill="white" opacity=".7"/>
+        <circle cx="11" cy="9" r=".6" fill="white" opacity=".6"/>
+      </svg>
+      Developed by Micorriza
+    </span>
+  </div>
 </div>
 
 <!-- ===================== MAIN APP ===================== -->
@@ -2459,7 +2470,7 @@ async function generarPDF() {
   // Espaciador temporal: fuerza que getBoundingClientRect().height incluya el fondo de la firma
   // (padding-bottom inline no afecta getBoundingClientRect en todos los navegadores)
   var _spacer = document.createElement('div');
-  _spacer.style.cssText = 'height:80px;display:block;flex-shrink:0';
+  _spacer.style.cssText = 'height:160px;display:block;flex-shrink:0';
   el.appendChild(_spacer);
   await new Promise(function(r){ requestAnimationFrame(r); });
   canvas = await html2canvas(el, {
@@ -2570,7 +2581,7 @@ async function handleSyncGoogle() {
   }
 
   var datos = getDatos();
-  var emailDest = appState.pendingEmail || '';
+  var emailDest = datos.emailDestinatario || appState.pendingEmail || '';
 
   try {
     // 2. Subir PDF a Drive (via Apps Script) y guardar en Firestore en paralelo
@@ -2737,6 +2748,7 @@ function openModalMail() {
     // Ya guardado → solo enviar correo
     var datos = getDatos();
     document.getElementById('modal-email').value = datos.emailDestinatario || get('r-emailResponsable') || '';
+    document.getElementById('modal-cc').value = 'eflores@certimar.cl';
     document.getElementById('modal-asunto').textContent = 'Registro de Visita — '+datos.centroCultivo+' — '+datos.fecha;
     document.getElementById('modal-body-preview').textContent = generarMensaje(datos);
     document.getElementById('modal-mail').classList.remove('hidden');
@@ -3569,6 +3581,7 @@ function showCompletionDialog(nro, emailSent, emailDest) {
     document.getElementById('cd-sub').textContent = 'El registro fue guardado exitosamente. ¿Deseas notificar al responsable del centro?';
     document.getElementById('cd-email-section').style.display = 'block';
     document.getElementById('cd-email-input').value = emailDest || get('r-emailResponsable') || '';
+    document.getElementById('cd-cc-input').value = 'eflores@certimar.cl';
     document.getElementById('cd-send-btn').disabled = false;
     document.getElementById('cd-send-btn').textContent = '✉️ Enviar';
   }
@@ -4222,6 +4235,17 @@ function toast(msg, type) {
   toastTimer = setTimeout(function(){ el.className = ''; }, 3500);
 }
 </script>
+<!-- Developed by Micorriza -->
+<div style="position:fixed;bottom:14px;right:16px;z-index:100;display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-muted,#94a3b8);opacity:.55;pointer-events:none;user-select:none">
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M12 2C7.5 2 3 5.8 3 10c0 .6.1 1 .3 1.5C4.2 13 6 14 8 14h.5v5a1.5 1.5 0 003 0v-5h1v5a1.5 1.5 0 003 0v-5H16c2 0 3.8-1 4.7-2.5.2-.5.3-.9.3-1.5 0-4.2-4.5-8-9-8z" fill="#7c3aed"/>
+    <circle cx="9" cy="7.5" r="1.2" fill="white" opacity=".7"/>
+    <circle cx="13.5" cy="6" r=".8" fill="white" opacity=".7"/>
+    <circle cx="11" cy="9" r=".6" fill="white" opacity=".6"/>
+  </svg>
+  Developed by Micorriza
+</div>
+
 <!-- Dropdown autocomplete global (fuera de doc-paper para evitar overflow:hidden) -->
 <div id="ac-dropdown" class="autocomplete-dropdown" style="display:none;position:fixed"></div>
 
