@@ -2192,7 +2192,39 @@ async function generarPDF() {
   // Esperar un frame para que CSS variables se apliquen antes de capturar
   await new Promise(function(r){ requestAnimationFrame(function(){ requestAnimationFrame(r); }); });
   var canvas;
+  // html2canvas no envuelve fiablemente el contenido de inputs/textareas.
+  // Reemplazamos por divs estáticos con word-wrap antes de capturar
+  // (se restauran en el finally).
+  var replacements = [];
   try {
+  el.querySelectorAll('input[type="text"], input:not([type])').forEach(function(inp) {
+    var div = document.createElement('div');
+    div.style.cssText =
+      'width:100%;min-height:' + Math.max(inp.offsetHeight, 22) + 'px;' +
+      'padding:2px 4px;font-size:13px;font-family:inherit;' +
+      'word-break:break-word;white-space:normal;line-height:1.5;' +
+      'color:' + (inp.value ? '#111827' : '#9ca3af') + ';box-sizing:border-box';
+    div.textContent = inp.value || '—';
+    inp.parentNode.insertBefore(div, inp);
+    inp.style.display = 'none';
+    replacements.push({ original: inp, replacement: div });
+  });
+
+  el.querySelectorAll('textarea').forEach(function(ta) {
+    var div = document.createElement('div');
+    div.style.cssText =
+      'width:100%;min-height:160px;padding:12px;font-size:13px;' +
+      'font-family:inherit;line-height:1.8;white-space:pre-wrap;' +
+      'word-break:break-word;box-sizing:border-box';
+    div.textContent = ta.value || '';
+    ta.parentNode.insertBefore(div, ta);
+    ta.style.display = 'none';
+    replacements.push({ original: ta, replacement: div });
+  });
+
+  // Esperar a que el layout se recalcule tras los reemplazos antes de capturar
+  await new Promise(function(r){ requestAnimationFrame(function(){ requestAnimationFrame(r); }); });
+
   // scale 1.5 en JPEG = 60% menos datos que scale:2 PNG, misma calidad visual para A4
   canvas = await html2canvas(el, {
     scale: 1.5,
@@ -2239,6 +2271,11 @@ async function generarPDF() {
   }
   return pdf;
   } finally {
+    // Restaurar inputs/textareas originales
+    replacements.forEach(function(item) {
+      item.original.style.display = '';
+      if (item.replacement.parentNode) item.replacement.parentNode.removeChild(item.replacement);
+    });
     if (prevTheme === 'dark') root.setAttribute('data-theme', 'dark');
   }
 }
