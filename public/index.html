@@ -1702,6 +1702,7 @@ document.addEventListener('DOMContentLoaded', function() {
   initFirmaCertificador();
   initFirmaCliente();
   initChecklist();
+  initBorradorAutosave();
   resetFormulario();
   generarParticulas();
 });
@@ -1816,6 +1817,146 @@ function resetFormulario() {
   appState = { saved: false, sent: false, archived: false, pdfB64: null, fotoB64: null, savedData: null };
   checkChecklist();
   setBtnGuardar(false);
+  // Mostrar banner de borrador en el próximo tick para que cargarRegistroEnFormulario
+  // pueda haber seteado appState.editMode antes y se evite el flash.
+  setTimeout(maybeShowBorradorBanner, 0);
+}
+
+// =====================================================================
+//  BORRADOR — autosave local en localStorage mientras se llena el form
+// =====================================================================
+var BORRADOR_KEY    = 'certimar_borrador_v1';
+var borradorTimer   = null;
+var borradorSuspend = false;
+
+function captureBorrador() {
+  var datos = getDatos();
+  if (!datos.centroCultivo && !datos.nroCentro && !datos.titular && !datos.observaciones) {
+    return null;  // form vacío → no guardar
+  }
+  var firmaCliente = '';
+  try {
+    if (firmaClienteHasData) {
+      var c = document.getElementById('firma-cliente');
+      if (c) firmaCliente = c.toDataURL('image/png');
+    }
+  } catch(e) {}
+  return { datos: datos, firmaCliente: firmaCliente, foto: appState.fotoB64 || '', ts: Date.now() };
+}
+
+function saveBorrador() {
+  if (borradorSuspend || appState.editMode || appState.saved) return;
+  var payload = captureBorrador();
+  if (!payload) { try { localStorage.removeItem(BORRADOR_KEY); } catch(e){} return; }
+  try { localStorage.setItem(BORRADOR_KEY, JSON.stringify(payload)); }
+  catch(e) { console.warn('Borrador: no se pudo guardar', e); }
+}
+
+function scheduleBorrador() {
+  if (borradorTimer) clearTimeout(borradorTimer);
+  borradorTimer = setTimeout(saveBorrador, 1500);
+}
+
+function clearBorrador() {
+  try { localStorage.removeItem(BORRADOR_KEY); } catch(e) {}
+  var bn = document.getElementById('borrador-banner');
+  if (bn) bn.remove();
+}
+
+function loadBorrador() {
+  try { var raw = localStorage.getItem(BORRADOR_KEY); return raw ? JSON.parse(raw) : null; }
+  catch(e) { return null; }
+}
+
+function applyBorrador(b) {
+  if (!b || !b.datos) return;
+  borradorSuspend = true;
+  var d = b.datos;
+  ['fecha','centroCultivo','nroCentro','acs','titular','ubicacion','fechaSiembra','tamanoPeces',
+   'jaulasLargo','jaulasAncho','cantidadJaulas','cantidadJaulasSembradas',
+   'latitud','longitud','norte','este','observaciones','nombreResponsable']
+    .forEach(function(k){ set('r-'+k, d[k] || ''); });
+  set('r-emailResponsable', d.emailDestinatario || '');
+  if (d.resoluciones) {
+    var chk = function(id, v){ var el=document.getElementById(id); if(el) el.checked = !!v; };
+    chk('r-cicE2',        d.resoluciones.cicE2);
+    chk('r-ca',           d.resoluciones.ca);
+    chk('r-vs',           d.resoluciones.vs);
+    chk('r-res1511',      d.resoluciones.res1511);
+    chk('r-desinfeccion', d.resoluciones.desinfeccion);
+  }
+  if (d.tipoObservacion) {
+    var r = document.querySelector('input[name="tipoObs"][value="'+d.tipoObservacion+'"]');
+    if (r) r.checked = true;
+  }
+  if (b.firmaCliente) {
+    var img = new Image();
+    img.onload = function() {
+      var c = document.getElementById('firma-cliente');
+      if (!c) return;
+      var ctx = c.getContext('2d');
+      ctx.clearRect(0,0,c.width,c.height);
+      ctx.drawImage(img, 0, 0, c.width, c.height);
+      firmaClienteHasData = true;
+      var ph = document.getElementById('firma-placeholder');
+      if (ph) ph.style.display = 'none';
+      checkChecklist();
+    };
+    img.src = b.firmaCliente;
+  }
+  if (b.foto) {
+    appState.fotoB64 = b.foto;
+    var badge = document.getElementById('foto-badge');
+    if (badge) badge.classList.remove('hidden');
+  }
+  borradorSuspend = false;
+  checkChecklist();
+}
+
+function maybeShowBorradorBanner() {
+  if (appState.editMode || appState.saved) return;
+  var b = loadBorrador();
+  if (!b) return;
+  var view = document.getElementById('view-registro');
+  if (!view) return;
+  var existing = document.getElementById('borrador-banner');
+  if (existing) existing.remove();
+  var fecha = '';
+  try { fecha = new Date(b.ts||Date.now()).toLocaleString('es-CL', { dateStyle:'short', timeStyle:'short' }); } catch(e){}
+  var bn = document.createElement('div');
+  bn.id = 'borrador-banner';
+  bn.style.cssText = 'background:#fef3c7;border:2px solid #f59e0b;border-radius:10px;padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap';
+  bn.innerHTML =
+    '<div><strong>📝 Borrador detectado</strong>' +
+    (fecha ? ' <span style="color:#92400e;font-size:12px">guardado el ' + fecha + '</span>' : '') +
+    '<div style="font-size:11px;color:#92400e;margin-top:2px">Datos sin enviar de una sesión anterior. No se ha consumido número de registro.</div></div>' +
+    '<div style="display:flex;gap:8px">' +
+      '<button onclick="restaurarBorrador()" style="background:#1e3a5f;color:white;border:none;padding:8px 16px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer">Restaurar</button>' +
+      '<button onclick="descartarBorrador()" style="background:white;color:#92400e;border:1px solid #f59e0b;padding:8px 16px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer">Descartar</button>' +
+    '</div>';
+  view.insertBefore(bn, view.firstChild);
+}
+
+function restaurarBorrador() {
+  var b = loadBorrador();
+  if (!b) return;
+  applyBorrador(b);
+  var bn = document.getElementById('borrador-banner');
+  if (bn) bn.remove();
+  toast('Borrador restaurado', 'success');
+}
+
+function descartarBorrador() {
+  clearBorrador();
+  toast('Borrador descartado', 'info');
+}
+
+function initBorradorAutosave() {
+  var doc = document.getElementById('registro-documento');
+  if (!doc || doc.dataset.borradorListener) return;
+  doc.dataset.borradorListener = '1';
+  doc.addEventListener('input',  scheduleBorrador);
+  doc.addEventListener('change', scheduleBorrador);
 }
 
 function set(id, val) {
@@ -1963,6 +2104,7 @@ function firmaStop() {
   firmaClienteHasData = true;
   document.getElementById('firma-placeholder').style.display = 'none';
   checkChecklist();
+  scheduleBorrador();
 }
 
 function clearFirmaCliente() {
@@ -2010,6 +2152,7 @@ function capturePhoto() {
     document.getElementById('photo-preview').classList.remove('hidden');
     document.getElementById('foto-badge').classList.remove('hidden');
     checkChecklist();
+    scheduleBorrador();
   });
 }
 
@@ -2063,6 +2206,7 @@ function _showPhotoPreview() {
   document.getElementById('photo-preview').classList.remove('hidden');
   document.getElementById('foto-badge').classList.remove('hidden');
   checkChecklist();
+  scheduleBorrador();
 }
 
 // Lee orientación EXIF y corrige rotación dibujando en canvas
@@ -2430,6 +2574,7 @@ async function handleSyncGoogle() {
     appState.savedData = Object.assign({}, datos, { urlCert: urlCertificado });
     setBtnGuardar(true);
     updateCustomCentroIfNeeded(datos);
+    clearBorrador();
 
     localRecords.unshift({
       nroReg: datos.nroRegistro, fecha: datos.fecha,
