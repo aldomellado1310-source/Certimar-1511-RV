@@ -163,13 +163,19 @@ exports.enviarNotificacion = functions
   await transporter.sendMail(mailOpts);
   functions.logger.info('Correo enviado a:', destEmail, '| Registro:', datos.nroRegistro);
 
-  // Copia interna al certificador
-  const certEmail = context.auth.token.email;
-  if (certEmail && certEmail !== destEmail) {
+  // Copia interna al equipo certificador (lista fija)
+  const COPIAS_CERTIFICADOR = [
+    'operaciones@certimar.cl',
+    'eflores@certimar.cl',
+    'informes@certimar.cl'
+  ];
+  const destLower = (destEmail || '').toLowerCase();
+  const copias = COPIAS_CERTIFICADOR.filter(e => e.toLowerCase() !== destLower);
+  if (copias.length) {
     try {
       await transporter.sendMail({
         from       : mailOpts.from,
-        to         : certEmail,
+        to         : copias.join(', '),
         subject    : `[COPIA INTERNA] ${asunto}`,
         html       : htmlBody,
         attachments: mailOpts.attachments || []
