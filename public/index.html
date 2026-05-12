@@ -1923,12 +1923,21 @@ function maybeShowBorradorBanner() {
   if (existing) existing.remove();
   var fecha = '';
   try { fecha = new Date(b.ts||Date.now()).toLocaleString('es-CL', { dateStyle:'short', timeStyle:'short' }); } catch(e){}
+  var centro = (b.datos && b.datos.centroCultivo) ? String(b.datos.centroCultivo).trim() : '';
+  var nro    = (b.datos && b.datos.nroCentro)     ? String(b.datos.nroCentro).trim()     : '';
+  var artefacto = '';
+  if (centro && nro)      artefacto = centro + ' (N° ' + nro + ')';
+  else if (centro)        artefacto = centro;
+  else if (nro)           artefacto = 'N° ' + nro;
+  else                    artefacto = 'sin nombre de centro';
+  var esc = function(s){ return String(s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); };
   var bn = document.createElement('div');
   bn.id = 'borrador-banner';
   bn.style.cssText = 'background:#fef3c7;border:2px solid #f59e0b;border-radius:10px;padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap';
   bn.innerHTML =
     '<div><strong>📝 Borrador detectado</strong>' +
-    (fecha ? ' <span style="color:#92400e;font-size:12px">guardado el ' + fecha + '</span>' : '') +
+    ' — <span style="color:#1e3a5f;font-weight:600">' + esc(artefacto) + '</span>' +
+    (fecha ? '<br><span style="color:#92400e;font-size:12px">guardado el ' + fecha + '</span>' : '') +
     '<div style="font-size:11px;color:#92400e;margin-top:2px">Datos sin enviar de una sesión anterior. No se ha consumido número de registro.</div></div>' +
     '<div style="display:flex;gap:8px">' +
       '<button onclick="restaurarBorrador()" style="background:#1e3a5f;color:white;border:none;padding:8px 16px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer">Restaurar</button>' +
