@@ -1508,10 +1508,7 @@ async function callFn(name, payload) {
 // =====================================================================
 //  FIREBASE — GUARDAR REGISTRO
 // =====================================================================
-async function fbGuardarRegistro(datos, urlCertificado, urlFoto) {
-  var db = initFirebase();
-  if (!db) throw new Error('Firebase no disponible');
-
+function buildDocData(datos, nroRegistro, urlCertificado, urlFoto) {
   var resArray = [];
   if (datos.resoluciones) {
     if (datos.resoluciones.cicE2)        resArray.push('1821-CIC E2');
@@ -1520,9 +1517,8 @@ async function fbGuardarRegistro(datos, urlCertificado, urlFoto) {
     if (datos.resoluciones.res1511)      resArray.push('1511');
     if (datos.resoluciones.desinfeccion) resArray.push('DESINFECCIÓN');
   }
-
-  var docData = {
-    nroRegistro      : datos.nroRegistro,
+  return {
+    nroRegistro      : nroRegistro,
     fecha            : datos.fecha,
     centroCultivo    : datos.centroCultivo,
     nroCentro        : datos.nroCentro,
@@ -1548,8 +1544,12 @@ async function fbGuardarRegistro(datos, urlCertificado, urlFoto) {
     certNombre       : currentUser ? currentUser.name  : '',
     creadoEn         : firebase.firestore.FieldValue.serverTimestamp()
   };
+}
 
-  // Usar nroRegistro como document ID para idempotencia
+async function fbGuardarRegistro(datos, urlCertificado, urlFoto) {
+  var db = initFirebase();
+  if (!db) throw new Error('Firebase no disponible');
+  var docData = buildDocData(datos, datos.nroRegistro, urlCertificado, urlFoto);
   await db.collection('registros_visita').doc(datos.nroRegistro).set(docData);
   return docData;
 }
@@ -1597,18 +1597,24 @@ async function fbObtenerTodos(filtros) {
 // =====================================================================
 //  FIREBASE — NÚMERO CORRELATIVO (atómico con Firestore counter)
 // =====================================================================
-async function fbGenerarNroRegistro() {
+// Reserva atómica del correlativo + creación del documento en una sola
+// transacción. Si la transacción falla, ni el contador se incrementa ni el doc
+// queda creado → no se generan huecos en la secuencia RV-YYYY-NNNN.
+async function fbCrearRegistroAtomico(datos) {
   var db = initFirebase();
-  if (!db) return 'RV-' + new Date().getFullYear() + '-' + Date.now();
+  if (!db) throw new Error('Firebase no disponible');
   var year   = new Date().getFullYear();
   var cntRef = db.collection('meta').doc('contador_' + year);
-  var newNum = await db.runTransaction(async function(tx) {
-    var doc = await tx.get(cntRef);
-    var n   = doc.exists ? (doc.data().count + 1) : 1;
+
+  return await db.runTransaction(async function(tx) {
+    var cnt = await tx.get(cntRef);
+    var n   = cnt.exists ? (cnt.data().count + 1) : 1;
+    var nro = 'RV-' + year + '-' + String(n).padStart(4, '0');
+    var docData = buildDocData(datos, nro, '', '');
     tx.set(cntRef, { count: n });
-    return n;
+    tx.set(db.collection('registros_visita').doc(nro), docData);
+    return nro;
   });
-  return 'RV-' + year + '-' + String(newNum).padStart(4, '0');
 }
 
 // =====================================================================
@@ -2286,81 +2292,67 @@ async function generarPDF() {
 async function handleSyncGoogle() {
   if (!checkChecklist()) { toast('Complete el checklist primero','error'); return; }
 
-  // 1. Generar PDF (cliente, rápido)
+  pushNotif('sync', 'info', '☁️ Guardando en Firebase…', [
+    { id:'step-nro',      label:'Reservando N° y creando registro', state:'active' },
+    { id:'pdf-render',    label:'Generando PDF',                    state:'pending' },
+    { id:'step-drive',    label:'Subiendo archivos a Storage',      state:'pending' },
+    { id:'step-update',   label:'Actualizando URLs',                state:'pending' }
+  ]);
+  setBtnLoading('btn-sync', true);
+
+  var datos = getDatos();
+  var emailDest = appState.pendingEmail || '';
+
+  // 1. Reservar correlativo y crear el documento en una sola transacción.
+  // Si falla, ni el contador se incrementa ni el doc queda creado.
+  var nroGenerado;
+  try {
+    if (appState.editMode && appState.editNro) {
+      nroGenerado = appState.editNro;
+      datos.nroRegistro = nroGenerado;
+      await fbGuardarRegistro(datos, '', '');
+    } else {
+      nroGenerado = await fbCrearRegistroAtomico(datos);
+      datos.nroRegistro = nroGenerado;
+    }
+    set('r-nroRegistro', nroGenerado);
+    updateNotifStep('sync','step-nro','done');
+  } catch(e) {
+    updateNotifCard('sync','error','❌ No se pudo crear el registro', String(e));
+    setBtnLoading('btn-sync', false);
+    return;
+  }
+
+  // 2. Generar PDF con el N° de registro ya asignado en el form
   var pdfB64 = null;
   try {
-    pushNotif('pdf', 'info', '📄 Generando PDF', [
-      { id:'pdf-render', label:'Renderizando formulario', state:'active' }
-    ]);
+    updateNotifStep('sync','pdf-render','active');
     await cargarLibsPDF();
     var pdf = await generarPDF();
     pdfB64 = pdf.output('datauristring');
     appState.pdfB64 = pdfB64;
     appState.pdfArrayBuffer = pdf.output('arraybuffer');
-    updateNotifStep('pdf', 'pdf-render', 'done');
-    removeNotif('pdf');
+    updateNotifStep('sync','pdf-render','done');
   } catch(e) {
-    updateNotifCard('pdf','error','❌ Error al generar PDF', String(e));
+    updateNotifCard('sync','error','❌ Error al generar PDF', String(e));
+    setBtnLoading('btn-sync', false);
     return;
   }
 
-  pushNotif('sync', 'info', '☁️ Guardando en Firebase…', [
-    { id:'step-nro',      label:'Generando N° correlativo',   state:'active' },
-    { id:'step-firebase', label:'Escribiendo en Firestore',   state:'pending' },
-    { id:'step-drive',    label:'Subiendo archivos a Storage', state:'pending' },
-    { id:'step-update',   label:'Actualizando registro',      state:'pending' }
-  ]);
-
-  setBtnLoading('btn-sync', true);
-
-  // Generar correlativo atómico justo antes de guardar (evita huecos por formularios abiertos sin guardar)
-  var nroGenerado;
-  if (appState.editMode && appState.editNro) {
-    // Modo edición: conservar el N° de registro existente
-    nroGenerado = appState.editNro;
-    updateNotifStep('sync','step-nro','done');
-    updateNotifStep('sync','step-firebase','active');
-  } else {
-    try {
-      nroGenerado = await fbGenerarNroRegistro();
-      set('r-nroRegistro', nroGenerado);
-      updateNotifStep('sync','step-nro','done');
-      updateNotifStep('sync','step-firebase','active');
-    } catch(e) {
-      try {
-        nroGenerado = await fbGenerarNroRegistro();
-        set('r-nroRegistro', nroGenerado);
-        updateNotifStep('sync','step-nro','done');
-        updateNotifStep('sync','step-firebase','active');
-      } catch(e2) {
-        updateNotifCard('sync','error','❌ No se pudo obtener correlativo', String(e2));
-        setBtnLoading('btn-sync', false);
-        return;
-      }
-    }
-  }
-
-  var datos = getDatos();
-  var emailDest = appState.pendingEmail || '';
-
   try {
-    // 2. Subir PDF a Drive (via Apps Script) y guardar en Firestore en paralelo
-    var urlCertificado = '';
-    var urlFoto = '';
+    updateNotifStep('sync','step-drive','active');
 
-    // Subir PDF + foto + firma a Firebase Storage
-    var drivePromise = (async function() {
+    // 3. Subir PDF + foto + firma a Firebase Storage
+    var driveRes = await (async function() {
       if (!pdfB64) return { urlCert: '', urlFoto: '', urlFirma: '', pdfStoragePath: '' };
       try {
         var nombre = 'CertimarRV_' + datos.nroRegistro + '_' +
                      (datos.centroCultivo || '').replace(/\s+/g,'_') + '.pdf';
         var storagePath = 'certificados/' + nombre;
         var ref    = firebase.storage().ref(storagePath);
-        // Usar ArrayBuffer directo de jsPDF — evita problemas de atob con base64 multi-línea
         await ref.put(appState.pdfArrayBuffer, { contentType: 'application/pdf' });
         var url = await ref.getDownloadURL();
         var fotoUrl = '';
-        // Subir foto de evidencia si existe
         if (appState.fotoB64 && !appState.fotoB64.startsWith('data:application/pdf')) {
           try {
             var mt   = (appState.fotoB64.match(/^data:([^;]+);base64,/) || [])[1] || 'image/jpeg';
@@ -2373,7 +2365,6 @@ async function handleSyncGoogle() {
           } catch(eFoto) { console.warn('Foto upload error (no fatal):', eFoto); }
         }
         var firmaUrl = '';
-        // Subir firma del cliente si fue dibujada localmente
         if (firmaClienteHasData) {
           try {
             var firmaCanvas = document.getElementById('firma-cliente');
@@ -2390,23 +2381,16 @@ async function handleSyncGoogle() {
         console.error('Storage upload error:', eStorage);
         return { urlCert: '', urlFoto: '', urlFirma: '', pdfStoragePath: '' };
       }
-    })()
+    })();
 
-    // 3. Firestore — escritura inmediata (~200ms)
-    await fbGuardarRegistro(datos, '', '');
-    updateNotifStep('sync','step-firebase','done');
-    updateNotifStep('sync','step-drive','active');
-
-    // 4. Esperar Storage uploads (PDF + foto + firma)
-    var driveRes = await drivePromise;
-    urlCertificado = driveRes.urlCert;
-    urlFoto        = driveRes.urlFoto;
+    var urlCertificado  = driveRes.urlCert;
+    var urlFoto         = driveRes.urlFoto;
     var urlFirmaCliente = driveRes.urlFirma || '';
     var pdfStoragePath  = driveRes.pdfStoragePath || '';
     updateNotifStep('sync','step-drive', urlCertificado ? 'done' : 'warn');
     updateNotifStep('sync','step-update','active');
 
-    // 5. Actualizar Firestore con URLs obtenidas
+    // 4. Actualizar Firestore con URLs obtenidas
     var urlUpdate = {};
     if (urlCertificado)   urlUpdate.urlCertificado   = urlCertificado;
     if (urlFoto)          urlUpdate.urlFoto           = urlFoto;
@@ -2443,7 +2427,7 @@ async function handleSyncGoogle() {
     showCompletionDialog(datos.nroRegistro, false, emailDest);
 
   } catch(e) {
-    updateNotifCard('sync','error','❌ Error al guardar', String(e));
+    updateNotifCard('sync','error','❌ Error al subir archivos', String(e));
     toast('Error: ' + String(e), 'error');
   } finally {
     setBtnLoading('btn-sync', false);
@@ -2504,17 +2488,15 @@ function lockForm(fullyLocked) {
 // =====================================================================
 function openModalMail() {
   if (!checkChecklist()) { toast('Complete el checklist primero','error'); return; }
-  if (appState.saved) {
-    // Ya guardado → solo enviar correo
-    var datos = getDatos();
-    document.getElementById('modal-email').value = datos.emailDestinatario || get('r-emailResponsable') || '';
-    document.getElementById('modal-asunto').textContent = 'Registro de Visita — '+datos.centroCultivo+' — '+datos.fecha;
-    document.getElementById('modal-body-preview').textContent = generarMensaje(datos);
-    document.getElementById('modal-mail').classList.remove('hidden');
-  } else {
-    // No guardado → ir al flujo completo vía completion dialog
-    showCompletionDialog(get('r-nroRegistro'), false, '');
+  if (!appState.saved) {
+    toast('Debe guardar el registro antes de notificar', 'error');
+    return;
   }
+  var datos = getDatos();
+  document.getElementById('modal-email').value = datos.emailDestinatario || get('r-emailResponsable') || '';
+  document.getElementById('modal-asunto').textContent = 'Registro de Visita — '+datos.centroCultivo+' — '+datos.fecha;
+  document.getElementById('modal-body-preview').textContent = generarMensaje(datos);
+  document.getElementById('modal-mail').classList.remove('hidden');
 }
 
 function closeModalMail() {
@@ -3324,15 +3306,22 @@ function completionGo(view) {
 
 function handleCompletionEnviar() {
   var email = document.getElementById('cd-email-input').value.trim();
-  if (!email || !email.includes('@')) { 
+  if (!email || !email.includes('@')) {
     document.getElementById('cd-email-input').style.borderColor = '#dc2626';
-    return; 
+    return;
+  }
+  // Defensa: el correo solo puede enviarse después de un guardado exitoso.
+  if (!appState.saved || !appState.savedData || !appState.savedData.nroRegistro
+      || /asignar/i.test(appState.savedData.nroRegistro)) {
+    toast('El registro aún no está guardado. Guarde primero y vuelva a intentar.', 'error');
+    return;
   }
   document.getElementById('cd-send-btn').disabled = true;
   document.getElementById('cd-send-btn').textContent = '⏳ Enviando…';
 
   appState.pendingEmail = email;
   var datos = getDatos();
+  datos.nroRegistro = appState.savedData.nroRegistro;
   datos.emailDestinatario = email;
   datos.emailCC  = document.getElementById('cd-cc-input')  ? document.getElementById('cd-cc-input').value.trim()  : '';
   datos.emailCCO = document.getElementById('cd-cco-input') ? document.getElementById('cd-cco-input').value.trim() : '';

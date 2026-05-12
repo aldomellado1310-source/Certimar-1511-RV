@@ -124,10 +124,21 @@ exports.enviarNotificacion = functions
   }
 
   const { datos, urlCertificado, pdfStoragePath } = data;
-  const destEmail = datos && datos.emailDestinatario;
+  const destEmail   = datos && datos.emailDestinatario;
+  const nroRegistro = datos && datos.nroRegistro;
 
   if (!destEmail) {
     throw new functions.https.HttpsError('invalid-argument', 'Email destinatario vacío.');
+  }
+  if (!nroRegistro || /asignar/i.test(nroRegistro)) {
+    throw new functions.https.HttpsError('failed-precondition',
+      'El registro debe guardarse antes de enviar la notificación.');
+  }
+  // Verificar que el documento existe en Firestore antes de enviar el correo.
+  const snap = await db.collection('registros_visita').doc(nroRegistro).get();
+  if (!snap.exists) {
+    throw new functions.https.HttpsError('not-found',
+      `Registro ${nroRegistro} no encontrado en Firestore.`);
   }
 
   const c       = cfg();
