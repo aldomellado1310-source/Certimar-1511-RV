@@ -15,6 +15,9 @@ async function callAppsScript(datos, urlCertificado, internalCopy) {
   const url = process.env.APPS_SCRIPT_URL;
   if (!url) throw new Error('APPS_SCRIPT_URL no configurada en functions/.env');
 
+  functions.logger.info('[callAppsScript] URL:', url.slice(0, 80) + '...');
+  functions.logger.info('[callAppsScript] dest:', datos.emailDestinatario, '| internalCopy:', internalCopy || 'none', '| urlCert:', urlCertificado ? urlCertificado.slice(0, 60) + '...' : '(vacía)');
+
   const payload = {
     secret        : 'CERTIMAR_FB_2026',
     accion        : 'enviarCorreo',
@@ -29,10 +32,20 @@ async function callAppsScript(datos, urlCertificado, internalCopy) {
     body    : JSON.stringify(payload),
     redirect: 'follow'
   });
+
+  functions.logger.info('[callAppsScript] HTTP status:', res.status, res.statusText);
+  functions.logger.info('[callAppsScript] URL final (tras redirects):', res.url);
+  functions.logger.info('[callAppsScript] Content-Type respuesta:', res.headers.get('content-type'));
   const text = await res.text();
+  functions.logger.info('[callAppsScript] Respuesta (primeros 1500 chars):', text.slice(0, 1500));
+
   let json;
-  try { json = JSON.parse(text); } catch(_) { json = { ok: false, error: text }; }
+  try { json = JSON.parse(text); } catch(_) {
+    functions.logger.error('[callAppsScript] Respuesta no es JSON. Status:', res.status, '| URL final:', res.url, '| Body:', text.slice(0, 800));
+    json = { ok: false, error: 'Apps Script retornó HTML en vez de JSON. Verifica el deployment del script.' };
+  }
   if (!json.ok) throw new Error(json.error || 'Apps Script error');
+  functions.logger.info('[callAppsScript] OK:', json);
   return json;
 }
 
@@ -152,36 +165,34 @@ exports.procesarMailQueue = functions
   .firestore.document('mail_queue/{docId}')
   .onCreate(async (snap) => {
 
-  await snap.ref.update({ estado: 'PROCESANDO' });
+  const safeUpdate = (ref, data) => ref.update(data).catch(e => functions.logger.warn('Firestore update (no fatal):', e.message));
+
+  await safeUpdate(snap.ref, { estado: 'PROCESANDO' });
 
   try {
-    const { datos, pdfStoragePath, urlCertificado } = snap.data();
+    const { datos, urlCertificado } = snap.data();
 
     if (!datos || !datos.emailDestinatario) {
-      await snap.ref.update({ estado: 'ERROR', error: 'emailDestinatario vacío' });
+      await safeUpdate(snap.ref, { estado: 'ERROR', error: 'emailDestinatario vacío' });
       return;
     }
 
     await callAppsScript(datos, urlCertificado || '', datos.emailCertificador || null);
     functions.logger.info('procesarMailQueue enviado a:', datos.emailDestinatario);
 
-    try {
-      await db.collection('registros_visita').doc(datos.nroRegistro).update({
-        estado          : 'ENVIADO',
-        emailResponsable: datos.emailDestinatario
-      });
-    } catch (eFs) {
-      functions.logger.warn('Firestore RV update (no fatal):', eFs.message);
-    }
+    await safeUpdate(db.collection('registros_visita').doc(datos.nroRegistro), {
+      estado          : 'ENVIADO',
+      emailResponsable: datos.emailDestinatario
+    });
 
-    await snap.ref.update({
+    await safeUpdate(snap.ref, {
       estado    : 'ENVIADO',
       enviadoEn : admin.firestore.FieldValue.serverTimestamp()
     });
 
   } catch (e) {
     functions.logger.error('procesarMailQueue ERROR:', e.message);
-    await snap.ref.update({ estado: 'ERROR', error: e.message });
+    await safeUpdate(snap.ref, { estado: 'ERROR', error: e.message });
   }
 });
 

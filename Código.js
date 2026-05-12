@@ -196,9 +196,12 @@ function guardarYEnviar(datos, pdfB64, fotoB64, emailDestinatario) {
         const htmlBody = _plantillaEmail(datos, urlCertificado);
         const opciones = { htmlBody, replyTo: EMAIL_REMITENTE, name: 'Certimar SpA' };
 
-        // CC y CCO
-        if (datos.emailCC  && datos.emailCC.trim())  opciones.cc  = datos.emailCC.trim();
-        if (datos.emailCCO && datos.emailCCO.trim())  opciones.bcc = datos.emailCCO.trim();
+        // CC fijos + extras del usuario
+        const _ccFijosGY = [EMAIL_REMITENTE, 'eflores@certimar.cl'].filter(function(e) { return e && e !== destEmail; });
+        const _ccExtraGY = (datos.emailCC && datos.emailCC.trim()) ? datos.emailCC.trim().split(',').map(function(e){ return e.trim(); }) : [];
+        const _ccAllGY   = Array.from(new Set(_ccFijosGY.concat(_ccExtraGY).filter(Boolean)));
+        if (_ccAllGY.length) opciones.cc = _ccAllGY.join(',');
+        if (datos.emailCCO && datos.emailCCO.trim()) opciones.bcc = datos.emailCCO.trim();
 
         if (pdfB64) {
           const raw  = pdfB64.replace(/^data:application\/pdf;base64,/, '');
@@ -254,13 +257,25 @@ function enviarNotificacion(datos, urlCertificado, pdfB64) {
     const asunto   = '[Certimar] Registro de Visita – ' + datos.centroCultivo + ' – ' + datos.fecha;
     const htmlBody = _plantillaEmail(datos, urlCertificado || '');
     const opciones = { htmlBody, replyTo: EMAIL_REMITENTE, name: 'Certimar SpA' };
-    if (datos.emailCC  && datos.emailCC.trim())  opciones.cc  = datos.emailCC.trim();
+    const _ccFijos = [EMAIL_REMITENTE, 'eflores@certimar.cl'].filter(function(e) { return e && e !== destEmail; });
+    const _ccExtra = (datos.emailCC && datos.emailCC.trim()) ? datos.emailCC.trim().split(',').map(function(e){ return e.trim(); }) : [];
+    const _ccAll   = Array.from(new Set(_ccFijos.concat(_ccExtra).filter(Boolean)));
+    if (_ccAll.length) opciones.cc = _ccAll.join(',');
     if (datos.emailCCO && datos.emailCCO.trim()) opciones.bcc = datos.emailCCO.trim();
+    const nombrePdf = 'CertimarRV_' + datos.nroRegistro + '_' + datos.centroCultivo.replace(/[^a-zA-Z0-9]/g,'_') + '.pdf';
     if (pdfB64) {
       const raw  = pdfB64.replace(/^data:application\/pdf;base64,/, '');
-      const nombre = 'CertimarRV_' + datos.nroRegistro + '_' + datos.centroCultivo.replace(/[^a-zA-Z0-9]/g,'_') + '.pdf';
-      const blob = Utilities.newBlob(Utilities.base64Decode(raw), 'application/pdf', nombre);
+      const blob = Utilities.newBlob(Utilities.base64Decode(raw), 'application/pdf', nombrePdf);
       opciones.attachments = [blob];
+    } else if (urlCertificado) {
+      try {
+        const fileIdMatch = urlCertificado.match(/\/d\/([a-zA-Z0-9_-]+)/);
+        if (fileIdMatch) {
+          opciones.attachments = [DriveApp.getFileById(fileIdMatch[1]).getBlob().setName(nombrePdf)];
+        }
+      } catch(eDrive) {
+        Logger.log('Adjunto Drive fallback: ' + eDrive.message);
+      }
     }
     GmailApp.sendEmail(destEmail, asunto, '', opciones);
 

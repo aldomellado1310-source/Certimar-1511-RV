@@ -3016,6 +3016,7 @@ function openModalMail() {
     // Ya guardado → solo enviar correo
     var datos = getDatos();
     document.getElementById('modal-email').value = datos.emailDestinatario || get('r-emailResponsable') || '';
+    document.getElementById('modal-cc').value = 'eflores@certimar.cl';
     document.getElementById('modal-asunto').textContent = 'Registro de Visita — '+datos.centroCultivo+' — '+datos.fecha;
     document.getElementById('modal-body-preview').textContent = generarMensaje(datos);
     document.getElementById('modal-mail').classList.remove('hidden');
@@ -4165,6 +4166,7 @@ function showCompletionDialog(nro, emailSent, emailDest) {
     document.getElementById('cd-sub').textContent = 'El registro fue guardado exitosamente. ¿Deseas notificar al responsable del centro?';
     document.getElementById('cd-email-section').style.display = 'block';
     document.getElementById('cd-email-input').value = emailDest || get('r-emailResponsable') || '';
+    document.getElementById('cd-cc-input').value = 'eflores@certimar.cl';
     document.getElementById('cd-send-btn').disabled = false;
     document.getElementById('cd-send-btn').textContent = '✉️ Enviar';
   }

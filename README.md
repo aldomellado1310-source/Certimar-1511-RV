@@ -20,9 +20,35 @@ Sistema web de registro de inspecciones técnicas en terreno para centros de cul
 
 - **Frontend/Backend:** Google Apps Script (web app, un solo despliegue)
 - **Base de datos:** Google Sheets (hoja `RV`) + Firebase Firestore (tiempo real)
-- **Almacenamiento:** Google Drive (PDFs, fotos, firmas PNG)
+- **Almacenamiento:** Firebase Storage (PDFs, fotos, firmas PNG)
+- **Funciones serverless:** Firebase Functions (Node.js 20) — envío de correo, firma remota, procesamiento de cola
 - **Librerías cliente:** jsPDF + html2canvas, Chart.js, Firebase SDK v10 compat
 - **Autenticación:** Google OAuth (login con cuenta Google)
+
+---
+
+## Herramientas de desarrollo y despliegue
+
+| Herramienta | Versión | Uso |
+|---|---|---|
+| [clasp](https://github.com/google/clasp) | 3.x | CLI para push/deploy de Apps Script sin abrir el editor web |
+| [Firebase CLI](https://firebase.google.com/docs/cli) | Latest | Deploy de Functions, Hosting y reglas de Firestore/Storage |
+| Node.js | 20 | Runtime de Firebase Functions |
+| npm | — | Gestión de dependencias en `functions/` |
+
+### Comandos frecuentes
+
+```bash
+# Apps Script — subir código y redesplegar
+clasp push
+clasp deploy --deploymentId <ID> --description "v3.x - descripción"
+
+# Firebase — desplegar solo funciones
+firebase deploy --only functions
+
+# Firebase — desplegar todo
+firebase deploy
+```
 
 ---
 

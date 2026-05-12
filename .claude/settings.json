@@ -2,7 +2,13 @@
   "permissions": {
     "allow": [
       "Bash(clasp --version)",
-      "Bash(clasp whoami *)"
+      "Bash(clasp whoami *)",
+      "Bash(firebase functions:log --limit 50)",
+      "Bash(firebase functions:log)",
+      "Bash(gcloud projects *)",
+      "Bash(python3 -c ' *)",
+      "Bash(clasp run *)",
+      "Bash(clasp open *)"
     ]
   }
 }
