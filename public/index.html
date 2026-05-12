@@ -1004,6 +1004,18 @@ video{width:100%;border-radius:8px;background:black}
               <td class="label-cell">Tamaño peces</td>
               <td colspan="3"><input type="text" id="r-tamanoPeces" class="doc-input" placeholder="—" oninput="checkChecklist()"></td>
             </tr>
+            <tr>
+              <td class="label-cell">Largo jaula (m)</td>
+              <td><input type="text" id="r-jaulasLargo" class="doc-input" placeholder="—" oninput="checkChecklist()"></td>
+              <td class="label-cell">Ancho jaula (m)</td>
+              <td><input type="text" id="r-jaulasAncho" class="doc-input" placeholder="—" oninput="checkChecklist()"></td>
+            </tr>
+            <tr>
+              <td class="label-cell">Cantidad jaulas</td>
+              <td><input type="text" id="r-cantidadJaulas" class="doc-input" placeholder="Total" oninput="checkChecklist()"></td>
+              <td class="label-cell">Jaulas sembradas</td>
+              <td><input type="text" id="r-cantidadJaulasSembradas" class="doc-input" placeholder="N°" oninput="checkChecklist()"></td>
+            </tr>
           </tbody>
         </table>
 
@@ -1527,6 +1539,10 @@ function buildDocData(datos, nroRegistro, urlCertificado, urlFoto) {
     ubicacion        : datos.ubicacion    || '',
     fechaSiembra     : datos.fechaSiembra || '',
     tamanoPeces      : datos.tamanoPeces  || '',
+    jaulasLargo             : datos.jaulasLargo             || '',
+    jaulasAncho             : datos.jaulasAncho             || '',
+    cantidadJaulas          : datos.cantidadJaulas          || '',
+    cantidadJaulasSembradas : datos.cantidadJaulasSembradas || '',
     latitud          : datos.latitud      || '',
     longitud         : datos.longitud     || '',
     norte            : datos.norte        || '',
@@ -1774,6 +1790,7 @@ function resetFormulario() {
   set('r-fecha', hoy);
   set('r-nroRegistro', 'Se asignará al guardar');
   ['centroCultivo','nroCentro','acs','titular','ubicacion','fechaSiembra','tamanoPeces',
+   'jaulasLargo','jaulasAncho','cantidadJaulas','cantidadJaulasSembradas',
    'latitud','longitud','norte','este','observaciones','nombreResponsable','emailResponsable'].forEach(function(id) {
     set('r-'+id,'');
   });
@@ -1816,6 +1833,7 @@ function get(id) {
 var checkItems = [
   { id:'ck-datos',      text:'¿La información del formulario digital coincide con los datos físicos?', auto:false },
   { id:'ck-fecha',      text:'¿Se completó la fecha de última siembra y tamaño peces?', auto:true },
+  { id:'ck-jaulas',     text:'¿Se completó el tamaño de jaulas (largo y ancho) y la cantidad total/sembradas?', auto:true },
   { id:'ck-obs',        text:'¿Se han registrado las observaciones y su tipo correspondiente?', auto:true },
   { id:'ck-responsable',text:'¿Se completó el nombre del responsable del centro?', auto:true },
   { id:'ck-firma',      text:'¿El responsable del centro ha firmado digitalmente?', auto:true },
@@ -1860,6 +1878,7 @@ function checkChecklist() {
   var checks = {
     'ck-datos':       !!manualChecks['ck-datos'],
     'ck-fecha':       !!get('r-fechaSiembra') && !!get('r-tamanoPeces'),
+    'ck-jaulas':      !!get('r-jaulasLargo') && !!get('r-jaulasAncho') && !!get('r-cantidadJaulas') && !!get('r-cantidadJaulasSembradas'),
     'ck-obs':         !!get('r-observaciones') && (document.getElementById('r-obs-no').checked || !!getSelectedRadio('tipoObs')),
     'ck-responsable': !!get('r-nombreResponsable'),
     'ck-firma':       firmaClienteHasData,
@@ -2656,6 +2675,10 @@ function getDatos() {
     ubicacion      : get('r-ubicacion'),
     fechaSiembra   : get('r-fechaSiembra'),
     tamanoPeces    : get('r-tamanoPeces'),
+    jaulasLargo             : get('r-jaulasLargo'),
+    jaulasAncho             : get('r-jaulasAncho'),
+    cantidadJaulas          : get('r-cantidadJaulas'),
+    cantidadJaulasSembradas : get('r-cantidadJaulasSembradas'),
     latitud        : get('r-latitud'),
     longitud       : get('r-longitud'),
     norte          : get('r-norte'),
@@ -3617,6 +3640,10 @@ function cargarRegistroEnFormulario(r, modoLectura) {
   set('r-ubicacion',         r.ubicacion         || '');
   set('r-fechaSiembra',      r.fechaSiembra      || '');
   set('r-tamanoPeces',       r.tamanoPeces       || '');
+  set('r-jaulasLargo',             r.jaulasLargo             || '');
+  set('r-jaulasAncho',             r.jaulasAncho             || '');
+  set('r-cantidadJaulas',          r.cantidadJaulas          || '');
+  set('r-cantidadJaulasSembradas', r.cantidadJaulasSembradas || '');
   set('r-latitud',           r.latitud           || '');
   set('r-longitud',          r.longitud          || '');
   set('r-norte',             r.norte             || '');
