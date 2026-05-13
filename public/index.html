@@ -329,6 +329,11 @@ input::placeholder,textarea::placeholder{color:var(--text-muted)}
 .admin-table-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;box-shadow:var(--shadow-sm)}
 .admin-table{width:100%;border-collapse:collapse;font-size:12px}
 .admin-table th{background:var(--surface-2);color:var(--text-sec);font-size:10px;text-transform:uppercase;letter-spacing:.6px;padding:10px 12px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap;font-weight:700}
+.admin-table th[data-sort]{cursor:pointer;user-select:none}
+.admin-table th[data-sort]:hover{background:var(--surface-3)}
+.admin-table th .sort-ind{opacity:.35;margin-left:3px;font-size:9px;font-style:normal}
+.admin-table th.sorted-asc .sort-ind::before{content:'▲';opacity:1}
+.admin-table th.sorted-desc .sort-ind::before{content:'▼';opacity:1}
 .admin-table td{padding:11px 12px;border-bottom:1px solid var(--border);color:var(--text-pri);vertical-align:middle}
 .admin-table tr:last-child td{border-bottom:none}
 .admin-table tr:hover td{background:var(--surface-2)}
@@ -978,7 +983,7 @@ video{width:100%;border-radius:8px;background:black}
           <tbody>
             <tr class="tr-centro-nro">
               <td class="label-cell td-centro-label">Centro de Cultivo</td>
-              <td class="td-centro-val"><input type="text" id="r-centroCultivo" class="doc-input" placeholder="—"></td>
+              <td class="td-centro-val"><input type="text" id="r-centroCultivo" class="doc-input" placeholder="—" oninput="this.value=this.value.toUpperCase()" style="text-transform:uppercase"></td>
               <td class="label-cell td-nro-label">N° de Centro</td>
               <td class="td-nro-val" style="position:relative">
                 <input type="text" id="r-nroCentro" class="doc-input" placeholder="—" oninput="onNroCentroInput(this.value)" onblur="setTimeout(closeAcDropdown,200)">
@@ -995,6 +1000,26 @@ video{width:100%;border-radius:8px;background:black}
             <tr>
               <td class="label-cell">Ubicación</td>
               <td colspan="3"><input type="text" id="r-ubicacion" class="doc-input" placeholder="—"></td>
+            </tr>
+            <tr>
+              <td class="label-cell">Región</td>
+              <td>
+                <select id="r-region" class="doc-input" onchange="onRegionChange(); checkChecklist()">
+                  <option value="">—</option>
+                  <option value="X">X</option>
+                  <option value="XI">XI</option>
+                  <option value="XII">XII</option>
+                </select>
+              </td>
+              <td class="label-cell">Sector</td>
+              <td>
+                <select id="r-sector" class="doc-input" onchange="onSectorChange(); checkChecklist()">
+                  <option value="">—</option>
+                </select>
+                <input type="text" id="r-sectorOtro" class="doc-input"
+                       placeholder="Especificar sector" style="display:none;margin-top:6px"
+                       oninput="checkChecklist()">
+              </td>
             </tr>
             <tr>
               <td class="label-cell">Fecha última siembra</td>
@@ -1015,6 +1040,10 @@ video{width:100%;border-radius:8px;background:black}
               <td><input type="text" id="r-cantidadJaulas" class="doc-input" placeholder="Total" oninput="checkChecklist()"></td>
               <td class="label-cell">Jaulas sembradas</td>
               <td><input type="text" id="r-cantidadJaulasSembradas" class="doc-input" placeholder="N°" oninput="checkChecklist()"></td>
+            </tr>
+            <tr>
+              <td class="label-cell">A/N Ensilaje</td>
+              <td colspan="3"><input type="text" id="r-artefactoNaval" class="doc-input" placeholder="—"></td>
             </tr>
           </tbody>
         </table>
@@ -1259,6 +1288,10 @@ video{width:100%;border-radius:8px;background:black}
         <p id="admin-header-sub">Gestión global de todos los registros de visita</p>
       </div>
       <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <button class="btn-action" style="border-color:#d97706;color:#d97706;font-size:12px;padding:7px 14px" onclick="normalizarNombresCentros(this)" title="Convierte todos los nombres de centros a MAYÚSCULAS en Firestore">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+          Normalizar Nombres
+        </button>
         <button class="btn-action" style="border-color:var(--border);color:var(--text-sec);font-size:12px;padding:7px 14px" onclick="exportarCSV()">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7,10 12,15 17,10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           Exportar CSV
@@ -1307,6 +1340,15 @@ video{width:100%;border-radius:8px;background:black}
           <option value="ENVIADO">✉️ Enviado</option>
           <option value="ARCHIVADO">📁 Archivado</option>
         </select>
+        <select id="adm-region" class="filtro-input" style="width:110px" onchange="onAdmRegionChange(); filtrarAdmin()">
+          <option value="">Todas las regiones</option>
+          <option value="X">X</option>
+          <option value="XI">XI</option>
+          <option value="XII">XII</option>
+        </select>
+        <select id="adm-sector" class="filtro-input" style="width:140px" onchange="filtrarAdmin()">
+          <option value="">Todos los sectores</option>
+        </select>
         <select id="adm-cert-filter" class="filtro-input" style="width:160px" onchange="filtrarAdmin()">
           <option value="">Todos los cert.</option>
         </select>
@@ -1321,21 +1363,23 @@ video{width:100%;border-radius:8px;background:black}
           <table class="admin-table">
             <thead>
               <tr>
-                <th>N° Registro</th>
-                <th>Fecha</th>
-                <th>Centro de Cultivo</th>
-                <th>N° Centro</th>
-                <th>Titular</th>
-                <th>ACS</th>
-                <th>Resoluciones</th>
-                <th>Responsable</th>
-                <th>Estado</th>
-                <th>Certificador</th>
+                <th data-sort="nroRegistro">N° Registro <span class="sort-ind"></span></th>
+                <th data-sort="fecha">Fecha <span class="sort-ind"></span></th>
+                <th data-sort="centroCultivo">Centro de Cultivo <span class="sort-ind"></span></th>
+                <th data-sort="nroCentro">N° Centro <span class="sort-ind"></span></th>
+                <th data-sort="titular">Titular <span class="sort-ind"></span></th>
+                <th data-sort="acs">ACS <span class="sort-ind"></span></th>
+                <th data-sort="region">Región <span class="sort-ind"></span></th>
+                <th data-sort="sector">Sector <span class="sort-ind"></span></th>
+                <th data-sort="resoluciones">Resoluciones <span class="sort-ind"></span></th>
+                <th data-sort="nombreResponsable">Responsable <span class="sort-ind"></span></th>
+                <th data-sort="estado">Estado <span class="sort-ind"></span></th>
+                <th data-sort="certNombre">Certificador <span class="sort-ind"></span></th>
                 <th>Acciones</th>
               </tr>
             </thead>
             <tbody id="adm-tbody">
-              <tr><td colspan="11" class="admin-empty">
+              <tr><td colspan="13" class="admin-empty">
                 <div style="font-size:32px;margin-bottom:10px">🔄</div>
                 Cargando registros…
               </td></tr>
@@ -1474,6 +1518,56 @@ var cameraStream = null;
 var currentUser  = null;   // { email, name, isAdmin }
 var _db = null;            // instancia Firestore
 
+// ─── Mapeo Región → Sectores ─────────────────────────────────────────────────
+var SECTORES_POR_REGION = {
+  'X':   ['Melinka'],
+  'XI':  ['Aysén', 'Cisnes'],
+  'XII': ['Natales', 'Punta Arenas']
+};
+
+function onRegionChange() {
+  var region = get('r-region');
+  var sel = document.getElementById('r-sector');
+  sel.innerHTML = '<option value="">—</option>';
+  document.getElementById('r-sectorOtro').style.display = 'none';
+  document.getElementById('r-sectorOtro').value = '';
+  sel.value = '';
+  if (region && SECTORES_POR_REGION[region]) {
+    SECTORES_POR_REGION[region].forEach(function(s) {
+      var opt = document.createElement('option');
+      opt.value = s; opt.textContent = s;
+      sel.appendChild(opt);
+    });
+    var optOtro = document.createElement('option');
+    optOtro.value = '__OTRO__'; optOtro.textContent = 'Otro…';
+    sel.appendChild(optOtro);
+  }
+}
+
+function onSectorChange() {
+  var val = get('r-sector');
+  document.getElementById('r-sectorOtro').style.display = (val === '__OTRO__') ? '' : 'none';
+}
+
+function resolveSector() {
+  var v = get('r-sector');
+  return (v === '__OTRO__') ? get('r-sectorOtro') : v;
+}
+
+function restoreRegionSector(region, sector) {
+  set('r-region', region || '');
+  onRegionChange();
+  if (!sector) return;
+  var validos = SECTORES_POR_REGION[region] || [];
+  if (validos.indexOf(sector) >= 0) {
+    set('r-sector', sector);
+  } else {
+    set('r-sector', '__OTRO__');
+    onSectorChange();
+    document.getElementById('r-sectorOtro').value = sector;
+  }
+}
+
 // =====================================================================
 //  FIREBASE — INIT
 // =====================================================================
@@ -1532,17 +1626,20 @@ function buildDocData(datos, nroRegistro, urlCertificado, urlFoto) {
   return {
     nroRegistro      : nroRegistro,
     fecha            : datos.fecha,
-    centroCultivo    : datos.centroCultivo,
+    centroCultivo    : (datos.centroCultivo || '').toUpperCase(),
     nroCentro        : datos.nroCentro,
     acs              : datos.acs,
     titular          : datos.titular,
     ubicacion        : datos.ubicacion    || '',
+    region           : datos.region       || '',
+    sector           : datos.sector       || '',
     fechaSiembra     : datos.fechaSiembra || '',
     tamanoPeces      : datos.tamanoPeces  || '',
     jaulasLargo             : datos.jaulasLargo             || '',
     jaulasAncho             : datos.jaulasAncho             || '',
     cantidadJaulas          : datos.cantidadJaulas          || '',
     cantidadJaulasSembradas : datos.cantidadJaulasSembradas || '',
+    artefactoNaval   : datos.artefactoNaval  || '',
     latitud          : datos.latitud      || '',
     longitud         : datos.longitud     || '',
     norte            : datos.norte        || '',
@@ -1791,10 +1888,12 @@ function resetFormulario() {
   set('r-fecha', hoy);
   set('r-nroRegistro', 'Se asignará al guardar');
   ['centroCultivo','nroCentro','acs','titular','ubicacion','fechaSiembra','tamanoPeces',
-   'jaulasLargo','jaulasAncho','cantidadJaulas','cantidadJaulasSembradas',
-   'latitud','longitud','norte','este','observaciones','nombreResponsable','emailResponsable'].forEach(function(id) {
+   'jaulasLargo','jaulasAncho','cantidadJaulas','cantidadJaulasSembradas','artefactoNaval',
+   'latitud','longitud','norte','este','observaciones','nombreResponsable','emailResponsable',
+   'sectorOtro'].forEach(function(id) {
     set('r-'+id,'');
   });
+  onRegionChange();
   document.getElementById('r-obs-si').checked = true;
   toggleTipoObs();
   ['cicE2','ca','vs','res1511','desinfeccion'].forEach(function(id) {
@@ -1873,9 +1972,10 @@ function applyBorrador(b) {
   borradorSuspend = true;
   var d = b.datos;
   ['fecha','centroCultivo','nroCentro','acs','titular','ubicacion','fechaSiembra','tamanoPeces',
-   'jaulasLargo','jaulasAncho','cantidadJaulas','cantidadJaulasSembradas',
+   'jaulasLargo','jaulasAncho','cantidadJaulas','cantidadJaulasSembradas','artefactoNaval',
    'latitud','longitud','norte','este','observaciones','nombreResponsable']
     .forEach(function(k){ set('r-'+k, d[k] || ''); });
+  restoreRegionSector(d.region, d.sector);
   set('r-emailResponsable', d.emailDestinatario || '');
   if (d.resoluciones) {
     var chk = function(id, v){ var el=document.getElementById(id); if(el) el.checked = !!v; };
@@ -1974,6 +2074,7 @@ function get(id) {
 var checkItems = [
   { id:'ck-datos',      text:'¿La información del formulario digital coincide con los datos físicos?', auto:false },
   { id:'ck-fecha',      text:'¿Se completó la fecha de última siembra y tamaño peces?', auto:true },
+  { id:'ck-area',       text:'¿Se seleccionó Región y Sector?', auto:true },
   { id:'ck-jaulas',     text:'¿Se completó el tamaño de jaulas (largo y ancho) y la cantidad total/sembradas?', auto:true },
   { id:'ck-obs',        text:'¿Se han registrado las observaciones y su tipo correspondiente?', auto:true },
   { id:'ck-responsable',text:'¿Se completó el nombre del responsable del centro?', auto:true },
@@ -2019,6 +2120,7 @@ function checkChecklist() {
   var checks = {
     'ck-datos':       !!manualChecks['ck-datos'],
     'ck-fecha':       !!get('r-fechaSiembra') && !!get('r-tamanoPeces'),
+    'ck-area':        !!get('r-region') && !!resolveSector(),
     'ck-jaulas':      !!get('r-jaulasLargo') && !!get('r-jaulasAncho') && !!get('r-cantidadJaulas') && !!get('r-cantidadJaulasSembradas'),
     'ck-obs':         !!get('r-observaciones') && (document.getElementById('r-obs-no').checked || !!getSelectedRadio('tipoObs')),
     'ck-responsable': !!get('r-nombreResponsable'),
@@ -2813,17 +2915,20 @@ function getDatos() {
   return {
     fecha          : get('r-fecha'),
     nroRegistro    : get('r-nroRegistro'),
-    centroCultivo  : get('r-centroCultivo'),
+    centroCultivo  : (get('r-centroCultivo') || '').toUpperCase(),
     nroCentro      : get('r-nroCentro'),
     acs            : get('r-acs'),
     titular        : get('r-titular'),
     ubicacion      : get('r-ubicacion'),
+    region         : get('r-region'),
+    sector         : resolveSector(),
     fechaSiembra   : get('r-fechaSiembra'),
     tamanoPeces    : get('r-tamanoPeces'),
     jaulasLargo             : get('r-jaulasLargo'),
     jaulasAncho             : get('r-jaulasAncho'),
     cantidadJaulas          : get('r-cantidadJaulas'),
     cantidadJaulasSembradas : get('r-cantidadJaulasSembradas'),
+    artefactoNaval : get('r-artefactoNaval'),
     latitud        : get('r-latitud'),
     longitud       : get('r-longitud'),
     norte          : get('r-norte'),
@@ -3213,7 +3318,7 @@ function saveNewCentro(code) {
   closeAcDropdown();
   // Capturar datos actuales del formulario para este centro
   var newEntry = {
-    centroCultivo: get('r-centroCultivo') || code,
+    centroCultivo: (get('r-centroCultivo') || code).toUpperCase(),
     titular      : get('r-titular') || '',
     ubicacion    : get('r-ubicacion') || '',
     acs          : get('r-acs') || '',
@@ -3559,6 +3664,7 @@ var _adminAll = [];
 var _adminFiltered = [];
 var _adminPage = 0;
 var _adminPageSize = 25;
+var _adminSort = { field: 'creadoEn', dir: 'desc' };
 
 function cargarAdmin() {
   if (!currentUser || !currentUser.isAdmin) {
@@ -3568,7 +3674,7 @@ function cargarAdmin() {
   }
 
   document.getElementById('adm-tbody').innerHTML =
-    '<tr><td colspan="11" class="admin-empty"><div class="spinner dark" style="margin:0 auto 8px"></div>Cargando todos los registros…</td></tr>';
+    '<tr><td colspan="13" class="admin-empty"><div class="spinner dark" style="margin:0 auto 8px"></div>Cargando todos los registros…</td></tr>';
   document.getElementById('adm-footer-count').textContent = 'Cargando…';
 
   pushNotif('admin-load','info','🛡️ Panel Admin cargando…',[
@@ -3617,13 +3723,14 @@ function cargarAdmin() {
     updateNotifStep('admin-load','a1','done');
     updateNotifStep('admin-load','a2','active');
     _adminPage = 0;
-    renderAdminTabla();
+    filtrarAdmin();
+    initAdminSortListeners();
     updateNotifStep('admin-load','a2','done');
     setTimeout(function(){ updateNotifCard('admin-load','success','🛡️ Panel Admin listo', docs.length + ' registros cargados'); }, 300);
   }).catch(function(e) {
     updateNotifCard('admin-load','error','❌ Error Admin', String(e));
     document.getElementById('adm-tbody').innerHTML =
-      '<tr><td colspan="11" class="admin-empty" style="color:var(--error)">⚠️ Error: '+esc(String(e))+'</td></tr>';
+      '<tr><td colspan="13" class="admin-empty" style="color:var(--error)">⚠️ Error: '+esc(String(e))+'</td></tr>';
   });
 }
 
@@ -3634,7 +3741,7 @@ function renderAdminTabla() {
   var total = _adminFiltered.length;
 
   if (!total) {
-    tbody.innerHTML = '<tr><td colspan="11" class="admin-empty">No hay registros con esos filtros</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="13" class="admin-empty">No hay registros con esos filtros</td></tr>';
     document.getElementById('adm-footer-count').textContent = '0 resultados';
     document.getElementById('adm-pag-info').textContent = '';
     return;
@@ -3654,6 +3761,8 @@ function renderAdminTabla() {
       '<td style="white-space:nowrap">'+esc(r.nroCentro||'—')+'</td>'+
       '<td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+esc(r.titular||'')+'">'+esc(r.titular||'—')+'</td>'+
       '<td>'+esc(r.acs||'—')+'</td>'+
+      '<td style="white-space:nowrap">'+esc(r.region||'—')+'</td>'+
+      '<td style="white-space:nowrap">'+esc(r.sector||'—')+'</td>'+
       '<td style="font-size:10px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(r.resoluciones||'—')+'</td>'+
       '<td>'+esc(r.nombreResponsable||'—')+'</td>'+
       '<td><span class="badge '+bdg+'">'+icon+' '+estado+'</span></td>'+
@@ -3676,27 +3785,65 @@ function renderAdminTabla() {
   document.getElementById('adm-next').disabled = _adminPage >= pages - 1;
 }
 
+function onAdmRegionChange() {
+  var region = document.getElementById('adm-region').value;
+  var sel = document.getElementById('adm-sector');
+  sel.innerHTML = '<option value="">Todos los sectores</option>';
+  var sectores = region
+    ? (SECTORES_POR_REGION[region] || [])
+    : Object.values(SECTORES_POR_REGION).reduce(function(a, b) { return a.concat(b); }, []);
+  sectores.forEach(function(s) {
+    var opt = document.createElement('option');
+    opt.value = s; opt.textContent = s;
+    sel.appendChild(opt);
+  });
+}
+
 function filtrarAdmin() {
-  var q    = (document.getElementById('adm-search').value || '').toLowerCase().trim();
-  var est  = document.getElementById('adm-estado').value;
-  var cert = document.getElementById('adm-cert-filter').value;
-  var desde= document.getElementById('adm-desde').value;
-  var hasta= document.getElementById('adm-hasta').value;
+  var q      = (document.getElementById('adm-search').value || '').toLowerCase().trim();
+  var est    = document.getElementById('adm-estado').value;
+  var cert   = document.getElementById('adm-cert-filter').value;
+  var region = document.getElementById('adm-region').value;
+  var sector = document.getElementById('adm-sector').value;
+  var desde  = document.getElementById('adm-desde').value;
+  var hasta  = document.getElementById('adm-hasta').value;
 
   _adminFiltered = _adminAll.filter(function(r) {
     if (q && !( (r.nroRegistro||'').toLowerCase().includes(q) ||
                 (r.centroCultivo||'').toLowerCase().includes(q) ||
                 (r.titular||'').toLowerCase().includes(q) ||
                 (r.creadoPor||'').toLowerCase().includes(q) ||
-                (r.certNombre||'').toLowerCase().includes(q) )) return false;
-    if (est  && r.estado !== est)         return false;
-    if (cert && r.creadoPor !== cert)     return false;
-    if (desde && fechaToISO(r.fecha) < desde) return false;
-    if (hasta && fechaToISO(r.fecha) > hasta) return false;
+                (r.certNombre||'').toLowerCase().includes(q) ||
+                (r.region||'').toLowerCase().includes(q) ||
+                (r.sector||'').toLowerCase().includes(q) )) return false;
+    if (est    && r.estado !== est)             return false;
+    if (cert   && r.creadoPor !== cert)         return false;
+    if (region && r.region !== region)          return false;
+    if (sector && r.sector !== sector)          return false;
+    if (desde  && fechaToISO(r.fecha) < desde) return false;
+    if (hasta  && fechaToISO(r.fecha) > hasta) return false;
     return true;
   });
+
+  var sf = _adminSort.field;
+  var sd = _adminSort.dir === 'asc' ? 1 : -1;
+  _adminFiltered.sort(function(a, b) {
+    var av = sf === 'creadoEn'
+      ? (a.creadoEn && a.creadoEn.toDate ? a.creadoEn.toDate().getTime() : 0)
+      : sf === 'fecha' ? fechaToISO(a.fecha)
+      : (a[sf] || '');
+    var bv = sf === 'creadoEn'
+      ? (b.creadoEn && b.creadoEn.toDate ? b.creadoEn.toDate().getTime() : 0)
+      : sf === 'fecha' ? fechaToISO(b.fecha)
+      : (b[sf] || '');
+    if (av < bv) return -sd;
+    if (av > bv) return sd;
+    return 0;
+  });
+
   _adminPage = 0;
   renderAdminTabla();
+  actualizarSortHeaders();
 }
 
 function fechaToISO(fecha) {
@@ -3707,12 +3854,39 @@ function fechaToISO(fecha) {
 }
 
 function limpiarFiltrosAdmin() {
-  document.getElementById('adm-search').value   = '';
-  document.getElementById('adm-estado').value   = '';
+  document.getElementById('adm-search').value      = '';
+  document.getElementById('adm-estado').value      = '';
   document.getElementById('adm-cert-filter').value = '';
-  document.getElementById('adm-desde').value    = '';
-  document.getElementById('adm-hasta').value    = '';
+  document.getElementById('adm-region').value      = '';
+  document.getElementById('adm-sector').value      = '';
+  document.getElementById('adm-desde').value       = '';
+  document.getElementById('adm-hasta').value       = '';
+  onAdmRegionChange();
   filtrarAdmin();
+}
+
+function actualizarSortHeaders() {
+  document.querySelectorAll('.admin-table th[data-sort]').forEach(function(th) {
+    th.classList.remove('sorted-asc', 'sorted-desc');
+    if (th.dataset.sort === _adminSort.field) {
+      th.classList.add('sorted-' + _adminSort.dir);
+    }
+  });
+}
+
+function initAdminSortListeners() {
+  document.querySelectorAll('.admin-table th[data-sort]').forEach(function(th) {
+    th.addEventListener('click', function() {
+      var field = th.dataset.sort;
+      if (_adminSort.field === field) {
+        _adminSort.dir = _adminSort.dir === 'asc' ? 'desc' : 'asc';
+      } else {
+        _adminSort.field = field;
+        _adminSort.dir = 'asc';
+      }
+      filtrarAdmin();
+    });
+  });
 }
 
 function admPagina(dir) {
@@ -3750,13 +3924,49 @@ function admReenviarMail(nro, email) {
   }).catch(function(e){ updateNotifCard('adm-mail','error','❌ Error',String(e && e.message ? e.message : e)); });
 }
 
+async function normalizarNombresCentros(btn) {
+  if (!confirm('¿Convertir TODOS los nombres de centros a mayúsculas en Firestore?\nEsta acción es irreversible.')) return;
+  var orig = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = 'Normalizando…';
+  try {
+    var db = initFirebase();
+    var snap = await db.collection('registros_visita').get();
+    var batch = db.batch();
+    var count = 0;
+    snap.forEach(function(doc) {
+      var nombre = doc.data().centroCultivo || '';
+      var upper  = nombre.toUpperCase();
+      if (nombre !== upper) {
+        batch.update(doc.ref, { centroCultivo: upper });
+        count++;
+      }
+    });
+    if (count === 0) {
+      toast('✓ Todos los nombres ya estaban en mayúsculas.', 'success');
+    } else {
+      await batch.commit();
+      // Actualizar la memoria local
+      _adminAll.forEach(function(r) { r.centroCultivo = (r.centroCultivo || '').toUpperCase(); });
+      _adminFiltered.forEach(function(r) { r.centroCultivo = (r.centroCultivo || '').toUpperCase(); });
+      renderAdminTabla();
+      toast('✓ ' + count + ' registros normalizados a MAYÚSCULAS.', 'success');
+    }
+  } catch(e) {
+    toast('❌ Error: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = orig;
+  }
+}
+
 function exportarCSV() {
   var data = _adminFiltered.length ? _adminFiltered : _adminAll;
   if (!data.length) { toast('No hay datos para exportar','error'); return; }
-  var headers = ['N° Registro','Fecha','Centro','N° Centro','Titular','ACS','Resoluciones','Responsable','Email','Estado','Certificador'];
+  var headers = ['N° Registro','Fecha','Centro','N° Centro','Titular','ACS','Región','Sector','Resoluciones','Responsable','Email','Estado','Certificador'];
   var rows = data.map(function(r) {
     return [r.nroRegistro, r.fecha, r.centroCultivo, r.nroCentro, r.titular, r.acs,
-      r.resoluciones, r.nombreResponsable, r.emailResponsable, r.estado,
+      r.region, r.sector, r.resoluciones, r.nombreResponsable, r.emailResponsable, r.estado,
       r.certNombre||r.creadoPor].map(function(v){ return '"'+(v||'').replace(/"/g,'""')+'"'; }).join(',');
   });
   var csv = [headers.map(function(h){ return '"'+h+'"'; }).join(',')].concat(rows).join('\n');
@@ -3778,17 +3988,19 @@ function cargarRegistroEnFormulario(r, modoLectura) {
   // Campos de texto
   set('r-fecha',             r.fecha             || '');
   set('r-nroRegistro',       r.nroRegistro       || r.nroReg || '');
-  set('r-centroCultivo',     r.centroCultivo      || r.centro || '');
+  set('r-centroCultivo',     (r.centroCultivo || r.centro || '').toUpperCase());
   set('r-nroCentro',         r.nroCentro          || '');
   set('r-acs',               r.acs               || '');
   set('r-titular',           r.titular           || '');
   set('r-ubicacion',         r.ubicacion         || '');
+  restoreRegionSector(r.region, r.sector);
   set('r-fechaSiembra',      r.fechaSiembra      || '');
   set('r-tamanoPeces',       r.tamanoPeces       || '');
   set('r-jaulasLargo',             r.jaulasLargo             || '');
   set('r-jaulasAncho',             r.jaulasAncho             || '');
   set('r-cantidadJaulas',          r.cantidadJaulas          || '');
   set('r-cantidadJaulasSembradas', r.cantidadJaulasSembradas || '');
+  set('r-artefactoNaval',          r.artefactoNaval          || '');
   set('r-latitud',           r.latitud           || '');
   set('r-longitud',          r.longitud          || '');
   set('r-norte',             r.norte             || '');

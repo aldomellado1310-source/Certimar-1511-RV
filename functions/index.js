@@ -47,18 +47,32 @@ function plantillaEmail(datos, urlCert) {
     : '';
 
   const filas = [
-    ['N° Registro',      `<strong style="color:#003366">${datos.nroRegistro || '—'}</strong>`],
-    ['Fecha',             datos.fecha            || '—'],
-    ['Centro de Cultivo', datos.centroCultivo    || '—'],
-    ['N° Centro',         datos.nroCentro        || '—'],
-    ['Titular',           datos.titular          || '—'],
-    ['ACS',               datos.acs              || '—'],
-    ['Responsable',       datos.nombreResponsable|| '—'],
-    ['Tipo Observación',  datos.tipoObservacion  || '—'],
-    ['Resoluciones',      resoluciones],
-    ['Observaciones',     (datos.observaciones   || 'S/O').replace(/\n/g, '<br>')],
-    ['Certificador',      datos.nombreCertificador || '—'],
-    ['N° Registro Cert.', datos.rutCertificador    || '—']
+    ['N° Registro',          `<strong style="color:#003366">${datos.nroRegistro || '—'}</strong>`],
+    ['Fecha',                 datos.fecha                     || '—'],
+    ['Centro de Cultivo',     datos.centroCultivo             || '—'],
+    ['N° Centro',             datos.nroCentro                 || '—'],
+    ['ACS',                   datos.acs                       || '—'],
+    ['Titular',               datos.titular                   || '—'],
+    ['Ubicación',             datos.ubicacion                 || '—'],
+    ['Región',                datos.region                    || '—'],
+    ['Sector',                datos.sector                    || '—'],
+    ['Fecha última siembra',  datos.fechaSiembra              || '—'],
+    ['Tamaño peces',          datos.tamanoPeces               || '—'],
+    ['Largo jaula (m)',       datos.jaulasLargo               || '—'],
+    ['Ancho jaula (m)',       datos.jaulasAncho               || '—'],
+    ['Cantidad jaulas',       datos.cantidadJaulas            || '—'],
+    ['Jaulas sembradas',      datos.cantidadJaulasSembradas   || '—'],
+    ['A/N Ensilaje',          datos.artefactoNaval            || '—'],
+    ['Norma aplicable',       resoluciones],
+    ['Latitud S',             datos.latitud                   || '—'],
+    ['Longitud W',            datos.longitud                  || '—'],
+    ['Norte',                 datos.norte                     || '—'],
+    ['Este',                  datos.este                      || '—'],
+    ['Responsable',           datos.nombreResponsable         || '—'],
+    ['Tipo Observación',      datos.tipoObservacion           || '—'],
+    ['Observaciones',         (datos.observaciones            || 'S/O').replace(/\n/g, '<br>')],
+    ['Certificador',          datos.nombreCertificador        || '—'],
+    ['N° Registro Cert.',     datos.rutCertificador           || '—']
   ].map((r, i) => {
     const bg = i % 2 === 0 ? '#ffffff' : '#f1f5f9';
     return `<tr style="background:${bg}">
