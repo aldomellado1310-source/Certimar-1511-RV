@@ -11,5 +11,11 @@ service cloud.firestore {
     match /meta/{docId} {
       allow read, write: if request.auth != null;
     }
+
+    // Tokens OAuth Gmail por usuario — solo Cloud Functions (admin SDK).
+    // Ningún cliente puede leer/escribir refresh tokens directamente.
+    match /users_gmail/{uid} {
+      allow read, write: if false;
+    }
   }
 }

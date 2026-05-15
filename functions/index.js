@@ -1,5 +1,6 @@
 // ============================================================
 //  CERTIMAR — Firebase Functions  (sin Google Sheets / Drive)
+//  Envío de correos: OAuth2 + Gmail API (per-user refresh token)
 // ============================================================
 'use strict';
 
@@ -7,53 +8,90 @@ const functions  = require('firebase-functions');
 const admin      = require('firebase-admin');
 const nodemailer = require('nodemailer');
 const crypto     = require('crypto');
+const { google } = require('googleapis');
 
 admin.initializeApp();
 const db = admin.firestore();
 
-// ─── Configuración ────────────────────────────────────────────────────────────
-// Lee primero de env vars (process.env.MAIL_USER / MAIL_PASS) y cae a
-// functions.config().mail solo como fallback. functions.config() quedó
-// deprecado por Firebase y dejó de soportarse el 31-Dic-2025. Para setear:
-//   - Recomendado: crear `functions/.env` con MAIL_USER=... y MAIL_PASS=...
-//   - Legacy:      firebase functions:config:set mail.user=... mail.pass=...
-const cfg = () => {
-  const fnCfg = (functions.config().mail || {});
-  const mailUser = process.env.MAIL_USER || fnCfg.user || 'operaciones@certimar.cl';
-  const mailPass = process.env.MAIL_PASS || fnCfg.pass || '';
-  const source   = process.env.MAIL_PASS ? 'env'
-                 : fnCfg.pass            ? 'functions.config'
-                 : 'NONE';
-  return { mailUser, mailPass, source, timezone: 'America/Santiago' };
-};
+// ─── Configuración OAuth Gmail ────────────────────────────────────────────────
+// Cada certificador conecta una sola vez su cuenta Gmail desde la app y la
+// refresh_token resultante se persiste en `users_gmail/{uid}`. A partir de
+// ahí los correos salen "as" la cuenta del certificador, sin almacenar
+// passwords en ninguna parte.
+//
+// Setup en Google Cloud Console (proyecto = certimar-rv):
+//   1. APIs & Services → OAuth consent screen → Internal o External
+//   2. APIs & Services → Library → habilitar "Gmail API"
+//   3. APIs & Services → Credentials → Create OAuth Client ID
+//        - Type: Web application
+//        - Authorized JavaScript origins: https://certimar-rv.web.app
+//          (y http://localhost:5000 para emulator)
+//        - Authorized redirect URIs:     https://certimar-rv.web.app/oauth-callback.html
+//          (y http://localhost:5000/oauth-callback.html para emulator)
+//        - Scopes: gmail.send, userinfo.email
+//   4. Copiar Client ID + Client Secret a `functions/.env`:
+//        GMAIL_OAUTH_CLIENT_ID=...
+//        GMAIL_OAUTH_CLIENT_SECRET=...
+//      El client_id es público (lo expone el frontend); solo el secret debe
+//      mantenerse server-side.
+const oauthCfg = () => ({
+  clientId    : process.env.GMAIL_OAUTH_CLIENT_ID     || '',
+  clientSecret: process.env.GMAIL_OAUTH_CLIENT_SECRET || ''
+});
 
-// Log de arranque — útil tras cada redeploy para confirmar versiones y origen
-// de credenciales. NO imprime el password (solo su longitud).
+const GMAIL_SCOPES = [
+  'https://www.googleapis.com/auth/gmail.send',
+  'https://www.googleapis.com/auth/userinfo.email'
+];
+
+// Log de arranque — útil tras cada redeploy para confirmar versiones y
+// presencia (no contenido) de credenciales OAuth.
 try {
-  const boot = cfg();
+  const oc = oauthCfg();
   functions.logger.info('[boot] Certimar Functions cargadas', {
-    node           : process.version,
-    firebaseFnsVer : require('firebase-functions/package.json').version,
-    nodemailerVer  : require('nodemailer/package.json').version,
-    mailUser       : boot.mailUser,
-    mailPassLength : (boot.mailPass || '').length,
-    mailPassSource : boot.source,
-    gcloudProject  : process.env.GCLOUD_PROJECT || '(no GCLOUD_PROJECT)'
+    node            : process.version,
+    firebaseFnsVer  : require('firebase-functions/package.json').version,
+    googleapisVer   : require('googleapis/package.json').version,
+    nodemailerVer   : require('nodemailer/package.json').version,
+    oauthClientId   : oc.clientId ? oc.clientId.slice(0, 16) + '…' : '(MISSING)',
+    oauthSecretLen  : (oc.clientSecret || '').length,
+    gcloudProject   : process.env.GCLOUD_PROJECT || '(no GCLOUD_PROJECT)'
   });
 } catch (eBoot) {
   functions.logger.error('[boot] Error inspeccionando config:', eBoot.message);
 }
 
-// ─── Transporte de correo ─────────────────────────────────────────────────────
-function getTransporter() {
-  const c = cfg();
-  functions.logger.info('[transporter] Creando transporter Gmail', {
-    user: c.mailUser, passLen: (c.mailPass || '').length, source: c.source
-  });
-  return nodemailer.createTransport({
-    service: 'gmail',
-    auth   : { user: c.mailUser, pass: c.mailPass }
-  });
+function newOAuthClient(redirectUri) {
+  const oc = oauthCfg();
+  if (!oc.clientId || !oc.clientSecret) {
+    throw new functions.https.HttpsError('failed-precondition',
+      'Credenciales OAuth Gmail no configuradas en el servidor (GMAIL_OAUTH_CLIENT_ID / SECRET).');
+  }
+  return new google.auth.OAuth2(oc.clientId, oc.clientSecret, redirectUri || undefined);
+}
+
+// ─── Persistencia de tokens por usuario ───────────────────────────────────────
+// Documento `users_gmail/{uid}`:
+//   { email, refreshToken, scopes, connectedAt, updatedAt }
+// Las reglas de Firestore deniegan acceso de cliente — solo Cloud Functions
+// (admin SDK) puede leer/escribir.
+async function saveUserTokens(uid, email, refreshToken, scopes) {
+  await db.collection('users_gmail').doc(uid).set({
+    email,
+    refreshToken,
+    scopes,
+    connectedAt: admin.firestore.FieldValue.serverTimestamp(),
+    updatedAt  : admin.firestore.FieldValue.serverTimestamp()
+  }, { merge: true });
+}
+
+async function getUserTokens(uid) {
+  const snap = await db.collection('users_gmail').doc(uid).get();
+  return snap.exists ? snap.data() : null;
+}
+
+async function deleteUserTokens(uid) {
+  await db.collection('users_gmail').doc(uid).delete();
 }
 
 // ─── Escape HTML ──────────────────────────────────────────────────────────────
@@ -73,6 +111,40 @@ function safeUrl(u) {
   if (!u) return '';
   const s = String(u);
   return /^https?:\/\//i.test(s) ? s : '';
+}
+
+// ─── RFC822 build + Gmail API send ───────────────────────────────────────────
+// Usa nodemailer en modo streamTransport para construir el mensaje completo
+// (headers, MIME, attachments, encoding) y luego lo entrega a Gmail API como
+// `raw` base64url. Así no hay SMTP ni passwords en juego.
+const _rfcBuilder = nodemailer.createTransport({
+  streamTransport: true,
+  buffer         : true,
+  newline        : 'unix'
+});
+
+function buildRawRfc822(mailOpts) {
+  return new Promise((resolve, reject) => {
+    _rfcBuilder.sendMail(mailOpts, (err, info) => {
+      if (err) return reject(err);
+      resolve(info.message);
+    });
+  });
+}
+
+function toBase64Url(buf) {
+  return Buffer.from(buf).toString('base64')
+    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+async function sendViaGmailApi(oauth2, mailOpts) {
+  const raw = toBase64Url(await buildRawRfc822(mailOpts));
+  const gmail = google.gmail({ version: 'v1', auth: oauth2 });
+  const resp = await gmail.users.messages.send({
+    userId: 'me',
+    requestBody: { raw }
+  });
+  return resp.data;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -205,18 +277,39 @@ exports.enviarNotificacion = functions
   }
   functions.logger.info('[enviarNotificacion] paso 2/6 OK: inputs válidos');
 
-  // Paso 3/6 — credenciales SMTP
-  const c = cfg();
-  if (!c.mailPass) {
-    functions.logger.error('[enviarNotificacion] paso 3/6 FAIL: SMTP password ausente', {
-      mailUser: c.mailUser, source: c.source
-    });
+  // Paso 3/6 — token OAuth Gmail del usuario
+  const userTokens = await getUserTokens(uid);
+  if (!userTokens || !userTokens.refreshToken) {
+    functions.logger.warn('[enviarNotificacion] paso 3/6 FAIL: usuario no tiene Gmail conectado', { uid });
     throw new functions.https.HttpsError('failed-precondition',
-      'Credenciales SMTP no configuradas en el servidor. Contacte al administrador.');
+      'Conecta tu cuenta de Gmail antes de enviar correos. (Botón "Conectar Gmail" en el modal)');
   }
-  functions.logger.info('[enviarNotificacion] paso 3/6 OK: credenciales presentes', {
-    mailUser: c.mailUser, source: c.source, passLen: c.mailPass.length
+  const fromEmail = userTokens.email;
+  functions.logger.info('[enviarNotificacion] paso 3/6 OK: refresh_token disponible', {
+    uid, fromEmail, scopes: userTokens.scopes
   });
+
+  let oauth2;
+  try {
+    oauth2 = newOAuthClient();
+    oauth2.setCredentials({ refresh_token: userTokens.refreshToken });
+    // Forzar refresh inmediato para detectar token revocado AHORA, no en mitad del envío.
+    await oauth2.getAccessToken();
+  } catch (eRefresh) {
+    const status = eRefresh.response && eRefresh.response.status;
+    const body   = eRefresh.response && eRefresh.response.data;
+    functions.logger.error('[enviarNotificacion] paso 3/6 FAIL: refresh access_token', {
+      uid, status, body, message: eRefresh.message
+    });
+    // 400 invalid_grant = token revocado o expirado → limpiar y pedir reconexión.
+    if (status === 400 || status === 401) {
+      await deleteUserTokens(uid).catch(() => {});
+      throw new functions.https.HttpsError('failed-precondition',
+        'La autorización de Gmail fue revocada o expiró. Vuelve a conectar tu cuenta.');
+    }
+    throw new functions.https.HttpsError('internal',
+      'Error refrescando token Gmail: ' + eRefresh.message);
+  }
 
   // Paso 4/6 — verificar que el documento existe en Firestore antes de enviar
   let snap;
@@ -239,12 +332,13 @@ exports.enviarNotificacion = functions
   const asunto   = `[Certimar] Registro de Visita – ${datos.centroCultivo} – ${datos.fecha}`;
   const htmlBody = plantillaEmail(datos, urlCertificado || '');
 
+  // Gmail API exige que el From sea la cuenta autenticada (o un alias verificado).
   const mailOpts = {
-    from   : `"Certimar SpA" <${c.mailUser}>`,
+    from   : `"Certimar SpA" <${fromEmail}>`,
     to     : destEmail,
     subject: asunto,
     html   : htmlBody,
-    replyTo: c.mailUser
+    replyTo: fromEmail
   };
 
   if (datos.emailCC  && datos.emailCC.trim())  mailOpts.cc  = datos.emailCC.trim();
@@ -269,21 +363,24 @@ exports.enviarNotificacion = functions
     }
   }
 
-  // Paso 5/6 — envío principal
-  const transporter = getTransporter();
+  // Paso 5/6 — envío principal vía Gmail API
   try {
-    const info = await transporter.sendMail(mailOpts);
+    const info = await sendViaGmailApi(oauth2, mailOpts);
     functions.logger.info('[enviarNotificacion] paso 5/6 OK: correo enviado', {
-      dest: destEmail, messageId: info && info.messageId,
-      accepted: info && info.accepted, rejected: info && info.rejected
+      dest: destEmail, messageId: info && info.id, threadId: info && info.threadId
     });
   } catch (eSend) {
-    functions.logger.error('[enviarNotificacion] paso 5/6 FAIL: sendMail principal', {
-      dest: destEmail, code: eSend.code, command: eSend.command,
-      responseCode: eSend.responseCode, message: eSend.message, stack: eSend.stack
+    const status = eSend.response && eSend.response.status;
+    const body   = eSend.response && eSend.response.data;
+    functions.logger.error('[enviarNotificacion] paso 5/6 FAIL: Gmail API send', {
+      dest: destEmail, status, body, code: eSend.code, message: eSend.message, stack: eSend.stack
     });
+    if (status === 401 || status === 403) {
+      throw new functions.https.HttpsError('failed-precondition',
+        'Gmail rechazó la autorización (' + status + '). Reconecta tu cuenta.');
+    }
     throw new functions.https.HttpsError('internal',
-      'Error enviando correo (SMTP): ' + eSend.message);
+      'Error enviando correo (Gmail API): ' + eSend.message);
   }
 
   // Paso 6a — copia interna al equipo certificador (no fatal)
@@ -293,10 +390,14 @@ exports.enviarNotificacion = functions
     'informes@certimar.cl'
   ];
   const destLower = (destEmail || '').toLowerCase();
-  const copias = COPIAS_CERTIFICADOR.filter(e => e.toLowerCase() !== destLower);
+  const fromLower = (fromEmail || '').toLowerCase();
+  const copias = COPIAS_CERTIFICADOR.filter(e => {
+    const el = e.toLowerCase();
+    return el !== destLower && el !== fromLower; // no auto-cc al certificador ni duplicar dest
+  });
   if (copias.length) {
     try {
-      await transporter.sendMail({
+      await sendViaGmailApi(oauth2, {
         from       : mailOpts.from,
         to         : copias.join(', '),
         subject    : `[COPIA INTERNA] ${asunto}`,
@@ -443,4 +544,143 @@ exports.migrarPDFsDrive = functions
   }
 
   return { ok: true, results };
+});
+
+// ════════════════════════════════════════════════════════════════════════════
+//  FUNCIÓN 5 — obtenerConfigOAuth
+//  Devuelve clientId + scopes para que el frontend arme la URL de autorización
+//  (el clientId es público; el secret jamás sale del servidor).
+// ════════════════════════════════════════════════════════════════════════════
+exports.obtenerConfigOAuth = functions
+  .runWith({ timeoutSeconds: 10, memory: '128MB' })
+  .https.onCall(async (data, context) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError('unauthenticated', 'Debes iniciar sesión.');
+  }
+  const oc = oauthCfg();
+  if (!oc.clientId) {
+    throw new functions.https.HttpsError('failed-precondition',
+      'OAuth Gmail no configurado en el servidor (GMAIL_OAUTH_CLIENT_ID ausente).');
+  }
+  return {
+    clientId: oc.clientId,
+    scopes  : GMAIL_SCOPES
+  };
+});
+
+// ════════════════════════════════════════════════════════════════════════════
+//  FUNCIÓN 6 — completarAuthGmail
+//  Recibe el authorization code del frontend, lo cambia por refresh_token,
+//  consulta el email del usuario y persiste todo en users_gmail/{uid}.
+// ════════════════════════════════════════════════════════════════════════════
+exports.completarAuthGmail = functions
+  .runWith({ timeoutSeconds: 30, memory: '256MB' })
+  .https.onCall(async (data, context) => {
+  const uid = context.auth && context.auth.uid;
+  if (!uid) {
+    throw new functions.https.HttpsError('unauthenticated', 'Debes iniciar sesión.');
+  }
+  const { code, redirectUri } = data || {};
+  if (!code || !redirectUri) {
+    throw new functions.https.HttpsError('invalid-argument', 'code y redirectUri son requeridos.');
+  }
+  functions.logger.info('[completarAuthGmail] BEGIN', { uid, redirectUri });
+
+  let tokens;
+  try {
+    const oauth2 = newOAuthClient(redirectUri);
+    const r = await oauth2.getToken(code);
+    tokens = r.tokens;
+  } catch (e) {
+    const status = e.response && e.response.status;
+    const body   = e.response && e.response.data;
+    functions.logger.error('[completarAuthGmail] FAIL: getToken', {
+      uid, status, body, message: e.message
+    });
+    throw new functions.https.HttpsError('internal',
+      'Google rechazó el código (' + (status || '?') + '): ' + (body && body.error_description || e.message));
+  }
+
+  if (!tokens.refresh_token) {
+    // Google solo devuelve refresh_token la PRIMERA vez que el usuario autoriza
+    // (o cuando se pasa prompt=consent). Si falta, normalmente es porque el
+    // usuario ya había autorizado antes — toca revocar en
+    // https://myaccount.google.com/permissions y reconectar.
+    functions.logger.warn('[completarAuthGmail] FAIL: sin refresh_token en respuesta', {
+      uid, scope: tokens.scope, hasAccess: !!tokens.access_token
+    });
+    throw new functions.https.HttpsError('failed-precondition',
+      'Google no devolvió refresh_token. Ve a https://myaccount.google.com/permissions, ' +
+      'revoca el acceso a Certimar y reconecta.');
+  }
+
+  // Obtener email del usuario autorizado.
+  let email;
+  try {
+    const oauth2 = newOAuthClient();
+    oauth2.setCredentials(tokens);
+    const userinfo = await google.oauth2({ version: 'v2', auth: oauth2 }).userinfo.get();
+    email = userinfo.data.email;
+  } catch (e) {
+    functions.logger.error('[completarAuthGmail] FAIL: userinfo', {
+      uid, message: e.message
+    });
+    throw new functions.https.HttpsError('internal', 'Error obteniendo email del usuario: ' + e.message);
+  }
+
+  await saveUserTokens(uid, email, tokens.refresh_token, (tokens.scope || '').split(' '));
+  functions.logger.info('[completarAuthGmail] OK', { uid, email });
+  return { ok: true, email };
+});
+
+// ════════════════════════════════════════════════════════════════════════════
+//  FUNCIÓN 7 — estadoGmail
+//  Devuelve si el usuario tiene Gmail conectado y con qué email.
+// ════════════════════════════════════════════════════════════════════════════
+exports.estadoGmail = functions
+  .runWith({ timeoutSeconds: 10, memory: '128MB' })
+  .https.onCall(async (data, context) => {
+  const uid = context.auth && context.auth.uid;
+  if (!uid) {
+    throw new functions.https.HttpsError('unauthenticated', 'Debes iniciar sesión.');
+  }
+  const t = await getUserTokens(uid);
+  if (!t || !t.refreshToken) return { connected: false };
+  return {
+    connected  : true,
+    email      : t.email,
+    scopes     : t.scopes || [],
+    connectedAt: t.connectedAt && t.connectedAt.toMillis ? t.connectedAt.toMillis() : null
+  };
+});
+
+// ════════════════════════════════════════════════════════════════════════════
+//  FUNCIÓN 8 — desconectarGmail
+//  Revoca el refresh_token en Google y borra el doc de users_gmail.
+// ════════════════════════════════════════════════════════════════════════════
+exports.desconectarGmail = functions
+  .runWith({ timeoutSeconds: 15, memory: '128MB' })
+  .https.onCall(async (data, context) => {
+  const uid = context.auth && context.auth.uid;
+  if (!uid) {
+    throw new functions.https.HttpsError('unauthenticated', 'Debes iniciar sesión.');
+  }
+  functions.logger.info('[desconectarGmail] BEGIN', { uid });
+  const t = await getUserTokens(uid);
+  if (!t) return { ok: true, alreadyDisconnected: true };
+
+  try {
+    const oauth2 = newOAuthClient();
+    await oauth2.revokeToken(t.refreshToken);
+    functions.logger.info('[desconectarGmail] token revocado en Google', { uid });
+  } catch (e) {
+    // Si la revocación falla, igual borramos el doc local — el usuario ya
+    // pidió desconectar.
+    functions.logger.warn('[desconectarGmail] revoke falló (igualmente borro doc local)', {
+      uid, message: e.message
+    });
+  }
+  await deleteUserTokens(uid);
+  functions.logger.info('[desconectarGmail] OK', { uid });
+  return { ok: true };
 });

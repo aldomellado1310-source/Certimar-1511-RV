@@ -1412,10 +1412,14 @@ video{width:100%;border-radius:8px;background:black}
       <button class="modal-close" onclick="closeModalMail()">×</button>
     </div>
     <div class="modal-body">
+      <!-- Banner conexión Gmail OAuth -->
+      <div id="gmail-banner" style="margin-bottom:14px;border-radius:10px;padding:14px 16px;font-size:13px;line-height:1.5">
+        <!-- Contenido inyectado por renderGmailBanner() -->
+      </div>
       <div class="email-preview">
         <div class="email-row">
           <span class="email-label">De:</span>
-          <span style="color:#64748b;font-size:12px">operaciones@certimar.cl</span>
+          <span id="modal-from-email" style="color:#64748b;font-size:12px">—</span>
         </div>
         <div class="email-row" style="align-items:flex-start">
           <span class="email-label">Para: <span style="color:#dc2626">*</span></span>
@@ -1464,7 +1468,10 @@ video{width:100%;border-radius:8px;background:black}
 // =====================================================================
 //  ESTADO GLOBAL
 // =====================================================================
-var appState = { saved: false, sent: false, pdfB64: null, fotoB64: null };
+var appState = {
+  saved: false, sent: false, pdfB64: null, fotoB64: null,
+  gmail: { connected: false, email: null, checking: false, oauthClientId: null, scopes: null }
+};
 var chartMes = null, chartRes = null;
 var historicData = [];
 var localRecords = [];
@@ -1558,6 +1565,181 @@ async function callFn(name, payload) {
     return { data: json.result };
   } finally {
     console.groupEnd();
+  }
+}
+
+// =====================================================================
+//  GMAIL OAUTH — conexión per-user vía popup
+// =====================================================================
+async function refrescarEstadoGmail() {
+  if (!firebase.auth().currentUser) {
+    appState.gmail = { connected: false, email: null, checking: false, oauthClientId: appState.gmail.oauthClientId, scopes: appState.gmail.scopes };
+    return appState.gmail;
+  }
+  appState.gmail.checking = true;
+  try {
+    var r = await callFn('estadoGmail', {});
+    appState.gmail.connected = !!(r.data && r.data.connected);
+    appState.gmail.email     = r.data && r.data.email || null;
+    appState.gmail.scopes    = r.data && r.data.scopes || null;
+    console.log('[gmail] estado:', appState.gmail);
+  } catch (e) {
+    console.warn('[gmail] estadoGmail error:', e && e.message);
+    appState.gmail.connected = false;
+    appState.gmail.email     = null;
+  } finally {
+    appState.gmail.checking = false;
+  }
+  return appState.gmail;
+}
+
+async function obtenerOAuthClientId() {
+  if (appState.gmail.oauthClientId) return appState.gmail.oauthClientId;
+  var r = await callFn('obtenerConfigOAuth', {});
+  appState.gmail.oauthClientId = r.data.clientId;
+  appState.gmail.scopes        = r.data.scopes;
+  return appState.gmail.oauthClientId;
+}
+
+function _gmailRedirectUri() {
+  return window.location.origin + '/oauth-callback.html';
+}
+
+async function iniciarConexionGmail() {
+  var btn = document.getElementById('gmail-connect-btn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Abriendo Google…'; }
+  try {
+    var clientId    = await obtenerOAuthClientId();
+    var scopes      = (appState.gmail.scopes || ['https://www.googleapis.com/auth/gmail.send','https://www.googleapis.com/auth/userinfo.email']).join(' ');
+    var redirectUri = _gmailRedirectUri();
+    var state       = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : String(Date.now()) + Math.random().toString(36).slice(2);
+    sessionStorage.setItem('gmail_oauth_state', state);
+
+    var url = new URL('https://accounts.google.com/o/oauth2/v2/auth');
+    url.searchParams.set('client_id'    , clientId);
+    url.searchParams.set('redirect_uri' , redirectUri);
+    url.searchParams.set('response_type', 'code');
+    url.searchParams.set('scope'        , scopes);
+    url.searchParams.set('access_type'  , 'offline');
+    url.searchParams.set('prompt'       , 'consent');           // fuerza refresh_token
+    url.searchParams.set('state'        , state);
+    url.searchParams.set('include_granted_scopes', 'true');
+
+    var w = 520, h = 640;
+    var left = Math.max(0, (screen.width  - w) / 2);
+    var top  = Math.max(0, (screen.height - h) / 2);
+    var popup = window.open(url.toString(), 'gmail-oauth',
+      'width='+w+',height='+h+',left='+left+',top='+top+',resizable=yes,scrollbars=yes');
+
+    if (!popup) {
+      toast('Permite popups para conectar Gmail', 'error');
+      renderGmailBanner();
+      return;
+    }
+
+    await new Promise(function(resolve) {
+      function onMessage(ev) {
+        if (ev.origin !== window.location.origin) return;
+        if (!ev.data || ev.data.type !== 'gmail-oauth-result') return;
+        window.removeEventListener('message', onMessage);
+        try { if (popup && !popup.closed) popup.close(); } catch(_){}
+
+        if (ev.data.error) {
+          toast('Google rechazó la autorización: ' + ev.data.error, 'error');
+          resolve();
+          return;
+        }
+        if (ev.data.state !== sessionStorage.getItem('gmail_oauth_state')) {
+          toast('Token de seguridad (state) no coincide — intento bloqueado', 'error');
+          resolve();
+          return;
+        }
+        sessionStorage.removeItem('gmail_oauth_state');
+
+        callFn('completarAuthGmail', { code: ev.data.code, redirectUri: redirectUri })
+          .then(function(r) {
+            toast('Gmail conectado: ' + r.data.email, 'success');
+            return refrescarEstadoGmail();
+          })
+          .catch(function(e) {
+            console.error('[gmail] completarAuthGmail error:', e);
+            toast('Error guardando autorización: ' + (e && e.message || e), 'error');
+          })
+          .finally(function() {
+            renderGmailBanner();
+            resolve();
+          });
+      }
+      window.addEventListener('message', onMessage);
+
+      var poll = setInterval(function() {
+        if (popup.closed) {
+          clearInterval(poll);
+          window.removeEventListener('message', onMessage);
+          renderGmailBanner();
+          resolve();
+        }
+      }, 500);
+    });
+  } catch (e) {
+    console.error('[gmail] iniciarConexionGmail error:', e);
+    toast('Error iniciando conexión Gmail: ' + (e && e.message || e), 'error');
+    renderGmailBanner();
+  }
+}
+
+async function desconectarGmailUI() {
+  if (!confirm('¿Desconectar Gmail? Tendrás que volver a autorizar para enviar correos.')) return;
+  try {
+    await callFn('desconectarGmail', {});
+    toast('Gmail desconectado', 'success');
+    appState.gmail.connected = false;
+    appState.gmail.email     = null;
+    renderGmailBanner();
+  } catch (e) {
+    toast('Error al desconectar: ' + (e && e.message || e), 'error');
+  }
+}
+
+function renderGmailBanner() {
+  var el = document.getElementById('gmail-banner');
+  if (!el) return;
+  var btnEnviar = document.getElementById('btn-enviar-mail');
+  var fromEl    = document.getElementById('modal-from-email');
+
+  if (appState.gmail.checking) {
+    el.style.background = '#f1f5f9';
+    el.style.border     = '1px solid #e2e8f0';
+    el.style.color      = '#475569';
+    el.innerHTML = '<span style="opacity:0.7">Verificando conexión Gmail…</span>';
+    if (btnEnviar) { btnEnviar.disabled = true; btnEnviar.style.opacity = '0.5'; }
+    if (fromEl) fromEl.textContent = '—';
+    return;
+  }
+  if (appState.gmail.connected) {
+    el.style.background = '#ecfdf5';
+    el.style.border     = '1px solid #a7f3d0';
+    el.style.color      = '#065f46';
+    el.innerHTML =
+      '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">' +
+        '<span style="font-size:18px">✓</span>' +
+        '<div style="flex:1;min-width:200px"><b>Gmail conectado</b><br><span style="font-size:11px;opacity:0.85">El correo saldrá desde <b>' + (appState.gmail.email||'') + '</b></span></div>' +
+        '<button onclick="desconectarGmailUI()" style="background:transparent;border:1px solid #047857;color:#047857;padding:5px 12px;border-radius:6px;font-size:11px;cursor:pointer">Desconectar</button>' +
+      '</div>';
+    if (btnEnviar) { btnEnviar.disabled = false; btnEnviar.style.opacity = '1'; }
+    if (fromEl) fromEl.textContent = appState.gmail.email || '—';
+  } else {
+    el.style.background = '#fef3c7';
+    el.style.border     = '1px solid #fcd34d';
+    el.style.color      = '#78350f';
+    el.innerHTML =
+      '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">' +
+        '<span style="font-size:18px">⚠</span>' +
+        '<div style="flex:1;min-width:200px"><b>Gmail no conectado</b><br><span style="font-size:11px;opacity:0.85">Autoriza una sola vez tu cuenta Gmail para enviar correos en tu nombre.</span></div>' +
+        '<button id="gmail-connect-btn" onclick="iniciarConexionGmail()" style="background:#1f2937;border:0;color:#fff;padding:8px 14px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer">Conectar Gmail</button>' +
+      '</div>';
+    if (btnEnviar) { btnEnviar.disabled = true; btnEnviar.style.opacity = '0.5'; }
+    if (fromEl) fromEl.textContent = '— (sin Gmail conectado)';
   }
 }
 
@@ -1737,6 +1919,10 @@ document.addEventListener('DOMContentLoaded', function() {
           isAdmin: (typeof ADMIN_EMAILS !== 'undefined') && ADMIN_EMAILS.includes(user.email)
         };
         showApp();
+        // Carga estado Gmail OAuth en background — no bloquea login.
+        refrescarEstadoGmail().catch(function(e) {
+          console.warn('[gmail] no se pudo cargar estado al login:', e && e.message);
+        });
       } else {
         document.getElementById('view-login').classList.remove('hidden');
       }
@@ -2714,6 +2900,12 @@ function openModalMail() {
   document.getElementById('modal-asunto').textContent = 'Registro de Visita — '+datos.centroCultivo+' — '+datos.fecha;
   document.getElementById('modal-body-preview').textContent = generarMensaje(datos);
   document.getElementById('modal-mail').classList.remove('hidden');
+
+  // Si no tenemos estado Gmail aún, refrescar mientras se muestra el banner "Verificando…".
+  renderGmailBanner();
+  if (!appState.gmail.email && !appState.gmail.checking) {
+    refrescarEstadoGmail().then(renderGmailBanner);
+  }
 }
 
 function closeModalMail() {
@@ -2721,6 +2913,11 @@ function closeModalMail() {
 }
 
 function handleEnviarMail() {
+  if (!appState.gmail.connected) {
+    toast('Conecta tu cuenta Gmail antes de enviar', 'error');
+    renderGmailBanner();
+    return;
+  }
   var emailDest = document.getElementById('modal-email').value.trim();
   if (!emailDest) {
     document.getElementById('modal-email').style.borderColor = '#dc2626';

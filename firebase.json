@@ -10,6 +10,10 @@
       { "source": "/api/enviarNotificacion",   "function": "enviarNotificacion",   "region": "us-central1" },
       { "source": "/api/generarLinkFirma",     "function": "generarLinkFirma",     "region": "us-central1" },
       { "source": "/api/procesarFirmaCliente", "function": "procesarFirmaCliente", "region": "us-central1" },
+      { "source": "/api/obtenerConfigOAuth",   "function": "obtenerConfigOAuth",   "region": "us-central1" },
+      { "source": "/api/completarAuthGmail",   "function": "completarAuthGmail",   "region": "us-central1" },
+      { "source": "/api/estadoGmail",          "function": "estadoGmail",          "region": "us-central1" },
+      { "source": "/api/desconectarGmail",     "function": "desconectarGmail",     "region": "us-central1" },
       {
         "source": "**",
         "destination": "/index.html"

@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Conectando Gmail — Certimar</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; }
+  body { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #003366 0%, #005599 100%); color: #fff; }
+  .card { background: rgba(255,255,255,0.08); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; padding: 40px 48px; max-width: 440px; text-align: center; }
+  .icon { width: 56px; height: 56px; border-radius: 50%; background: rgba(255,255,255,0.15); display: inline-flex; align-items: center; justify-content: center; font-size: 28px; margin-bottom: 18px; }
+  h1 { font-size: 18px; font-weight: 700; margin-bottom: 10px; letter-spacing: 0.3px; }
+  p  { font-size: 13px; line-height: 1.55; color: rgba(255,255,255,0.85); }
+  .err { color: #fca5a5; }
+  .small { font-size: 11px; color: rgba(255,255,255,0.55); margin-top: 16px; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="icon" id="ic">⏳</div>
+    <h1 id="title">Procesando autorización…</h1>
+    <p id="msg">Devolviéndote a la app, no cierres esta ventana.</p>
+    <p class="small" id="sub"></p>
+  </div>
+<script>
+(function() {
+  var params = new URLSearchParams(window.location.search);
+  var code   = params.get('code');
+  var state  = params.get('state');
+  var error  = params.get('error');
+
+  var ic     = document.getElementById('ic');
+  var title  = document.getElementById('title');
+  var msg    = document.getElementById('msg');
+  var sub    = document.getElementById('sub');
+
+  function ok() {
+    ic.textContent = '✓';
+    title.textContent = 'Autorización recibida';
+    msg.textContent = 'Cerrando esta ventana…';
+  }
+  function fail(text) {
+    ic.textContent = '✕';
+    title.textContent = 'No se pudo conectar';
+    title.classList.add('err');
+    msg.textContent = text;
+    sub.textContent = 'Cierra esta ventana e inténtalo de nuevo desde la app.';
+  }
+
+  if (!window.opener) {
+    fail('Esta página debe abrirse como popup desde la app de Certimar.');
+    return;
+  }
+
+  try {
+    window.opener.postMessage({
+      type  : 'gmail-oauth-result',
+      code  : code,
+      state : state,
+      error : error
+    }, window.location.origin);
+  } catch (e) {
+    fail('No se pudo notificar a la ventana principal: ' + e.message);
+    return;
+  }
+
+  if (error) {
+    fail('Google reportó: ' + error);
+  } else if (code) {
+    ok();
+    setTimeout(function(){ try { window.close(); } catch(e){} }, 600);
+  } else {
+    fail('Respuesta inválida de Google (sin code ni error).');
+  }
+})();
+</script>
+</body>
+</html>
