@@ -1489,6 +1489,19 @@ function initFirebase() {
   try {
     if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
     _db = firebase.firestore();
+
+    // Auto-detección Emulator Suite. Si la app corre en localhost, conectamos
+    // Firestore + Storage a los emuladores. Functions va por hosting rewrite,
+    // así que el Hosting emulator (puerto 5000) ya rerutea /api/* al Functions
+    // emulator (5001) sin configuración del cliente. Auth queda contra Google
+    // real para conservar el flujo de signInWithPopup tal cual prod.
+    var isLocal = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+    if (isLocal) {
+      _db.useEmulator('localhost', 8080);
+      try { firebase.storage().useEmulator('localhost', 9199); } catch(_) {}
+      console.warn('[Firebase] MODO EMULADOR — Firestore:8080 / Storage:9199 / Functions vía /api (5001) / Auth: Google real');
+    }
+
     _db.settings({ merge: true });
     console.log('[Firebase] Firestore conectado ✓');
     return _db;

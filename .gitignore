@@ -4,3 +4,4 @@ functions/serviceAccount.json
 .env
 *.log
 .firebase/
+.emulator-data/
