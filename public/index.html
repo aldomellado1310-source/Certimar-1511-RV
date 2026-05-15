@@ -1500,21 +1500,65 @@ function dbCol() {
 //  CLOUD FUNCTIONS — llamada via Hosting rewrite (evita CORS de org policy)
 // =====================================================================
 async function callFn(name, payload) {
-  var user = firebase.auth().currentUser;
-  if (!user) throw new Error('No autenticado');
-  var idToken = await user.getIdToken();
-  var resp = await fetch('/api/' + name, {
-    method : 'POST',
-    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + idToken },
-    body   : JSON.stringify({ data: payload })
-  });
-  var json = await resp.json();
-  if (json.error) {
-    var err = new Error(json.error.message || json.error.status || 'Error en función');
-    err.code = json.error.status;
-    throw err;
+  console.group('[callFn] ' + name);
+  var t0 = performance.now();
+  try {
+    var user = firebase.auth().currentUser;
+    if (!user) {
+      console.warn('[callFn] sin usuario autenticado');
+      throw new Error('No autenticado');
+    }
+    console.log('[callFn] uid:', user.uid);
+    var idToken = await user.getIdToken();
+
+    var resp = await fetch('/api/' + name, {
+      method : 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + idToken },
+      body   : JSON.stringify({ data: payload })
+    });
+    var ctype = resp.headers.get('content-type') || '';
+    console.log('[callFn] status:', resp.status, '| content-type:', ctype, '| ms:', Math.round(performance.now() - t0));
+
+    var bodyText = await resp.text();
+
+    // Si el body no parece JSON (típicamente página HTML de error 5xx/404 de Hosting),
+    // devolvemos un Error informativo con el preview del body para diagnóstico.
+    var looksJson = ctype.indexOf('application/json') !== -1 || /^\s*\{/.test(bodyText);
+    if (!looksJson) {
+      var preview = bodyText.slice(0, 240).replace(/\s+/g, ' ').trim();
+      console.error('[callFn] respuesta NO-JSON. Body preview:', preview);
+      console.error('[callFn] body completo:', bodyText);
+      var errHtml = new Error('La función "' + name + '" devolvió ' + (ctype || 'sin content-type') +
+        ' (HTTP ' + resp.status + '). Probablemente no está desplegada o falló al iniciar. ' +
+        'Body: ' + preview);
+      errHtml.code = 'non-json-response';
+      errHtml.httpStatus = resp.status;
+      errHtml.bodyPreview = preview;
+      throw errHtml;
+    }
+
+    var json;
+    try {
+      json = JSON.parse(bodyText);
+    } catch (eParse) {
+      console.error('[callFn] JSON.parse falló:', eParse.message, '| body:', bodyText.slice(0, 400));
+      var errParse = new Error('Respuesta de "' + name + '" no es JSON válido: ' + eParse.message);
+      errParse.code = 'bad-json';
+      throw errParse;
+    }
+
+    if (json.error) {
+      console.error('[callFn] función devolvió error:', json.error);
+      var err = new Error(json.error.message || json.error.status || 'Error en función');
+      err.code = json.error.status;
+      err.details = json.error.details;
+      throw err;
+    }
+    console.log('[callFn] OK result:', json.result);
+    return { data: json.result };
+  } finally {
+    console.groupEnd();
   }
-  return { data: json.result };
 }
 
 // =====================================================================
@@ -2708,13 +2752,30 @@ function handleEnviarMail() {
 
   setTimeout(function() { updateNotifStep('mail-send','m1','done'); updateNotifStep('mail-send','m2','active'); }, 800);
 
-  callFn('enviarNotificacion', {
+  var payload = {
     datos           : datos,
     urlCertificado  : appState.savedData ? appState.savedData.urlCert : '',
     pdfStoragePath  : appState.pdfStoragePath || ''
-  }).then(function(result) {
+  };
+  console.group('[mail] handleEnviarMail');
+  console.log('[mail] payload:', {
+    dest          : emailDest,
+    cc            : emailCC || '(none)',
+    cco           : emailCCO ? '(set)' : '(none)',
+    nroRegistro   : datos.nroRegistro,
+    centroCultivo : datos.centroCultivo,
+    fecha         : datos.fecha,
+    urlCertificado: payload.urlCertificado || '(none)',
+    pdfStoragePath: payload.pdfStoragePath || '(none)',
+    appStateSaved : appState.saved,
+    appStateSent  : appState.sent
+  });
+  console.groupEnd();
+
+  callFn('enviarNotificacion', payload).then(function(result) {
     setBtnLoading('btn-enviar-mail', false);
     var res = result.data;
+    console.log('[mail] response:', res);
     if (res && res.ok) {
       updateNotifStep('mail-send','m2','done');
       updateNotifStep('mail-send','m3','done');
@@ -2735,13 +2796,41 @@ function handleEnviarMail() {
       lockForm(true);
       showCompletionDialog(nro, true, emailDest);
     } else {
+      console.warn('[mail] respuesta sin ok:', res);
       updateNotifCard('mail-send', 'error', '❌ Error al enviar', res ? (res.error||'Error desconocido') : 'Sin respuesta del servidor');
       toast('Error al enviar: '+(res && res.error ? res.error : 'sin respuesta'),'error');
     }
   }).catch(function(e) {
     setBtnLoading('btn-enviar-mail', false);
-    updateNotifCard('mail-send', 'error', '❌ Error de conexión', String(e && e.message ? e.message : e));
-    toast('Error al enviar correo','error');
+    console.error('[mail] error envío:', {
+      code: e && e.code, httpStatus: e && e.httpStatus,
+      message: e && e.message, bodyPreview: e && e.bodyPreview, stack: e && e.stack
+    });
+
+    // Mensaje al usuario diferenciado por código.
+    var userMsg, cardSubtitle;
+    var code = e && e.code;
+    if (code === 'failed-precondition') {
+      userMsg = e.message || 'Falta configuración en el servidor';
+      cardSubtitle = userMsg;
+    } else if (code === 'unauthenticated') {
+      userMsg = 'Sesión expirada. Recargue la página e inicie sesión.';
+      cardSubtitle = userMsg;
+    } else if (code === 'not-found') {
+      userMsg = 'El registro no existe en el servidor. Guárdelo primero.';
+      cardSubtitle = userMsg;
+    } else if (code === 'internal') {
+      userMsg = 'Error interno: ' + (e.message || 'desconocido');
+      cardSubtitle = userMsg;
+    } else if (code === 'non-json-response') {
+      userMsg = 'La función no respondió (HTTP ' + (e.httpStatus || '?') + '). Revise el despliegue.';
+      cardSubtitle = userMsg;
+    } else {
+      userMsg = 'Error al enviar correo';
+      cardSubtitle = String(e && e.message ? e.message : e);
+    }
+    updateNotifCard('mail-send', 'error', '❌ ' + userMsg, cardSubtitle);
+    toast(userMsg, 'error');
   });
 }
 

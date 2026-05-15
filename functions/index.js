@@ -12,19 +12,67 @@ admin.initializeApp();
 const db = admin.firestore();
 
 // ─── Configuración ────────────────────────────────────────────────────────────
-const cfg = () => ({
-  mailUser: (functions.config().mail || {}).user || 'operaciones@certimar.cl',
-  mailPass: (functions.config().mail || {}).pass || '',
-  timezone: 'America/Santiago'
-});
+// Lee primero de env vars (process.env.MAIL_USER / MAIL_PASS) y cae a
+// functions.config().mail solo como fallback. functions.config() quedó
+// deprecado por Firebase y dejó de soportarse el 31-Dic-2025. Para setear:
+//   - Recomendado: crear `functions/.env` con MAIL_USER=... y MAIL_PASS=...
+//   - Legacy:      firebase functions:config:set mail.user=... mail.pass=...
+const cfg = () => {
+  const fnCfg = (functions.config().mail || {});
+  const mailUser = process.env.MAIL_USER || fnCfg.user || 'operaciones@certimar.cl';
+  const mailPass = process.env.MAIL_PASS || fnCfg.pass || '';
+  const source   = process.env.MAIL_PASS ? 'env'
+                 : fnCfg.pass            ? 'functions.config'
+                 : 'NONE';
+  return { mailUser, mailPass, source, timezone: 'America/Santiago' };
+};
+
+// Log de arranque — útil tras cada redeploy para confirmar versiones y origen
+// de credenciales. NO imprime el password (solo su longitud).
+try {
+  const boot = cfg();
+  functions.logger.info('[boot] Certimar Functions cargadas', {
+    node           : process.version,
+    firebaseFnsVer : require('firebase-functions/package.json').version,
+    nodemailerVer  : require('nodemailer/package.json').version,
+    mailUser       : boot.mailUser,
+    mailPassLength : (boot.mailPass || '').length,
+    mailPassSource : boot.source,
+    gcloudProject  : process.env.GCLOUD_PROJECT || '(no GCLOUD_PROJECT)'
+  });
+} catch (eBoot) {
+  functions.logger.error('[boot] Error inspeccionando config:', eBoot.message);
+}
 
 // ─── Transporte de correo ─────────────────────────────────────────────────────
 function getTransporter() {
   const c = cfg();
+  functions.logger.info('[transporter] Creando transporter Gmail', {
+    user: c.mailUser, passLen: (c.mailPass || '').length, source: c.source
+  });
   return nodemailer.createTransport({
     service: 'gmail',
     auth   : { user: c.mailUser, pass: c.mailPass }
   });
+}
+
+// ─── Escape HTML ──────────────────────────────────────────────────────────────
+// Evita que un input con `<`, `>`, `&`, `"` o `'` rompa el markup del correo.
+function esc(s) {
+  if (s === null || s === undefined) return '';
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+// Valida que la URL sea http/https antes de usarla en un href.
+function safeUrl(u) {
+  if (!u) return '';
+  const s = String(u);
+  return /^https?:\/\//i.test(s) ? s : '';
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -41,24 +89,28 @@ function buildResExt(resoluciones) {
 
 // ─── Plantilla HTML del correo ────────────────────────────────────────────────
 function plantillaEmail(datos, urlCert) {
-  const resoluciones = buildResExt(datos.resoluciones) || '—';
-  const linkBtn = urlCert
-    ? `<a href="${urlCert}" style="display:inline-block;background:#003366;color:#fff;padding:13px 32px;text-decoration:none;border-radius:6px;font-size:14px;font-weight:700;font-family:Arial,sans-serif">Ver Certificado →</a>`
+  const resoluciones = esc(buildResExt(datos.resoluciones)) || '—';
+  const urlCertSafe  = safeUrl(urlCert);
+  const linkBtn = urlCertSafe
+    ? `<a href="${esc(urlCertSafe)}" style="display:inline-block;background:#003366;color:#fff;padding:13px 32px;text-decoration:none;border-radius:6px;font-size:14px;font-weight:700;font-family:Arial,sans-serif">Ver Certificado →</a>`
     : '';
 
+  // Observaciones: escapar primero, luego convertir \n en <br>.
+  const obsHtml = esc(datos.observaciones || 'S/O').replace(/\n/g, '<br>');
+
   const filas = [
-    ['N° Registro',      `<strong style="color:#003366">${datos.nroRegistro || '—'}</strong>`],
-    ['Fecha',             datos.fecha            || '—'],
-    ['Centro de Cultivo', datos.centroCultivo    || '—'],
-    ['N° Centro',         datos.nroCentro        || '—'],
-    ['Titular',           datos.titular          || '—'],
-    ['ACS',               datos.acs              || '—'],
-    ['Responsable',       datos.nombreResponsable|| '—'],
-    ['Tipo Observación',  datos.tipoObservacion  || '—'],
+    ['N° Registro',      `<strong style="color:#003366">${esc(datos.nroRegistro) || '—'}</strong>`],
+    ['Fecha',             esc(datos.fecha)            || '—'],
+    ['Centro de Cultivo', esc(datos.centroCultivo)    || '—'],
+    ['N° Centro',         esc(datos.nroCentro)        || '—'],
+    ['Titular',           esc(datos.titular)          || '—'],
+    ['ACS',               esc(datos.acs)              || '—'],
+    ['Responsable',       esc(datos.nombreResponsable)|| '—'],
+    ['Tipo Observación',  esc(datos.tipoObservacion)  || '—'],
     ['Resoluciones',      resoluciones],
-    ['Observaciones',     (datos.observaciones   || 'S/O').replace(/\n/g, '<br>')],
-    ['Certificador',      datos.nombreCertificador || '—'],
-    ['N° Registro Cert.', datos.rutCertificador    || '—']
+    ['Observaciones',     obsHtml],
+    ['Certificador',      esc(datos.nombreCertificador) || '—'],
+    ['N° Registro Cert.', esc(datos.rutCertificador)    || '—']
   ].map((r, i) => {
     const bg = i % 2 === 0 ? '#ffffff' : '#f1f5f9';
     return `<tr style="background:${bg}">
@@ -83,12 +135,12 @@ function plantillaEmail(datos, urlCert) {
     <tr>
       <td style="padding:28px 32px 16px">
         <p style="margin:0 0 12px;color:#1e293b;font-size:15px;font-family:Arial,sans-serif">
-          Estimado(a) <strong>${datos.nombreResponsable || 'Responsable'}</strong>,
+          Estimado(a) <strong>${esc(datos.nombreResponsable) || 'Responsable'}</strong>,
         </p>
         <p style="margin:0;color:#475569;font-size:14px;line-height:1.65;font-family:Arial,sans-serif">
           Adjunto encontrará el Registro de Visita oficial del centro
-          <strong style="color:#003366">${datos.centroCultivo}</strong>
-          con fecha <strong>${datos.fecha}</strong>, emitido por Certimar SpA.
+          <strong style="color:#003366">${esc(datos.centroCultivo)}</strong>
+          con fecha <strong>${esc(datos.fecha)}</strong>, emitido por Certimar SpA.
         </p>
       </td>
     </tr>
@@ -99,7 +151,7 @@ function plantillaEmail(datos, urlCert) {
         </table>
       </td>
     </tr>
-    ${urlCert ? `<tr><td style="padding:4px 32px 28px;text-align:center">${linkBtn}</td></tr>` : ''}
+    ${urlCertSafe ? `<tr><td style="padding:4px 32px 28px;text-align:center">${linkBtn}</td></tr>` : ''}
     <tr><td style="background:#1e293b;padding:18px 32px;text-align:center">
       <p style="margin:0;color:#94a3b8;font-size:11px;font-family:Arial,sans-serif">
         Certimar SpA · operaciones@certimar.cl · +56 9 6115 6322
@@ -119,30 +171,72 @@ exports.enviarNotificacion = functions
   .runWith({ timeoutSeconds: 120, memory: '512MB' })
   .https.onCall(async (data, context) => {
 
+  const uid = context.auth && context.auth.uid;
+  functions.logger.info('[enviarNotificacion] BEGIN', {
+    uid,
+    nroRegistro    : data && data.datos && data.datos.nroRegistro,
+    dest           : data && data.datos && data.datos.emailDestinatario,
+    centroCultivo  : data && data.datos && data.datos.centroCultivo,
+    fecha          : data && data.datos && data.datos.fecha,
+    pdfStoragePath : data && data.pdfStoragePath,
+    hasUrlCert     : !!(data && data.urlCertificado)
+  });
+
+  // Paso 1/6 — autenticación
   if (!context.auth) {
+    functions.logger.warn('[enviarNotificacion] paso 1/6 FAIL: no auth context');
     throw new functions.https.HttpsError('unauthenticated', 'Debes iniciar sesión.');
   }
+  functions.logger.info('[enviarNotificacion] paso 1/6 OK: auth=' + uid);
 
   const { datos, urlCertificado, pdfStoragePath } = data;
   const destEmail   = datos && datos.emailDestinatario;
   const nroRegistro = datos && datos.nroRegistro;
 
+  // Paso 2/6 — validación de inputs
   if (!destEmail) {
+    functions.logger.warn('[enviarNotificacion] paso 2/6 FAIL: destEmail vacío');
     throw new functions.https.HttpsError('invalid-argument', 'Email destinatario vacío.');
   }
   if (!nroRegistro || /asignar/i.test(nroRegistro)) {
+    functions.logger.warn('[enviarNotificacion] paso 2/6 FAIL: nroRegistro inválido', { nroRegistro });
     throw new functions.https.HttpsError('failed-precondition',
       'El registro debe guardarse antes de enviar la notificación.');
   }
-  // Verificar que el documento existe en Firestore antes de enviar el correo.
-  const snap = await db.collection('registros_visita').doc(nroRegistro).get();
+  functions.logger.info('[enviarNotificacion] paso 2/6 OK: inputs válidos');
+
+  // Paso 3/6 — credenciales SMTP
+  const c = cfg();
+  if (!c.mailPass) {
+    functions.logger.error('[enviarNotificacion] paso 3/6 FAIL: SMTP password ausente', {
+      mailUser: c.mailUser, source: c.source
+    });
+    throw new functions.https.HttpsError('failed-precondition',
+      'Credenciales SMTP no configuradas en el servidor. Contacte al administrador.');
+  }
+  functions.logger.info('[enviarNotificacion] paso 3/6 OK: credenciales presentes', {
+    mailUser: c.mailUser, source: c.source, passLen: c.mailPass.length
+  });
+
+  // Paso 4/6 — verificar que el documento existe en Firestore antes de enviar
+  let snap;
+  try {
+    snap = await db.collection('registros_visita').doc(nroRegistro).get();
+  } catch (eFs) {
+    functions.logger.error('[enviarNotificacion] paso 4/6 FAIL: error consultando Firestore', {
+      nroRegistro, code: eFs.code, message: eFs.message
+    });
+    throw new functions.https.HttpsError('internal',
+      'Error consultando Firestore: ' + eFs.message);
+  }
   if (!snap.exists) {
+    functions.logger.warn('[enviarNotificacion] paso 4/6 FAIL: registro no existe', { nroRegistro });
     throw new functions.https.HttpsError('not-found',
       `Registro ${nroRegistro} no encontrado en Firestore.`);
   }
+  functions.logger.info('[enviarNotificacion] paso 4/6 OK: registro existe');
 
-  const c       = cfg();
-  const asunto  = `[Certimar] Registro de Visita – ${datos.centroCultivo} – ${datos.fecha}`;
+  const asunto   = `[Certimar] Registro de Visita – ${datos.centroCultivo} – ${datos.fecha}`;
   const htmlBody = plantillaEmail(datos, urlCertificado || '');
 
   const mailOpts = {
@@ -165,16 +259,34 @@ exports.enviarNotificacion = functions
         content    : pdfBuffer,
         contentType: 'application/pdf'
       }];
+      functions.logger.info('[enviarNotificacion] PDF adjuntado', {
+        path: pdfStoragePath, sizeBytes: pdfBuffer.length
+      });
     } catch (ePdf) {
-      functions.logger.warn('No se pudo adjuntar PDF desde Storage (no fatal):', ePdf.message);
+      functions.logger.warn('[enviarNotificacion] No se pudo adjuntar PDF (no fatal)', {
+        path: pdfStoragePath, code: ePdf.code, message: ePdf.message
+      });
     }
   }
 
+  // Paso 5/6 — envío principal
   const transporter = getTransporter();
-  await transporter.sendMail(mailOpts);
-  functions.logger.info('Correo enviado a:', destEmail, '| Registro:', datos.nroRegistro);
+  try {
+    const info = await transporter.sendMail(mailOpts);
+    functions.logger.info('[enviarNotificacion] paso 5/6 OK: correo enviado', {
+      dest: destEmail, messageId: info && info.messageId,
+      accepted: info && info.accepted, rejected: info && info.rejected
+    });
+  } catch (eSend) {
+    functions.logger.error('[enviarNotificacion] paso 5/6 FAIL: sendMail principal', {
+      dest: destEmail, code: eSend.code, command: eSend.command,
+      responseCode: eSend.responseCode, message: eSend.message, stack: eSend.stack
+    });
+    throw new functions.https.HttpsError('internal',
+      'Error enviando correo (SMTP): ' + eSend.message);
+  }
 
-  // Copia interna al equipo certificador (lista fija)
+  // Paso 6a — copia interna al equipo certificador (no fatal)
   const COPIAS_CERTIFICADOR = [
     'operaciones@certimar.cl',
     'eflores@certimar.cl',
@@ -191,21 +303,28 @@ exports.enviarNotificacion = functions
         html       : htmlBody,
         attachments: mailOpts.attachments || []
       });
+      functions.logger.info('[enviarNotificacion] paso 6a OK: copia interna enviada', { copias });
     } catch (eCopia) {
-      functions.logger.warn('Copia interna error (no fatal):', eCopia.message);
+      functions.logger.warn('[enviarNotificacion] paso 6a FAIL (no fatal): copia interna', {
+        copias, code: eCopia.code, message: eCopia.message
+      });
     }
   }
 
-  // Actualizar estado en Firestore
+  // Paso 6b — actualizar estado en Firestore (no fatal)
   try {
     await db.collection('registros_visita').doc(datos.nroRegistro).update({
       estado          : 'ENVIADO',
       emailResponsable: destEmail
     });
+    functions.logger.info('[enviarNotificacion] paso 6b OK: estado actualizado a ENVIADO');
   } catch (eFs) {
-    functions.logger.warn('Firestore update error (no fatal):', eFs.message);
+    functions.logger.warn('[enviarNotificacion] paso 6b FAIL (no fatal): Firestore update', {
+      nroRegistro, code: eFs.code, message: eFs.message
+    });
   }
 
+  functions.logger.info('[enviarNotificacion] END OK', { nroRegistro, dest: destEmail });
   return { ok: true };
 });
 
