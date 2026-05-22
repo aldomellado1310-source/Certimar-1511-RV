@@ -302,6 +302,9 @@ input::placeholder,textarea::placeholder{color:var(--text-muted)}
 [data-theme="dark"] .badge-red {background:rgba(220,38,38,.18);color:#f87171;border-color:rgba(248,113,113,.3)}
 /* ---- Barra búsqueda histórico dark mode ---- */
 [data-theme="dark"] .hist-search-bar{background:var(--surface-2);border-color:var(--border)}
+[data-theme="dark"] #hist-col-dropdown{background:var(--surface);border-color:var(--border)}
+[data-theme="dark"] .hist-col-fixed-chip{background:var(--surface-2);color:var(--text-sec)}
+[data-theme="dark"] .hist-col-option{color:var(--text-pri)}
 /* ---- Botones acción tabla dark mode ---- */
 [data-theme="dark"] .admin-action-btn{background:var(--surface-2);border-color:var(--border-2);color:var(--text-sec)}
 [data-theme="dark"] .admin-action-btn:hover{background:var(--surface-3);color:var(--text-pri)}
@@ -521,6 +524,16 @@ video{width:100%;border-radius:8px;background:black}
 .hist-table .link-cert:hover{text-decoration:underline}
 .hist-empty{text-align:center;padding:48px;color:#94a3b8;font-size:14px}
 .hist-footer{padding:12px 16px;border-top:1px solid #f1f5f9;background:#f8fafc;font-size:12px;color:#64748b}
+.hist-col-btn{height:32px;background:#0099CC;color:white;border:none;border-radius:8px;padding:0 12px;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:5px;white-space:nowrap;transition:.2s}
+.hist-col-btn:hover{background:#007aaa}
+.hist-col-btn.open{border-bottom-left-radius:0;border-bottom-right-radius:0}
+#hist-col-dropdown{position:absolute;top:100%;right:0;width:220px;background:white;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 8px 8px;padding:12px;box-shadow:0 8px 24px rgba(0,0,0,.12);z-index:1000;max-height:400px;overflow-y:auto}
+#hist-col-dropdown.hidden{display:none}
+.hist-col-fixed-chips{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px}
+.hist-col-fixed-chip{background:#f1f5f9;color:#64748b;border-radius:4px;padding:2px 7px;font-size:10px}
+.hist-col-group-label{font-size:10px;color:#0099CC;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin:8px 0 5px}
+.hist-col-option{display:flex;align-items:center;gap:6px;color:#374151;font-size:12px;margin-bottom:5px;cursor:pointer}
+.hist-col-option input[type=checkbox]{cursor:pointer}
 /* Modal */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;display:flex;align-items:center;justify-content:center;padding:16px}
 .modal-box{background:white;border-radius:16px;max-width:520px;width:100%;max-height:90vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.2)}
