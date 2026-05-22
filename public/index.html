@@ -1292,7 +1292,7 @@ video{width:100%;border-radius:8px;background:black}
     <div class="hist-table-wrap">
       <div class="hist-search-bar">
         <input type="text" id="hist-search" class="hist-search" placeholder="Buscar por centro, titular o ID..." oninput="filtrarHistorico()">
-        <div style="display:flex;gap:8px">
+        <div style="display:flex;gap:8px;align-items:center">
           <input type="date" id="hist-desde" class="filtro-input" style="width:140px" onchange="filtrarHistorico()">
           <input type="date" id="hist-hasta" class="filtro-input" style="width:140px" onchange="filtrarHistorico()">
           <select id="hist-estado" class="filtro-input" style="width:130px" onchange="filtrarHistorico()">
@@ -1301,18 +1301,22 @@ video{width:100%;border-radius:8px;background:black}
             <option value="ENVIADO">Enviado</option>
             <option value="ARCHIVADO">Archivado</option>
           </select>
+          <div style="position:relative">
+            <button id="hist-col-btn" class="hist-col-btn" onclick="toggleHistColDropdown()">⊞ Columnas ▾</button>
+            <div id="hist-col-dropdown" class="hidden"></div>
+          </div>
         </div>
       </div>
       <div style="overflow-x:auto">
         <table class="hist-table">
-          <thead>
+          <thead id="hist-thead">
             <tr>
               <th>ID Registro</th><th>Fecha</th><th>Centro</th><th>Titular</th>
               <th>Res. Ext.</th><th>Tipo Obs.</th><th>Responsable</th><th>Estado</th><th>Certificado</th><th>Acciones</th>
             </tr>
           </thead>
           <tbody id="hist-tbody">
-            <tr><td colspan="10" class="hist-empty">
+            <tr><td colspan="20" class="hist-empty">
               <div class="spinner dark" style="margin:0 auto 8px"></div>
               Cargando registros...
             </td></tr>
@@ -3132,7 +3136,7 @@ function renderVencer(stats) {
 // =====================================================================
 function cargarHistorico() {
   document.getElementById('hist-tbody').innerHTML =
-    '<tr><td colspan="10" class="hist-empty"><div class="spinner dark" style="margin:0 auto 8px"></div>Cargando registros…</td></tr>';
+    '<tr><td colspan="20" class="hist-empty"><div class="spinner dark" style="margin:0 auto 8px"></div>Cargando registros…</td></tr>';
   document.getElementById('hist-footer').textContent = 'Consultando Firestore…';
 
   pushNotif('hist-load', 'info', '📋 Cargando Histórico…', [
@@ -3163,7 +3167,7 @@ function cargarHistorico() {
 
     if (historicData.length === 0) {
       document.getElementById('hist-tbody').innerHTML =
-        '<tr><td colspan="10" class="hist-empty">' +
+        '<tr><td colspan="20" class="hist-empty">' +
         '<div style="font-size:32px;margin-bottom:10px">📋</div>' +
         'No hay registros aún.<br>' +
         '<span style="font-size:11px;color:var(--text-muted)">Crea tu primer registro con "Nueva Visita"</span>' +
@@ -3186,7 +3190,7 @@ function cargarHistorico() {
       renderHistorico(historicData);
     } else {
       document.getElementById('hist-tbody').innerHTML =
-        '<tr><td colspan="10" class="hist-empty" style="color:var(--error)">⚠️ Sin conexión a Firestore<br>' +
+        '<tr><td colspan="20" class="hist-empty" style="color:var(--error)">⚠️ Sin conexión a Firestore<br>' +
         '<span style="font-size:11px">'+esc(String(e))+'</span><br>' +
         '<span style="font-size:11px;color:var(--text-muted)">Verifica la configuración en FirebaseConfig.html</span></td></tr>';
     }
