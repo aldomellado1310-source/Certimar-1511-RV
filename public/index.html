@@ -635,6 +635,14 @@ video{width:100%;border-radius:8px;background:black}
         <input type="text" id="cd-cc-input" class="completion-email-input" placeholder="CC (opcional)" style="font-size:11px;padding:6px 10px">
         <input type="text" id="cd-cco-input" class="completion-email-input" placeholder="CCO (oculto)" style="font-size:11px;padding:6px 10px">
       </div>
+      <div style="margin-top:10px;padding:8px 12px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;text-align:left">
+        <div style="font-size:11px;font-weight:700;color:#1d4ed8;margin-bottom:3px">📋 Copias internas automáticas</div>
+        <div style="font-size:11px;color:#1e40af;line-height:1.6">
+          Se enviará copia de este registro a:<br>
+          <strong>operaciones@certimar.cl · eflores@certimar.cl · informes@certimar.cl</strong>
+        </div>
+      </div>
+      <div id="cd-mail-result" style="display:none;margin-top:10px;padding:10px 12px;border-radius:8px;text-align:left;font-size:12px;line-height:1.6"></div>
     </div>
     <div class="completion-actions">
       <button class="completion-btn primary" onclick="completionGo('dashboard')">
@@ -746,7 +754,7 @@ video{width:100%;border-radius:8px;background:black}
       Continuar con Google
     </button>
   </div>
-  <div class="login-footer">© <span id="login-year"></span> Certimar SpA. Todos los derechos reservados.</div>
+  <div class="login-footer">© <span id="login-year"></span> Certimar SpA. Todos los derechos reservados. · <span id="login-version"></span> by Micorriza</div>
 </div>
 
 <!-- ===================== MAIN APP ===================== -->
@@ -780,6 +788,7 @@ video{width:100%;border-radius:8px;background:black}
         </button>
       </div>
       <div class="nav-right">
+        <span id="nav-version" style="font-size:10px;color:var(--text-muted);opacity:.55;letter-spacing:.3px;user-select:none"></span>
         <button class="btn-theme" onclick="toggleTheme()" id="btn-theme" title="Cambiar tema">🌙</button>
         <div class="user-chip hidden" id="user-chip">
           <div class="user-avatar" id="user-avatar">U</div>
@@ -1508,6 +1517,8 @@ video{width:100%;border-radius:8px;background:black}
 // =====================================================================
 //  ESTADO GLOBAL
 // =====================================================================
+var APP_VERSION = 'v1.0.3';
+
 var appState = { saved: false, sent: false, pdfB64: null, fotoB64: null };
 var chartMes = null, chartRes = null;
 var historicData = [];
@@ -1596,13 +1607,17 @@ function dbCol() {
 async function callFn(name, payload) {
   var user = firebase.auth().currentUser;
   if (!user) throw new Error('No autenticado');
-  var idToken = await user.getIdToken();
+  var idToken = await user.getIdToken(true);
   var resp = await fetch('/api/' + name, {
     method : 'POST',
     headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + idToken },
     body   : JSON.stringify({ data: payload })
   });
-  var json = await resp.json();
+  var text = await resp.text();
+  var json;
+  try { json = JSON.parse(text); } catch(e) {
+    throw new Error('Error del servidor (HTTP ' + resp.status + '). Intenta nuevamente.');
+  }
   if (json.error) {
     var err = new Error(json.error.message || json.error.status || 'Error en función');
     err.code = json.error.status;
@@ -1774,6 +1789,8 @@ async function fbObtenerEstadisticas() {
 // =====================================================================
 document.addEventListener('DOMContentLoaded', function() {
   document.getElementById('login-year').textContent = new Date().getFullYear();
+  document.getElementById('login-version').textContent = APP_VERSION;
+  document.getElementById('nav-version').textContent   = APP_VERSION + ' · Micorriza';
   initFirebase();
   loadTheme();
   // Firebase Auth — detecta sesión activa automáticamente
@@ -2041,6 +2058,7 @@ function restaurarBorrador() {
   var b = loadBorrador();
   if (!b) return;
   applyBorrador(b);
+  set('r-nroRegistro', 'Se asignará al guardar');
   var bn = document.getElementById('borrador-banner');
   if (bn) bn.remove();
   toast('Borrador restaurado', 'success');
@@ -2555,7 +2573,9 @@ async function generarPDF() {
 //  SYNC DRIVE + SHEETS
 // =====================================================================
 async function handleSyncGoogle() {
+  if (appState.guardandoEnCurso) { toast('Ya hay un guardado en curso, espera un momento.','error'); return; }
   if (!checkChecklist()) { toast('Complete el checklist primero','error'); return; }
+  appState.guardandoEnCurso = true;
 
   pushNotif('sync', 'info', '☁️ Guardando en Firebase…', [
     { id:'step-nro',      label:'Reservando N° y creando registro', state:'active' },
@@ -2584,6 +2604,7 @@ async function handleSyncGoogle() {
     updateNotifStep('sync','step-nro','done');
   } catch(e) {
     updateNotifCard('sync','error','❌ No se pudo crear el registro', String(e));
+    appState.guardandoEnCurso = false;
     setBtnLoading('btn-sync', false);
     return;
   }
@@ -2600,6 +2621,7 @@ async function handleSyncGoogle() {
     updateNotifStep('sync','pdf-render','done');
   } catch(e) {
     updateNotifCard('sync','error','❌ Error al generar PDF', String(e));
+    appState.guardandoEnCurso = false;
     setBtnLoading('btn-sync', false);
     return;
   }
@@ -2696,6 +2718,7 @@ async function handleSyncGoogle() {
     updateNotifCard('sync','error','❌ Error al subir archivos', String(e));
     toast('Error: ' + String(e), 'error');
   } finally {
+    appState.guardandoEnCurso = false;
     setBtnLoading('btn-sync', false);
   }
 }
@@ -3603,6 +3626,9 @@ function handleCompletionEnviar() {
     { id:'mail-send', label:'Enviando a ' + email, state:'active' }
   ]);
 
+  var resultBox = document.getElementById('cd-mail-result');
+  resultBox.style.display = 'none';
+
   callFn('enviarNotificacion', {
     datos           : datos,
     urlCertificado  : appState.savedData ? appState.savedData.urlCert : '',
@@ -3612,10 +3638,18 @@ function handleCompletionEnviar() {
     if (res && res.ok) {
       updateNotifCard('mail', 'success', '✉️ Correo enviado', 'Notificación enviada a ' + email);
       document.getElementById('cd-send-btn').textContent = '✓ Enviado';
-      document.getElementById('cd-email-section').style.display = 'none';
       document.getElementById('cd-icon').textContent = '🎉';
       document.getElementById('cd-title').textContent = 'Registro Guardado y Notificado';
-      document.getElementById('cd-sub').textContent = 'Correo enviado a ' + email + '.';
+      document.getElementById('cd-sub').textContent = '';
+      // Ocultar campos de entrada, mostrar resultado de éxito
+      document.getElementById('cd-email-input').parentNode.style.display = 'none';
+      document.querySelectorAll('#cd-email-section .completion-email-row, #cd-email-section > div:nth-child(3), #cd-email-section > div:nth-child(4)').forEach(function(el){ el.style.display='none'; });
+      resultBox.style.cssText = 'display:block;margin-top:10px;padding:12px 14px;background:#f0fdf4;border:1px solid #86efac;border-radius:8px;text-align:left;font-size:12px;line-height:1.7';
+      resultBox.innerHTML =
+        '<div style="font-weight:700;color:#15803d;margin-bottom:4px">✅ Correo enviado exitosamente</div>' +
+        '<div style="color:#166534">📨 Destinatario: <strong>' + email + '</strong></div>' +
+        '<div style="color:#166534;margin-top:2px">📋 Copias internas enviadas a:<br>' +
+        '<strong>operaciones@certimar.cl · eflores@certimar.cl · informes@certimar.cl</strong></div>';
       appState.sent = true;
       lockForm(true);
       var nro = get('r-nroRegistro');
@@ -3624,14 +3658,26 @@ function handleCompletionEnviar() {
         if (localRecords[i].nroReg === nro) { localRecords[i].estado = 'ENVIADO'; localRecords[i].emailResp = email; break; }
       }
     } else {
-      updateNotifCard('mail', 'error', '❌ Error al enviar', res ? res.error : 'Reintenta');
+      var errMsg = (res && res.error) ? res.error : 'Error desconocido. Reintenta.';
+      updateNotifCard('mail', 'error', '❌ Error al enviar', errMsg);
       document.getElementById('cd-send-btn').disabled = false;
       document.getElementById('cd-send-btn').textContent = '✉️ Reintentar';
+      resultBox.style.cssText = 'display:block;margin-top:10px;padding:12px 14px;background:#fef2f2;border:1px solid #fca5a5;border-radius:8px;text-align:left;font-size:12px;line-height:1.7';
+      resultBox.innerHTML =
+        '<div style="font-weight:700;color:#dc2626;margin-bottom:4px">❌ Error al enviar el correo</div>' +
+        '<div style="color:#991b1b">' + esc(errMsg) + '</div>' +
+        '<div style="color:#991b1b;margin-top:4px;font-size:11px">Verifica la dirección de correo e intenta nuevamente. Si el problema persiste, contacta soporte técnico.</div>';
     }
   }).catch(function(e) {
-    updateNotifCard('mail', 'error', '❌ Error de conexión', String(e || ''));
+    var errMsg = (e && e.message) ? e.message : String(e || 'Error de conexión');
+    updateNotifCard('mail', 'error', '❌ Error de conexión', errMsg);
     document.getElementById('cd-send-btn').disabled = false;
     document.getElementById('cd-send-btn').textContent = '✉️ Reintentar';
+    resultBox.style.cssText = 'display:block;margin-top:10px;padding:12px 14px;background:#fef2f2;border:1px solid #fca5a5;border-radius:8px;text-align:left;font-size:12px;line-height:1.7';
+    resultBox.innerHTML =
+      '<div style="font-weight:700;color:#dc2626;margin-bottom:4px">❌ Error de conexión</div>' +
+      '<div style="color:#991b1b">' + esc(errMsg) + '</div>' +
+      '<div style="color:#991b1b;margin-top:4px;font-size:11px">Verifica tu conexión a internet e intenta nuevamente.</div>';
   });
 }
 

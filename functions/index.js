@@ -1,5 +1,5 @@
 // ============================================================
-//  CERTIMAR — Firebase Functions  (sin Google Sheets / Drive)
+//  CERTIMAR — Firebase Functions  v2
 // ============================================================
 'use strict';
 
