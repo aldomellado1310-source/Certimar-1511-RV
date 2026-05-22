@@ -3132,6 +3132,67 @@ function renderVencer(stats) {
 }
 
 // =====================================================================
+//  HISTÓRICO — selector de columnas
+// =====================================================================
+function renderColumnSelector() {
+  var visible = getVisibleHistColumns();
+  var groups = {};
+  HIST_COL_DEFS.forEach(function(c) {
+    if (!groups[c.grupo]) groups[c.grupo] = [];
+    groups[c.grupo].push(c);
+  });
+  var fixed = ['ID Registro','Fecha','Centro','Estado','Certificado','Acciones'];
+  var html = '<div style="font-size:10px;color:#94a3b8;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">Siempre visibles</div>';
+  html += '<div class="hist-col-fixed-chips">';
+  fixed.forEach(function(f){ html += '<span class="hist-col-fixed-chip">'+f+'</span>'; });
+  html += '</div>';
+  html += '<div style="border-top:1px solid var(--border,#f1f5f9);margin-bottom:8px"></div>';
+  Object.keys(groups).forEach(function(grp) {
+    html += '<div class="hist-col-group-label">'+grp+'</div>';
+    groups[grp].forEach(function(c) {
+      var checked = visible.indexOf(c.key) !== -1 ? ' checked' : '';
+      html += '<label class="hist-col-option"><input type="checkbox" onchange="toggleHistColumn(\''+c.key+'\')"'+checked+'> '+c.label+'</label>';
+    });
+  });
+  document.getElementById('hist-col-dropdown').innerHTML = html;
+}
+
+function toggleHistColDropdown() {
+  var btn = document.getElementById('hist-col-btn');
+  var dd  = document.getElementById('hist-col-dropdown');
+  var isOpen = !dd.classList.contains('hidden');
+  if (isOpen) {
+    dd.classList.add('hidden');
+    btn.classList.remove('open');
+    return;
+  }
+  renderColumnSelector();
+  dd.classList.remove('hidden');
+  btn.classList.add('open');
+  setTimeout(function() {
+    document.addEventListener('click', function closeOnOutside(e) {
+      var btnEl = document.getElementById('hist-col-btn');
+      var ddEl  = document.getElementById('hist-col-dropdown');
+      if (btnEl && ddEl && !btnEl.contains(e.target) && !ddEl.contains(e.target)) {
+        ddEl.classList.add('hidden');
+        btnEl.classList.remove('open');
+        document.removeEventListener('click', closeOnOutside);
+      }
+    });
+  }, 0);
+}
+
+function toggleHistColumn(key) {
+  var visible = getVisibleHistColumns();
+  var idx = visible.indexOf(key);
+  if (idx === -1) visible.push(key);
+  else visible.splice(idx, 1);
+  saveVisibleHistColumns(visible);
+  renderColumnSelector();
+  filtrarHistorico();
+}
+
+// =====================================================================
 //  HISTÓRICO — carga desde Firestore
 // =====================================================================
 function cargarHistorico() {
