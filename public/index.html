@@ -3213,7 +3213,7 @@ function toggleHistColumn(key) {
 // =====================================================================
 function cargarHistorico() {
   document.getElementById('hist-tbody').innerHTML =
-    '<tr><td colspan="20" class="hist-empty"><div class="spinner dark" style="margin:0 auto 8px"></div>Cargando registros…</td></tr>';
+    '<tr><td colspan="'+(getVisibleHistColumns().length+6)+'" class="hist-empty"><div class="spinner dark" style="margin:0 auto 8px"></div>Cargando registros…</td></tr>';
   document.getElementById('hist-footer').textContent = 'Consultando Firestore…';
 
   pushNotif('hist-load', 'info', '📋 Cargando Histórico…', [
@@ -3244,7 +3244,7 @@ function cargarHistorico() {
 
     if (historicData.length === 0) {
       document.getElementById('hist-tbody').innerHTML =
-        '<tr><td colspan="20" class="hist-empty">' +
+        '<tr><td colspan="'+(getVisibleHistColumns().length+6)+'" class="hist-empty">' +
         '<div style="font-size:32px;margin-bottom:10px">📋</div>' +
         'No hay registros aún.<br>' +
         '<span style="font-size:11px;color:var(--text-muted)">Crea tu primer registro con "Nueva Visita"</span>' +
@@ -3267,7 +3267,7 @@ function cargarHistorico() {
       renderHistorico(historicData);
     } else {
       document.getElementById('hist-tbody').innerHTML =
-        '<tr><td colspan="20" class="hist-empty" style="color:var(--error)">⚠️ Sin conexión a Firestore<br>' +
+        '<tr><td colspan="'+(getVisibleHistColumns().length+6)+'" class="hist-empty" style="color:var(--error)">⚠️ Sin conexión a Firestore<br>' +
         '<span style="font-size:11px">'+esc(String(e))+'</span><br>' +
         '<span style="font-size:11px;color:var(--text-muted)">Verifica la configuración en FirebaseConfig.html</span></td></tr>';
     }
