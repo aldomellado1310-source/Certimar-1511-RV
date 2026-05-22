@@ -1590,6 +1590,7 @@ var HIST_COL_DEFS = [
   { key: 'correoResponsable', label: 'Correo Responsable',   grupo: 'Visita',           defaultVisible: false },
   { key: 'estadoFirma',       label: 'Estado Firma',         grupo: 'Visita',           defaultVisible: false },
 ];
+var _histColCloseHandler = null;
 
 function getVisibleHistColumns() {
   try {
@@ -3144,14 +3145,14 @@ function renderColumnSelector() {
   var fixed = ['ID Registro','Fecha','Centro','Estado','Certificado','Acciones'];
   var html = '<div style="font-size:10px;color:#94a3b8;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">Siempre visibles</div>';
   html += '<div class="hist-col-fixed-chips">';
-  fixed.forEach(function(f){ html += '<span class="hist-col-fixed-chip">'+f+'</span>'; });
+  fixed.forEach(function(f){ html += '<span class="hist-col-fixed-chip">'+esc(f)+'</span>'; });
   html += '</div>';
   html += '<div style="border-top:1px solid var(--border,#f1f5f9);margin-bottom:8px"></div>';
   Object.keys(groups).forEach(function(grp) {
-    html += '<div class="hist-col-group-label">'+grp+'</div>';
+    html += '<div class="hist-col-group-label">'+esc(grp)+'</div>';
     groups[grp].forEach(function(c) {
       var checked = visible.indexOf(c.key) !== -1 ? ' checked' : '';
-      html += '<label class="hist-col-option"><input type="checkbox" onchange="toggleHistColumn(\''+c.key+'\')"'+checked+'> '+c.label+'</label>';
+      html += '<label class="hist-col-option"><input type="checkbox" onchange="toggleHistColumn(\''+c.key+'\')"'+checked+'> '+esc(c.label)+'</label>';
     });
   });
   document.getElementById('hist-col-dropdown').innerHTML = html;
@@ -3169,16 +3170,22 @@ function toggleHistColDropdown() {
   renderColumnSelector();
   dd.classList.remove('hidden');
   btn.classList.add('open');
+  if (_histColCloseHandler) {
+    document.removeEventListener('click', _histColCloseHandler);
+    _histColCloseHandler = null;
+  }
   setTimeout(function() {
-    document.addEventListener('click', function closeOnOutside(e) {
+    _histColCloseHandler = function(e) {
       var btnEl = document.getElementById('hist-col-btn');
       var ddEl  = document.getElementById('hist-col-dropdown');
       if (btnEl && ddEl && !btnEl.contains(e.target) && !ddEl.contains(e.target)) {
         ddEl.classList.add('hidden');
         btnEl.classList.remove('open');
-        document.removeEventListener('click', closeOnOutside);
+        document.removeEventListener('click', _histColCloseHandler);
+        _histColCloseHandler = null;
       }
-    });
+    };
+    document.addEventListener('click', _histColCloseHandler);
   }, 0);
 }
 
