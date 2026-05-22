@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>Registro de Visita – Certimar</title>
 <link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
@@ -17,7 +20,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-functions-compat.js"></script>
 <!-- Configuración Firebase del proyecto -->
-<script src="firebaseConfig.js"></script>
+<script src="firebaseConfig.js?v=20260522"></script>
 <style>
 /* ===================== TEMA: VARIABLES CSS ===================== */
 :root {
@@ -315,17 +318,29 @@ input::placeholder,textarea::placeholder{color:var(--text-muted)}
 
 /* ===================== ADMIN VIEW ===================== */
 #view-admin{background:var(--bg);min-height:calc(100vh - 64px)}
-.admin-header{max-width:1200px;margin:0 auto;padding:28px 24px 0;display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
+.admin-header{max-width:1440px;margin:0 auto;padding:28px 32px 0;display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
 .admin-header h1{font-size:24px;font-weight:800;color:var(--text-pri)}
 .admin-header p{font-size:13px;color:var(--text-sec);margin-top:4px}
 .admin-badge{background:#7c3aed;color:white;font-size:10px;font-weight:700;padding:2px 8px;border-radius:9999px;text-transform:uppercase;letter-spacing:.5px;vertical-align:middle;margin-left:8px}
-.admin-stats{max-width:1200px;margin:20px auto 0;padding:0 24px;display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px}
-.admin-stat{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 18px;box-shadow:var(--shadow-sm)}
-.admin-stat-val{font-size:28px;font-weight:800;color:var(--brand)}
-.admin-stat-lbl{font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-top:2px}
-.admin-filters{max-width:1200px;margin:16px auto 0;padding:0 24px;background:var(--surface);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.admin-stats{max-width:1440px;margin:20px auto 0;padding:0 32px;display:grid;grid-template-columns:repeat(5,1fr);gap:16px}
+.admin-stat{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px 22px;box-shadow:var(--shadow-sm)}
+.admin-stat-val{font-size:32px;font-weight:800;color:var(--brand)}
+.admin-stat-lbl{font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-top:4px}
+.admin-stat.primary{background:var(--brand);border-color:var(--brand)}
+.admin-stat.primary .admin-stat-val{color:white}
+.admin-stat.primary .admin-stat-lbl{color:rgba(255,255,255,.7)}
+.admin-stat.success .admin-stat-val{color:#059669}
+.admin-stat.warning .admin-stat-val{color:#d97706}
+.adm-search-wrap{position:relative;flex:1;min-width:260px}
+.adm-search-wrap>svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text-muted);pointer-events:none}
+.adm-search-wrap .filtro-input{padding-left:32px;width:100%}
+.adm-date-group{display:flex;align-items:center;gap:6px;flex-shrink:0}
+.adm-date-sep{font-size:11px;color:var(--text-muted)}
+.adm-filters-row{display:flex;gap:10px;align-items:center}
+.adm-filters-row+.adm-filters-row{margin-top:10px}
+.admin-filters{max-width:1440px;margin:16px auto 0;padding:0 32px;background:var(--surface);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
 .admin-filters-inner{padding:14px 0;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-.admin-table-wrap{margin:20px 24px 40px;padding:0}
+.admin-table-wrap{max-width:1440px;margin:16px auto 40px;padding:0 32px}
 .admin-table-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;box-shadow:var(--shadow-sm)}
 .admin-table{width:100%;border-collapse:collapse;font-size:12px}
 .admin-table th{background:var(--surface-2);color:var(--text-sec);font-size:10px;text-transform:uppercase;letter-spacing:.6px;padding:10px 12px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap;font-weight:700}
@@ -585,8 +600,11 @@ video{width:100%;border-radius:8px;background:black}
 
   /* --- Admin --- */
   .admin-header{padding:16px 12px 0;flex-direction:column}
-  .admin-stats{padding:0 12px}
-  .admin-table-wrap{margin:12px 8px 32px;padding:0}
+  .admin-stats{padding:0 12px;grid-template-columns:repeat(2,1fr)}
+  .admin-table-wrap{padding:0 8px;margin:12px 0 32px}
+  .adm-filters-row{flex-wrap:wrap}
+  .adm-date-group{width:100%}
+  .adm-date-group .filtro-input{flex:1;width:auto}
 
   /* --- Modales --- */
   .modal-box{border-radius:12px 12px 0 0;position:fixed;bottom:0;left:0;right:0;max-height:90vh;max-width:100%}
@@ -608,7 +626,8 @@ video{width:100%;border-radius:8px;background:black}
   .btn-archive{align-self:flex-end}
 }
 </style>
-<script src="concesiones.js"></script>
+<script src="concesiones.js?v=20260522"></script>
+<script src="aquachile.js?v=20260522"></script>
 </head>
 <body>
 
@@ -1315,7 +1334,7 @@ video{width:100%;border-radius:8px;background:black}
 
     <!-- Stats globales -->
     <div class="admin-stats" id="admin-stats-grid">
-      <div class="admin-stat">
+      <div class="admin-stat primary">
         <div class="admin-stat-val" id="adm-total">—</div>
         <div class="admin-stat-lbl">Total Registros</div>
       </div>
@@ -1327,41 +1346,54 @@ video{width:100%;border-radius:8px;background:black}
         <div class="admin-stat-val" id="adm-cert">—</div>
         <div class="admin-stat-lbl">Certificadores Activos</div>
       </div>
-      <div class="admin-stat">
+      <div class="admin-stat success">
         <div class="admin-stat-val" id="adm-enviados">—</div>
         <div class="admin-stat-lbl">Notificados</div>
       </div>
-      <div class="admin-stat">
+      <div class="admin-stat warning">
         <div class="admin-stat-val" id="adm-pendientes">—</div>
         <div class="admin-stat-lbl">Sin Notificar</div>
       </div>
     </div>
 
     <!-- Filtros admin -->
-    <div style="max-width:1200px;margin:16px auto 0;padding:0 24px">
-      <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 18px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">
-        <input type="text" id="adm-search" class="filtro-input" placeholder="🔍  Buscar por centro, titular, N° registro, certificador..." style="flex:1;min-width:220px" oninput="filtrarAdmin()">
-        <input type="date" id="adm-desde" class="filtro-input" style="width:145px" onchange="filtrarAdmin()">
-        <input type="date" id="adm-hasta" class="filtro-input" style="width:145px" onchange="filtrarAdmin()">
-        <select id="adm-estado" class="filtro-input" style="width:140px" onchange="filtrarAdmin()">
-          <option value="">Todos los estados</option>
-          <option value="GUARDADO">💾 Guardado</option>
-          <option value="ENVIADO">✉️ Enviado</option>
-          <option value="ARCHIVADO">📁 Archivado</option>
-        </select>
-        <select id="adm-region" class="filtro-input" style="width:110px" onchange="onAdmRegionChange(); filtrarAdmin()">
-          <option value="">Todas las regiones</option>
-          <option value="X">X</option>
-          <option value="XI">XI</option>
-          <option value="XII">XII</option>
-        </select>
-        <select id="adm-sector" class="filtro-input" style="width:140px" onchange="filtrarAdmin()">
-          <option value="">Todos los sectores</option>
-        </select>
-        <select id="adm-cert-filter" class="filtro-input" style="width:160px" onchange="filtrarAdmin()">
-          <option value="">Todos los cert.</option>
-        </select>
-        <button class="btn-action" style="border-color:var(--border);color:var(--text-sec);font-size:12px;padding:7px 12px;white-space:nowrap" onclick="limpiarFiltrosAdmin()">✕ Limpiar</button>
+    <div style="max-width:1440px;margin:16px auto 0;padding:0 32px">
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 20px">
+        <div class="adm-filters-row">
+          <div class="adm-search-wrap">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            <input type="text" id="adm-search" class="filtro-input" placeholder="Buscar por centro, titular, N° registro, certificador..." style="width:100%" oninput="filtrarAdmin()">
+          </div>
+          <div class="adm-date-group">
+            <input type="date" id="adm-desde" class="filtro-input" style="width:148px" onchange="filtrarAdmin()">
+            <span class="adm-date-sep">—</span>
+            <input type="date" id="adm-hasta" class="filtro-input" style="width:148px" onchange="filtrarAdmin()">
+          </div>
+        </div>
+        <div class="adm-filters-row">
+          <select id="adm-estado" class="filtro-input" style="flex:1" onchange="filtrarAdmin()">
+            <option value="">Todos los estados</option>
+            <option value="GUARDADO">Guardado</option>
+            <option value="ENVIADO">Enviado</option>
+            <option value="ARCHIVADO">Archivado</option>
+          </select>
+          <select id="adm-region" class="filtro-input" style="flex:1" onchange="onAdmRegionChange(); filtrarAdmin()">
+            <option value="">Todas las regiones</option>
+            <option value="X">X</option>
+            <option value="XI">XI</option>
+            <option value="XII">XII</option>
+          </select>
+          <select id="adm-sector" class="filtro-input" style="flex:1" onchange="filtrarAdmin()">
+            <option value="">Todos los sectores</option>
+          </select>
+          <select id="adm-cert-filter" class="filtro-input" style="flex:1" onchange="filtrarAdmin()">
+            <option value="">Todos los certificadores</option>
+          </select>
+          <button class="btn-action" style="border-color:var(--border);color:var(--text-sec);font-size:12px;padding:8px 14px;white-space:nowrap;flex-shrink:0" onclick="limpiarFiltrosAdmin()">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
+            Limpiar filtros
+          </button>
+        </div>
       </div>
     </div>
 
@@ -1389,7 +1421,7 @@ video{width:100%;border-radius:8px;background:black}
             </thead>
             <tbody id="adm-tbody">
               <tr><td colspan="13" class="admin-empty">
-                <div style="font-size:32px;margin-bottom:10px">🔄</div>
+                <div class="spinner dark" style="margin:0 auto 10px"></div>
                 Cargando registros…
               </td></tr>
             </tbody>
@@ -1523,6 +1555,34 @@ var appState = { saved: false, sent: false, pdfB64: null, fotoB64: null };
 var chartMes = null, chartRes = null;
 var historicData = [];
 var localRecords = [];
+var HIST_COL_DEFS = [
+  { key: 'titular',           label: 'Titular',              grupo: 'Identificación',   defaultVisible: true  },
+  { key: 'nroCentro',         label: 'N° Centro',            grupo: 'Identificación',   defaultVisible: false },
+  { key: 'acs',               label: 'ACS',                  grupo: 'Identificación',   defaultVisible: false },
+  { key: 'area',              label: 'Área',                 grupo: 'Datos del centro', defaultVisible: false },
+  { key: 'fechaSiembra',      label: 'Fecha última siembra', grupo: 'Datos del centro', defaultVisible: false },
+  { key: 'tamanioPeces',      label: 'Tamaño peces',         grupo: 'Datos del centro', defaultVisible: false },
+  { key: 'ubicacion',         label: 'Ubicación',            grupo: 'Datos del centro', defaultVisible: false },
+  { key: 'latLong',           label: 'Lat / Long',           grupo: 'Datos del centro', defaultVisible: false },
+  { key: 'resExt',            label: 'Res. Externa',         grupo: 'Visita',           defaultVisible: true  },
+  { key: 'tipoObs',           label: 'Tipo Observación',     grupo: 'Visita',           defaultVisible: true  },
+  { key: 'observaciones',     label: 'Observaciones',        grupo: 'Visita',           defaultVisible: false },
+  { key: 'responsable',       label: 'Responsable',          grupo: 'Visita',           defaultVisible: true  },
+  { key: 'correoResponsable', label: 'Correo Responsable',   grupo: 'Visita',           defaultVisible: false },
+  { key: 'estadoFirma',       label: 'Estado Firma',         grupo: 'Visita',           defaultVisible: false },
+];
+
+function getVisibleHistColumns() {
+  try {
+    var saved = localStorage.getItem('certimar_hist_columns');
+    if (saved) return JSON.parse(saved);
+  } catch(e) {}
+  return HIST_COL_DEFS.filter(function(c){ return c.defaultVisible; }).map(function(c){ return c.key; });
+}
+
+function saveVisibleHistColumns(keys) {
+  localStorage.setItem('certimar_hist_columns', JSON.stringify(keys));
+}
 var isFirmaDrawing = false;
 var firmaClienteHasData = false;
 var cameraStream = null;
@@ -3429,6 +3489,17 @@ function fillConcesion(code, c) {
     set('r-longitud', Math.abs(c.coords.lon).toFixed(6));
     highlightFilled('r-latitud'); highlightFilled('r-longitud');
   }
+  // Autocompletar región y área desde datos AquaChile
+  var aq = (typeof AQUACHILE_CENTROS !== 'undefined') && AQUACHILE_CENTROS[String(code)];
+  if (aq && aq.region && !get('r-region')) {
+    set('r-region', aq.region);
+    onRegionChange();
+    if (aq.area) {
+      set('r-sector', aq.area);
+      highlightFilled('r-sector');
+    }
+    highlightFilled('r-region');
+  }
   var input = document.getElementById('r-nroCentro');
   if (input) {
     input.style.color = c._custom ? '#d97706' : '#15803d';
@@ -3776,7 +3847,7 @@ function cargarAdmin() {
   }).catch(function(e) {
     updateNotifCard('admin-load','error','❌ Error Admin', String(e));
     document.getElementById('adm-tbody').innerHTML =
-      '<tr><td colspan="13" class="admin-empty" style="color:var(--error)">⚠️ Error: '+esc(String(e))+'</td></tr>';
+      '<tr><td colspan="13" class="admin-empty" style="color:var(--error)">Error al cargar: '+esc(String(e))+'</td></tr>';
   });
 }
 
