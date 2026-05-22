@@ -307,6 +307,7 @@ input::placeholder,textarea::placeholder{color:var(--text-muted)}
 [data-theme="dark"] .hist-col-option{color:var(--text-pri)}
 [data-theme="dark"] .hist-col-group-label{color:var(--accent,#0099CC)}
 [data-theme="dark"] .hist-col-btn{background:var(--accent)}
+[data-theme="dark"] .hist-col-btn:hover{background:#0ea5e9}
 /* ---- Botones acción tabla dark mode ---- */
 [data-theme="dark"] .admin-action-btn{background:var(--surface-2);border-color:var(--border-2);color:var(--text-sec)}
 [data-theme="dark"] .admin-action-btn:hover{background:var(--surface-3);color:var(--text-pri)}
@@ -519,7 +520,7 @@ video{width:100%;border-radius:8px;background:black}
 #view-historico{padding:28px 24px}
 .hist-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px;flex-wrap:wrap;gap:12px}
 .hist-header h1{font-size:26px;font-weight:700;color:#003366}
-.hist-table-wrap{background:white;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden}
+.hist-table-wrap{background:white;border:1px solid #e2e8f0;border-radius:12px;overflow:visible}
 .hist-search-bar{padding:14px 16px;border-bottom:1px solid #f1f5f9;display:flex;justify-content:space-between;align-items:center;background:#f8fafc;gap:12px;flex-wrap:wrap}
 .hist-search{padding:8px 12px 8px 36px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;background:white url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%2394a3b8' stroke-width='2' viewBox='0 0 24 24'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E") no-repeat 10px center;outline:none;width:280px;transition:.2s}
 .hist-search:focus{border-color:#0099CC;box-shadow:0 0 0 3px rgba(0,153,204,.12)}
@@ -3212,6 +3213,7 @@ function toggleHistColumn(key) {
 //  HISTÓRICO — carga desde Firestore
 // =====================================================================
 function cargarHistorico() {
+  renderHistorico([]);
   document.getElementById('hist-tbody').innerHTML =
     '<tr><td colspan="'+(getVisibleHistColumns().length+6)+'" class="hist-empty"><div class="spinner dark" style="margin:0 auto 8px"></div>Cargando registros…</td></tr>';
   document.getElementById('hist-footer').textContent = 'Consultando Firestore…';
