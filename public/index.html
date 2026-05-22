@@ -343,9 +343,14 @@ input::placeholder,textarea::placeholder{color:var(--text-muted)}
 .adm-date-sep{font-size:11px;color:var(--text-muted)}
 .adm-filters-row{display:flex;gap:10px;align-items:center}
 .adm-filters-row+.adm-filters-row{margin-top:10px}
+.adm-filters-label{display:flex;align-items:center;gap:6px;margin-bottom:12px}
+.adm-filters-label span{font-size:11px;font-weight:700;color:#1d4ed8;text-transform:uppercase;letter-spacing:.6px}
+.adm-filters-label svg{color:#1d4ed8}
 .admin-filters{max-width:1440px;margin:16px auto 0;padding:0 32px;background:var(--surface);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
 .admin-filters-inner{padding:14px 0;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-.admin-table-wrap{max-width:1440px;margin:16px auto 40px;padding:0 32px}
+.admin-table-wrap{margin:16px 0 40px;padding:0 16px}
+[data-theme="dark"] .adm-filters-card{background:rgba(29,78,216,.08);border-color:rgba(96,165,250,.3)}
+[data-theme="dark"] .adm-filters-label span,[data-theme="dark"] .adm-filters-label svg{color:#60a5fa}
 .admin-table-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;box-shadow:var(--shadow-sm)}
 .admin-table{width:100%;border-collapse:collapse;font-size:12px}
 .admin-table th{background:var(--surface-2);color:var(--text-sec);font-size:10px;text-transform:uppercase;letter-spacing:.6px;padding:10px 12px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap;font-weight:700}
@@ -1376,8 +1381,12 @@ video{width:100%;border-radius:8px;background:black}
     </div>
 
     <!-- Filtros admin -->
-    <div style="max-width:1440px;margin:16px auto 0;padding:0 32px">
-      <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 20px">
+    <div style="margin:16px 0 0;padding:0 16px">
+      <div class="adm-filters-card" style="background:#eef4ff;border:1.5px solid #93c5fd;border-radius:12px;padding:16px 20px">
+        <div class="adm-filters-label">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="22,3 2,3 10,12.46 10,19 14,21 14,12.46"/></svg>
+          <span>Filtrar registros</span>
+        </div>
         <div class="adm-filters-row">
           <div class="adm-search-wrap">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
@@ -1408,7 +1417,7 @@ video{width:100%;border-radius:8px;background:black}
           <select id="adm-cert-filter" class="filtro-input" style="flex:1" onchange="filtrarAdmin()">
             <option value="">Todos los certificadores</option>
           </select>
-          <button class="btn-action" style="border-color:var(--border);color:var(--text-sec);font-size:12px;padding:8px 14px;white-space:nowrap;flex-shrink:0" onclick="limpiarFiltrosAdmin()">
+          <button class="btn-action" style="border-color:#3b82f6;color:#1d4ed8;font-size:12px;padding:8px 14px;white-space:nowrap;flex-shrink:0;font-weight:600" onclick="limpiarFiltrosAdmin()">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
             Limpiar filtros
           </button>
@@ -3286,51 +3295,77 @@ function filtrarHistorico() {
 
 function renderHistorico(data) {
   var tbody  = document.getElementById('hist-tbody');
+  var thead  = document.getElementById('hist-thead');
   var footer = document.getElementById('hist-footer');
+
+  var visible = getVisibleHistColumns();
+
+  var fixedHeaders  = ['ID Registro', 'Fecha', 'Centro'];
+  var optHeaders    = HIST_COL_DEFS.filter(function(c){ return visible.indexOf(c.key) !== -1; }).map(function(c){ return c.label; });
+  var trailHeaders  = ['Estado', 'Certificado', 'Acciones'];
+  var allHeaders    = fixedHeaders.concat(optHeaders).concat(trailHeaders);
+  var totalCols     = allHeaders.length;
+
+  thead.innerHTML = '<tr>' + allHeaders.map(function(h){ return '<th>'+esc(h)+'</th>'; }).join('') + '</tr>';
+
   if (!data || !data.length) {
-    tbody.innerHTML = '<tr><td colspan="10" class="hist-empty">No se encontraron registros</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="'+totalCols+'" class="hist-empty">No se encontraron registros</td></tr>';
     footer.textContent = '0 registros';
     return;
   }
-  // Soporte both old (Sheets) and new (Firestore) field names
+
+  var extractors = {
+    titular:           function(r){ return esc(r.titular || '—'); },
+    nroCentro:         function(r){ return esc(r.nroCentro || '—'); },
+    acs:               function(r){ return esc(r.acs || '—'); },
+    area:              function(r){ return esc(r.area || '—'); },
+    fechaSiembra:      function(r){ return esc(r.fechaUltimaSiembra || r.fechaSiembra || '—'); },
+    tamanioPeces:      function(r){ return esc(r.tamanioPeces || '—'); },
+    ubicacion:         function(r){ return esc(r.ubicacion || '—'); },
+    latLong:           function(r){ return esc(r.latLong || '—'); },
+    resExt:            function(r){ return '<span class="badge badge-blue" style="font-size:10px">'+esc(r.resoluciones || r.resExt || '—')+'</span>'; },
+    tipoObs:           function(r){ return esc(r.tipoObservacion || r.tipoObs || '—'); },
+    observaciones:     function(r){ return esc(r.observaciones || '—'); },
+    responsable:       function(r){ return esc(r.nombreResponsable || r.responsable || '—'); },
+    correoResponsable: function(r){ return esc(r.emailResponsable || '—'); },
+    estadoFirma:       function(r){ return esc(r.estadoFirma || '—'); },
+  };
+
   tbody.innerHTML = data.map(function(r) {
-    var nro      = r.nroRegistro || r.nroReg || '—';
-    var fecha    = r.fecha || '—';
-    var centro   = r.centroCultivo || r.centro || '—';
-    var titular  = r.titular || '—';
-    var res      = r.resoluciones || r.resExt || '—';
-    var tipoObs  = r.tipoObservacion || r.tipoObs || '—';
-    var resp     = r.nombreResponsable || r.responsable || '—';
-    var urlCert  = r.urlCertificado || r.urlCert || '';
-    var estado   = r.estado || 'GUARDADO';
-    var certLink = urlCert ? '<a href="'+esc(urlCert)+'" target="_blank" class="link-cert"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/></svg> PDF</a>' : '<span style="color:var(--text-muted);font-size:11px">—</span>';
+    var nro     = r.nroRegistro || r.nroReg || '—';
+    var fecha   = r.fecha || '—';
+    var centro  = r.centroCultivo || r.centro || '—';
+    var urlCert = r.urlCertificado || r.urlCert || '';
+    var estado  = r.estado || 'GUARDADO';
+    var certLink = urlCert
+      ? '<a href="'+esc(urlCert)+'" target="_blank" class="link-cert"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/></svg> PDF</a>'
+      : '<span style="color:var(--text-muted);font-size:11px">—</span>';
     var badgeCls = estado === 'ENVIADO' ? 'badge-ok' : estado === 'ARCHIVADO' ? 'badge-warn' : 'badge-blue';
-    var rJson    = esc(JSON.stringify(r).replace(/'/g,"\\'"));
     var canEdit  = estado === 'GUARDADO';
     var hasPdf   = !urlCert;
-    return '<tr>'+
-      '<td style="font-weight:600;color:var(--brand)">'+esc(nro)+'</td>'+
-      '<td>'+esc(fecha)+'</td>'+
-      '<td style="font-weight:600">'+esc(centro)+'</td>'+
-      '<td>'+esc(titular)+'</td>'+
-      '<td><span class="badge badge-blue" style="font-size:10px">'+esc(res)+'</span></td>'+
-      '<td>'+esc(tipoObs)+'</td>'+
-      '<td>'+esc(resp)+'</td>'+
-      '<td><span class="badge '+badgeCls+'">'+estado+'</span></td>'+
-      '<td>'+certLink+'</td>'+
-      '<td><div style="display:flex;gap:4px;flex-wrap:wrap;align-items:center">'+
-        '<button class="admin-action-btn ok" onclick="verRegistroHistorico(\''+esc(nro)+'\')">'+
-          '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> Ver'+
-        '</button> '+
-        (canEdit ? '<button class="admin-action-btn" onclick="editarRegistroHistorico(\''+esc(nro)+'\')">'+
-          '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Editar'+
-        '</button> ' : '')+
-        (hasPdf ? '<button class="admin-action-btn warn" onclick="regenerarPDFHistorico(\''+esc(nro)+'\')">'+
-          '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg> Regen. PDF'+
-        '</button>' : '')+
-      '</div></td>'+
-      '</tr>';
+
+    var cells = '<td style="font-weight:600;color:var(--brand)">'+esc(nro)+'</td>'+
+                '<td>'+esc(fecha)+'</td>'+
+                '<td style="font-weight:600">'+esc(centro)+'</td>';
+    visible.forEach(function(key) {
+      if (extractors[key]) cells += '<td>' + extractors[key](r) + '</td>';
+    });
+    cells += '<td><span class="badge '+badgeCls+'">'+estado+'</span></td>'+
+             '<td>'+certLink+'</td>'+
+             '<td><div style="display:flex;gap:4px;flex-wrap:wrap;align-items:center">'+
+               '<button class="admin-action-btn ok" onclick="verRegistroHistorico(\''+esc(nro)+'\')">'+
+                 '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> Ver'+
+               '</button> '+
+               (canEdit ? '<button class="admin-action-btn" onclick="editarRegistroHistorico(\''+esc(nro)+'\')">'+
+                 '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Editar'+
+               '</button> ' : '')+
+               (hasPdf ? '<button class="admin-action-btn warn" onclick="regenerarPDFHistorico(\''+esc(nro)+'\')">'+
+                 '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg> Regen. PDF'+
+               '</button>' : '')+
+             '</div></td>';
+    return '<tr>'+cells+'</tr>';
   }).join('');
+
   footer.textContent = 'Mostrando ' + data.length + ' registro' + (data.length!==1?'s':'') + ' · Firestore';
 }
 
