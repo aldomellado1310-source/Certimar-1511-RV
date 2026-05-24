@@ -534,6 +534,12 @@ video{width:100%;border-radius:8px;background:black}
 .hist-search:focus{border-color:#0099CC;box-shadow:0 0 0 3px rgba(0,153,204,.12)}
 .hist-table{width:100%;border-collapse:collapse;font-size:13px}
 .hist-table th{background:#f8fafc;font-weight:600;color:#64748b;text-align:left;padding:11px 14px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid #e2e8f0}
+.hist-table th.sortable{cursor:pointer;user-select:none}
+.hist-table th.sortable:hover{background:#f1f5f9;color:#475569}
+.hist-sort-icon{opacity:.3;font-size:11px;margin-left:3px;display:inline-block}
+.hist-table th.sort-active .hist-sort-icon{opacity:1;color:#0099CC}
+[data-theme="dark"] .hist-table th.sortable:hover{background:var(--surface-2)}
+[data-theme="dark"] .hist-table th.sort-active .hist-sort-icon{color:#38bdf8}
 .hist-table td{padding:11px 14px;border-bottom:1px solid #f1f5f9}
 .hist-table tr:hover td{background:#f8fafc}
 .hist-table .link-cert{color:#0099CC;text-decoration:none;font-weight:600;font-size:12px}
@@ -1778,6 +1784,16 @@ var HIST_COL_DEFS = [
   { key: 'estadoFirma',       label: 'Estado Firma',         grupo: 'Visita',           defaultVisible: false },
 ];
 var _histColCloseHandler = null;
+var _histSort = { col: null, dir: 'asc' };
+var HIST_SORTABLE = {
+  'ID Registro': function(r){ return r.nroRegistro||r.nroReg||''; },
+  'Fecha':       function(r){ var p=(r.fecha||'').split(/[-\/]/); return p.length===3?(p[0].length===4?p[0]+p[1]+p[2]:p[2]+p[1]+p[0]):(r.fecha||''); },
+  'Centro':      function(r){ return (r.centroCultivo||r.centro||'').toLowerCase(); },
+  'Estado':      function(r){ return r.estado||''; },
+  'Titular':     function(r){ return (r.titular||'').toLowerCase(); },
+  'N° Centro':   function(r){ return r.nroCentro||''; },
+  'Responsable': function(r){ return (r.nombreResponsable||r.responsable||'').toLowerCase(); }
+};
 
 function getVisibleHistColumns() {
   try {
@@ -3555,6 +3571,12 @@ function cargarHistorico() {
 }
 
 
+function sortHistorico(col) {
+  _histSort.dir = _histSort.col === col && _histSort.dir === 'asc' ? 'desc' : 'asc';
+  _histSort.col = col;
+  filtrarHistorico();
+}
+
 function filtrarHistorico() {
   var q      = (document.getElementById('hist-search').value || '').toLowerCase();
   var desde  = document.getElementById('hist-desde').value;
@@ -3586,7 +3608,21 @@ function renderHistorico(data) {
   var allHeaders    = fixedHeaders.concat(optHeaders).concat(trailHeaders);
   var totalCols     = allHeaders.length;
 
-  thead.innerHTML = '<tr>' + allHeaders.map(function(h){ return '<th>'+esc(h)+'</th>'; }).join('') + '</tr>';
+  if (_histSort.col && data && data.length > 1) {
+    var _sf = HIST_SORTABLE[_histSort.col];
+    if (_sf) data = data.slice().sort(function(a,b){
+      var av=_sf(a), bv=_sf(b);
+      return av<bv?(_histSort.dir==='asc'?-1:1):av>bv?(_histSort.dir==='asc'?1:-1):0;
+    });
+  }
+
+  thead.innerHTML = '<tr>' + allHeaders.map(function(h) {
+    var s = !!HIST_SORTABLE[h];
+    var a = _histSort.col === h;
+    var icon = a ? (_histSort.dir==='asc' ? '↑' : '↓') : '↕';
+    if (!s) return '<th>'+esc(h)+'</th>';
+    return '<th class="sortable'+(a?' sort-active':'')+'" onclick="sortHistorico(\''+h.replace(/'/g,"\\'")+'\')">'+esc(h)+'<span class="hist-sort-icon"> '+icon+'</span></th>';
+  }).join('') + '</tr>';
 
   if (!data || !data.length) {
     tbody.innerHTML = '<tr><td colspan="'+totalCols+'" class="hist-empty">No se encontraron registros</td></tr>';
