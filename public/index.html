@@ -198,6 +198,9 @@ input::placeholder,textarea::placeholder{color:var(--text-muted)}
 .btn-google{width:100%;display:flex;align-items:center;justify-content:center;gap:12px;background:white;border:1px solid #d1d5db;color:#374151;padding:12px 24px;border-radius:9999px;font-size:15px;font-weight:500;transition:.2s;cursor:pointer}
 .btn-google:hover{background:#f9fafb;box-shadow:0 2px 8px rgba(0,0,0,.1)}
 .login-footer{position:absolute;bottom:24px;font-size:12px;color:#94a3b8}
+@keyframes lbFloat{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-28px) scale(1.03)}}
+@keyframes lbDrift{0%{transform:translate(0,0) scale(1)}33%{transform:translate(22px,-18px) scale(1.02)}66%{transform:translate(-14px,12px) scale(.98)}100%{transform:translate(0,0) scale(1)}}
+.lb-orb{position:absolute;border-radius:50%;pointer-events:none;will-change:transform}
 
 /* ===================== SIDEBAR NOTIFICATIONS ===================== */
 #notif-sidebar{position:fixed;top:80px;right:0;width:300px;z-index:800;display:flex;flex-direction:column;gap:8px;padding:0 12px;pointer-events:none}
@@ -811,7 +814,12 @@ video{width:100%;border-radius:8px;background:black}
 <!-- ===================== LOGIN ===================== -->
 <div id="view-login" class="hidden">
   <div class="login-bg">
-    <div style="position:absolute;inset:0;background:linear-gradient(135deg,rgba(0,153,204,.05),rgba(0,51,102,.05))"></div>
+    <div style="position:absolute;inset:0;background:linear-gradient(135deg,rgba(0,153,204,.06) 0%,rgba(0,51,102,.04) 100%)"></div>
+    <div class="lb-orb" style="width:520px;height:520px;background:rgba(0,153,204,.07);top:-160px;right:-120px;animation:lbFloat 20s ease-in-out infinite"></div>
+    <div class="lb-orb" style="width:380px;height:380px;background:rgba(0,51,102,.05);bottom:-100px;left:-120px;animation:lbDrift 24s ease-in-out infinite 1s"></div>
+    <div class="lb-orb" style="width:220px;height:220px;background:rgba(0,153,204,.08);top:32%;left:12%;animation:lbFloat 15s ease-in-out infinite 3s"></div>
+    <div class="lb-orb" style="width:130px;height:130px;background:rgba(0,51,102,.05);bottom:22%;right:18%;animation:lbDrift 17s ease-in-out infinite 5s"></div>
+    <div class="lb-orb" style="width:80px;height:80px;background:rgba(0,153,204,.09);top:18%;left:55%;animation:lbFloat 12s ease-in-out infinite 2s"></div>
   </div>
   <div class="login-card">
     <svg style="width:180px;height:46px" viewBox="0 0 280 60" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -1781,6 +1789,7 @@ var HIST_COL_DEFS = [
   { key: 'responsable',       label: 'Responsable',          grupo: 'Visita',           defaultVisible: true  },
   { key: 'correoResponsable', label: 'Correo Responsable',   grupo: 'Visita',           defaultVisible: false },
   { key: 'estadoFirma',       label: 'Estado Firma',         grupo: 'Visita',           defaultVisible: false },
+  { key: 'anEnsilaje',        label: 'A/N Ensilaje',         grupo: 'Visita',           defaultVisible: false },
 ];
 var ADMIN_COL_DEFS = [
   { key: 'fecha',             label: 'Fecha',             sortField: 'fecha',             defaultVisible: true  },
@@ -3828,6 +3837,7 @@ function renderHistorico(data) {
     responsable:       function(r){ return esc(r.nombreResponsable || r.responsable || '—'); },
     correoResponsable: function(r){ return esc(r.emailResponsable || '—'); },
     estadoFirma:       function(r){ return esc(r.estadoFirma || '—'); },
+    anEnsilaje:        function(r){ return esc(r.artefactoNaval || '—'); },
   };
 
   tbody.innerHTML = data.map(function(r) {
@@ -4499,7 +4509,7 @@ function cargarAdmin() {
     updateNotifStep('admin-load','a2','active');
     _adminPage = 0;
     filtrarAdmin();
-    initAdminSortListeners();
+    initAdminDynamicSort();
     updateNotifStep('admin-load','a2','done');
     setTimeout(function(){ updateNotifCard('admin-load','success','🛡️ Panel Admin listo', docs.length + ' registros cargados'); }, 300);
   }).catch(function(e) {
@@ -4509,46 +4519,97 @@ function cargarAdmin() {
   });
 }
 
+function sortAdmin(field) {
+  _adminSort.dir = _adminSort.field === field && _adminSort.dir === 'asc' ? 'desc' : 'asc';
+  _adminSort.field = field;
+  filtrarAdmin();
+}
+
+function initAdminDynamicSort() {
+  var thead = document.getElementById('adm-thead');
+  if (!thead || thead._sortBound) return;
+  thead._sortBound = true;
+  thead.addEventListener('click', function(e) {
+    var th = e.target.closest('[data-sort]');
+    if (!th) return;
+    sortAdmin(th.dataset.sort);
+  });
+}
+
+var ADMIN_EXTRACTORS = {
+  fecha:             function(r){ return '<td style="white-space:nowrap">'+esc(r.fecha||'—')+'</td>'; },
+  centroCultivo:     function(r){ return '<td style="font-weight:600;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+esc(r.centroCultivo||'')+'">'+esc(r.centroCultivo||'—')+'</td>'; },
+  nroCentro:         function(r){ return '<td style="white-space:nowrap">'+esc(r.nroCentro||'—')+'</td>'; },
+  titular:           function(r){ return '<td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+esc(r.titular||'')+'">'+esc(r.titular||'—')+'</td>'; },
+  acs:               function(r){ return '<td>'+esc(r.acs||'—')+'</td>'; },
+  region:            function(r){ return '<td style="white-space:nowrap">'+esc(r.region||'—')+'</td>'; },
+  sector:            function(r){ return '<td style="white-space:nowrap">'+esc(r.sector||'—')+'</td>'; },
+  resoluciones:      function(r){ return '<td style="font-size:10px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(r.resoluciones||'—')+'</td>'; },
+  nombreResponsable: function(r){ return '<td>'+esc(r.nombreResponsable||'—')+'</td>'; },
+  estado:            function(r){
+    var est=r.estado||'GUARDADO';
+    var icon=est==='ENVIADO'?'✉️':est==='ARCHIVADO'?'📁':'💾';
+    var bdg=est==='ENVIADO'?'badge-ok':est==='ARCHIVADO'?'badge-warn':'badge-blue';
+    return '<td><span class="badge '+bdg+'">'+icon+' '+est+'</span></td>';
+  },
+  certNombre:        function(r){
+    var ini=(r.certNombre||r.creadoPor||'U')[0].toUpperCase();
+    var nom=r.certNombre||(r.creadoPor||'').split('@')[0]||'—';
+    return '<td><div class="admin-cert-chip"><div class="admin-cert-avatar">'+ini+'</div><span style="max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+esc(nom)+'">'+esc(nom)+'</span></div></td>';
+  }
+};
+
 function renderAdminTabla() {
   var tbody = document.getElementById('adm-tbody');
+  var thead = document.getElementById('adm-thead');
   var start = _adminPage * _adminPageSize;
   var page  = _adminFiltered.slice(start, start + _adminPageSize);
   var total = _adminFiltered.length;
+  var colspan = getAdminColspan();
+
+  // Build dynamic thead
+  var visible = getVisibleAdminColumns();
+  var order   = getAdminColOrder();
+  var orderedDefs = order.map(function(k){
+    return ADMIN_COL_DEFS.find(function(c){ return c.key === k; });
+  }).filter(Boolean);
+  ADMIN_COL_DEFS.forEach(function(c){
+    if (order.indexOf(c.key) === -1) orderedDefs.push(c);
+  });
+  var visibleDefs = orderedDefs.filter(function(c){ return visible.indexOf(c.key) !== -1; });
+
+  var sfNro = _adminSort.field === 'nroRegistro';
+  thead.innerHTML = '<tr>' +
+    '<th data-sort="nroRegistro" style="cursor:pointer;user-select:none" class="'+(sfNro ? 'sorted-'+_adminSort.dir : '')+'">N° Registro <span class="sort-ind"></span></th>' +
+    visibleDefs.map(function(c){
+      var isActive = _adminSort.field === c.sortField;
+      if (!c.sortField) return '<th>'+esc(c.label)+'</th>';
+      return '<th data-sort="'+c.sortField+'" style="cursor:pointer;user-select:none" class="'+(isActive ? 'sorted-'+_adminSort.dir : '')+'">'+esc(c.label)+' <span class="sort-ind"></span></th>';
+    }).join('') +
+    '<th>Acciones</th>' +
+    '</tr>';
 
   if (!total) {
-    tbody.innerHTML = '<tr><td colspan="13" class="admin-empty">No hay registros con esos filtros</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="'+colspan+'" class="admin-empty">No hay registros con esos filtros</td></tr>';
     document.getElementById('adm-footer-count').textContent = '0 resultados';
     document.getElementById('adm-pag-info').textContent = '';
     return;
   }
 
   tbody.innerHTML = page.map(function(r) {
-    var estado  = r.estado || 'GUARDADO';
-    var icon    = estado==='ENVIADO' ? '✉️' : estado==='ARCHIVADO' ? '📁' : '💾';
-    var bdg     = estado==='ENVIADO' ? 'badge-ok' : estado==='ARCHIVADO' ? 'badge-warn' : 'badge-blue';
-    var certIni = (r.certNombre || r.creadoPor || 'U')[0].toUpperCase();
-    var certNom = r.certNombre || (r.creadoPor||'').split('@')[0] || '—';
     var urlCert = r.urlCertificado || '';
-    return '<tr>'+
-      '<td style="font-weight:700;color:var(--brand);white-space:nowrap">'+esc(r.nroRegistro||'—')+'</td>'+
-      '<td style="white-space:nowrap">'+esc(r.fecha||'—')+'</td>'+
-      '<td style="font-weight:600;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+esc(r.centroCultivo||'')+'">'+esc(r.centroCultivo||'—')+'</td>'+
-      '<td style="white-space:nowrap">'+esc(r.nroCentro||'—')+'</td>'+
-      '<td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+esc(r.titular||'')+'">'+esc(r.titular||'—')+'</td>'+
-      '<td>'+esc(r.acs||'—')+'</td>'+
-      '<td style="white-space:nowrap">'+esc(r.region||'—')+'</td>'+
-      '<td style="white-space:nowrap">'+esc(r.sector||'—')+'</td>'+
-      '<td style="font-size:10px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(r.resoluciones||'—')+'</td>'+
-      '<td>'+esc(r.nombreResponsable||'—')+'</td>'+
-      '<td><span class="badge '+bdg+'">'+icon+' '+estado+'</span></td>'+
-      '<td><div class="admin-cert-chip"><div class="admin-cert-avatar">'+certIni+'</div><span style="max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+esc(certNom)+'">'+esc(certNom)+'</span></div></td>'+
-      '<td><div style="display:flex;gap:4px;flex-wrap:wrap;align-items:center">'+
-        (urlCert ? '<a href="'+esc(urlCert)+'" target="_blank" class="admin-action-btn ok"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/></svg> Ver PDF</a> ' : '')+
-        (!urlCert ? '<button class="admin-action-btn warn" onclick="regenerarPDFAdmin(\''+esc(r.nroRegistro||'')+'\')"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg> Regen. PDF</button> ' : '')+
-        '<button class="admin-action-btn" onclick="admReenviarMail(\''+esc(r.nroRegistro||'')+'\',\''+esc(r.emailResponsable||'')+'\')"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg> Reenviar</button> '+
-        '<button class="admin-action-btn" onclick="editarRegistroAdmin(\''+esc(r.nroRegistro||'')+'\')"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Editar</button> '+
-        '<button class="admin-action-btn danger" onclick="openModalEliminar(\''+esc(r.nroRegistro||'')+'\')"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3,6 5,6 21,6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg> Eliminar</button>'+
-      '</div></td>'+
+    return '<tr>' +
+      '<td style="font-weight:700;color:var(--brand);white-space:nowrap">'+esc(r.nroRegistro||'—')+'</td>' +
+      visibleDefs.map(function(c){
+        return ADMIN_EXTRACTORS[c.key] ? ADMIN_EXTRACTORS[c.key](r) : '<td>—</td>';
+      }).join('') +
+      '<td><div style="display:flex;gap:4px;flex-wrap:wrap;align-items:center">' +
+        (urlCert ? '<a href="'+esc(urlCert)+'" target="_blank" class="admin-action-btn ok"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/></svg> Ver PDF</a> ' : '') +
+        (!urlCert ? '<button class="admin-action-btn warn" onclick="regenerarPDFAdmin(\''+esc(r.nroRegistro||'')+'\')"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg> Regen. PDF</button> ' : '') +
+        '<button class="admin-action-btn" onclick="admReenviarMail(\''+esc(r.nroRegistro||'')+'\',\''+esc(r.emailResponsable||'')+'\')"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg> Reenviar</button> ' +
+        '<button class="admin-action-btn" onclick="editarRegistroAdmin(\''+esc(r.nroRegistro||'')+'\')"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Editar</button> ' +
+        '<button class="admin-action-btn danger" onclick="openModalEliminar(\''+esc(r.nroRegistro||'')+'\')"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3,6 5,6 21,6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg> Eliminar</button>' +
+      '</div></td>' +
       '</tr>';
   }).join('');
 
@@ -5107,16 +5168,6 @@ function toast(msg, type) {
   toastTimer = setTimeout(function(){ el.className = ''; }, 3500);
 }
 </script>
-<!-- Developed by Micorriza -->
-<div style="position:fixed;bottom:14px;right:16px;z-index:100;display:flex;align-items:center;gap:5px;font-size:13px;color:var(--text-muted,#94a3b8);opacity:.55;pointer-events:none;user-select:none">
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M12 2C7.5 2 3 5.8 3 10c0 .6.1 1 .3 1.5C4.2 13 6 14 8 14h.5v5a1.5 1.5 0 003 0v-5h1v5a1.5 1.5 0 003 0v-5H16c2 0 3.8-1 4.7-2.5.2-.5.3-.9.3-1.5 0-4.2-4.5-8-9-8z" fill="#7c3aed"/>
-    <circle cx="9" cy="7.5" r="1.2" fill="white" opacity=".7"/>
-    <circle cx="13.5" cy="6" r=".8" fill="white" opacity=".7"/>
-    <circle cx="11" cy="9" r=".6" fill="white" opacity=".6"/>
-  </svg>
-  Developed by Micorriza
-</div>
 
 <!-- Dropdown autocomplete global (fuera de doc-paper para evitar overflow:hidden) -->
 <div id="ac-dropdown" class="autocomplete-dropdown" style="display:none;position:fixed"></div>
