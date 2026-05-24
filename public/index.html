@@ -1818,7 +1818,13 @@ function saveVisibleHistColumns(keys) {
 function getHistColOrder() {
   try {
     var saved = localStorage.getItem('certimar_hist_col_order');
-    if (saved) return JSON.parse(saved);
+    if (saved) {
+      var parsed = JSON.parse(saved);
+      var allKeys = HIST_COL_DEFS.map(function(c){ return c.key; });
+      var merged = parsed.filter(function(k){ return allKeys.indexOf(k) !== -1; });
+      allKeys.forEach(function(k){ if (merged.indexOf(k) === -1) merged.push(k); });
+      return merged;
+    }
   } catch(e) {}
   return HIST_COL_DEFS.map(function(c){ return c.key; });
 }
