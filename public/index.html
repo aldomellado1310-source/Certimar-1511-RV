@@ -558,7 +558,7 @@ video{width:100%;border-radius:8px;background:black}
 #hist-col-dropdown.hidden{display:none}
 #adm-col-dropdown{position:absolute;top:100%;right:0;width:230px;background:white;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 8px 8px;padding:12px;box-shadow:0 8px 24px rgba(0,0,0,.12);z-index:1000;max-height:400px;overflow-y:auto}
 #adm-col-dropdown.hidden{display:none}
-[data-theme="dark"] #adm-col-dropdown{background:var(--surface-1);border-color:var(--border)}
+[data-theme="dark"] #adm-col-dropdown{background:var(--surface);border-color:var(--border)}
 .hist-col-fixed-chips{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px}
 .hist-col-fixed-chip{background:#f1f5f9;color:#64748b;border-radius:4px;padding:2px 7px;font-size:10px}
 .hist-col-group-label{font-size:10px;color:#0099CC;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin:8px 0 5px}
@@ -1261,7 +1261,7 @@ video{width:100%;border-radius:8px;background:black}
                 </svg>
               </div>
               <canvas id="firma-cliente" width="280" height="90" class="firma-canvas"></canvas>
-              <button onclick="clearFirmaCliente()" style="position:absolute;top:4px;right:4px;z-index:10;background:rgba(255,255,255,.85);border:1px solid #fecaca;color:#ef4444;padding:3px 7px;border-radius:5px;cursor:pointer;font-size:13px;font-weight:700;line-height:1" title="Borrar firma">✕</button>
+              <button onclick="clearFirmaCliente()" class="pdf-hide" style="position:absolute;top:4px;right:4px;z-index:10;background:rgba(255,255,255,.85);border:1px solid #fecaca;color:#ef4444;padding:3px 7px;border-radius:5px;cursor:pointer;font-size:13px;font-weight:700;line-height:1" title="Borrar firma">✕</button>
             </div>
             <div class="firma-line"></div>
             <input type="text" id="r-nombreResponsable" class="firma-input-name" placeholder="Nombre Responsable" oninput="checkChecklist()">
@@ -2899,6 +2899,9 @@ async function generarPDF() {
     ta.value = '';
     textareaReplacements.push({ ta: ta, div: div, saved: saved });
   });
+  // Ocultar elementos marcados como pdf-hide (ej: botón borrar firma)
+  var pdfHideEls = el.querySelectorAll('.pdf-hide');
+  pdfHideEls.forEach(function(e){ e.style.display = 'none'; });
   // Espaciador temporal: fuerza que getBoundingClientRect().height incluya el fondo de la firma
   // (padding-bottom inline no afecta getBoundingClientRect en todos los navegadores)
   var _spacer = document.createElement('div');
@@ -2952,6 +2955,7 @@ async function generarPDF() {
       item.original.style.display = '';
       if (item.replacement.parentNode) item.replacement.parentNode.removeChild(item.replacement);
     });
+    if (pdfHideEls) pdfHideEls.forEach(function(e){ e.style.display = ''; });
     if (prevTheme === 'dark') root.setAttribute('data-theme', 'dark');
     if (_spacer && _spacer.parentNode) _spacer.parentNode.removeChild(_spacer);
     textareaReplacements.forEach(function(r) {
