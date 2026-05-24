@@ -1791,6 +1791,19 @@ var HIST_COL_DEFS = [
   { key: 'correoResponsable', label: 'Correo Responsable',   grupo: 'Visita',           defaultVisible: false },
   { key: 'estadoFirma',       label: 'Estado Firma',         grupo: 'Visita',           defaultVisible: false },
 ];
+var ADMIN_COL_DEFS = [
+  { key: 'fecha',             label: 'Fecha',             sortField: 'fecha',             defaultVisible: true  },
+  { key: 'centroCultivo',     label: 'Centro de Cultivo', sortField: 'centroCultivo',     defaultVisible: true  },
+  { key: 'nroCentro',         label: 'N° Centro',         sortField: 'nroCentro',         defaultVisible: true  },
+  { key: 'titular',           label: 'Titular',           sortField: 'titular',           defaultVisible: true  },
+  { key: 'acs',               label: 'ACS',               sortField: 'acs',               defaultVisible: false },
+  { key: 'region',            label: 'Región',            sortField: 'region',            defaultVisible: false },
+  { key: 'sector',            label: 'Sector',            sortField: 'sector',            defaultVisible: false },
+  { key: 'resoluciones',      label: 'Resoluciones',      sortField: 'resoluciones',      defaultVisible: true  },
+  { key: 'nombreResponsable', label: 'Responsable',       sortField: 'nombreResponsable', defaultVisible: true  },
+  { key: 'estado',            label: 'Estado',            sortField: 'estado',            defaultVisible: true  },
+  { key: 'certNombre',        label: 'Certificador',      sortField: 'certNombre',        defaultVisible: true  },
+];
 var _histColCloseHandler = null;
 var _histSort = { col: null, dir: 'asc' };
 var HIST_SORTABLE = {
@@ -1831,6 +1844,41 @@ function getHistColOrder() {
 
 function saveHistColOrder(keys) {
   localStorage.setItem('certimar_hist_col_order', JSON.stringify(keys));
+}
+function getVisibleAdminColumns() {
+  try {
+    var saved = localStorage.getItem('certimar_admin_columns');
+    if (saved) {
+      var parsed = JSON.parse(saved);
+      var allKeys = ADMIN_COL_DEFS.map(function(c){ return c.key; });
+      var merged = parsed.filter(function(k){ return allKeys.indexOf(k) !== -1; });
+      allKeys.forEach(function(k){ if (merged.indexOf(k) === -1 && ADMIN_COL_DEFS.find(function(c){ return c.key===k&&c.defaultVisible; })) merged.push(k); });
+      return merged;
+    }
+  } catch(e) {}
+  return ADMIN_COL_DEFS.filter(function(c){ return c.defaultVisible; }).map(function(c){ return c.key; });
+}
+function saveVisibleAdminColumns(keys) {
+  localStorage.setItem('certimar_admin_columns', JSON.stringify(keys));
+}
+function getAdminColOrder() {
+  try {
+    var saved = localStorage.getItem('certimar_admin_col_order');
+    if (saved) {
+      var parsed = JSON.parse(saved);
+      var allKeys = ADMIN_COL_DEFS.map(function(c){ return c.key; });
+      var merged = parsed.filter(function(k){ return allKeys.indexOf(k) !== -1; });
+      allKeys.forEach(function(k){ if (merged.indexOf(k) === -1) merged.push(k); });
+      return merged;
+    }
+  } catch(e) {}
+  return ADMIN_COL_DEFS.map(function(c){ return c.key; });
+}
+function saveAdminColOrder(keys) {
+  localStorage.setItem('certimar_admin_col_order', JSON.stringify(keys));
+}
+function getAdminColspan() {
+  return getVisibleAdminColumns().length + 2; // +2 for N° Registro + Acciones
 }
 
 var isFirmaDrawing = false;
@@ -2136,7 +2184,8 @@ async function fbObtenerEstadisticas() {
 // =====================================================================
 document.addEventListener('DOMContentLoaded', function() {
   document.getElementById('login-year').textContent = new Date().getFullYear();
-  document.getElementById('login-version').textContent = APP_VERSION;
+  var loginVer = document.getElementById('login-version');
+  if (loginVer) loginVer.textContent = APP_VERSION;
   document.getElementById('nav-version').textContent   = APP_VERSION + ' · Micorriza';
   initFirebase();
   loadTheme();
