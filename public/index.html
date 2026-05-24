@@ -2947,29 +2947,6 @@ async function generarPDF() {
   // Esperar a que el layout se recalcule tras los reemplazos antes de capturar
   await new Promise(function(r){ requestAnimationFrame(function(){ requestAnimationFrame(r); }); });
 
-  // scale 1.5 en JPEG = 60% menos datos que scale:2 PNG, misma calidad visual para A4
-  // html2canvas no renderiza bien el texto de textareas (puede cortar en horizontal).
-  // Reemplazamos temporalmente cada textarea visible por un div equivalente.
-  el.querySelectorAll('textarea').forEach(function(ta) {
-    var saved = ta.value;
-    var cs = window.getComputedStyle(ta);
-    var div = document.createElement('div');
-    div.textContent = saved;
-    div.style.width = ta.getBoundingClientRect().width + 'px';
-    div.style.maxWidth = ta.getBoundingClientRect().width + 'px';
-    div.style.padding = cs.padding;
-    div.style.overflow = 'hidden';
-    div.style.fontSize = cs.fontSize;
-    div.style.fontFamily = cs.fontFamily;
-    div.style.lineHeight = cs.lineHeight;
-    div.style.whiteSpace = 'pre-wrap';
-    div.style.wordBreak = 'break-word';
-    div.style.overflowWrap = 'break-word';
-    div.style.boxSizing = 'border-box';
-    ta.parentNode.insertBefore(div, ta);
-    ta.value = '';
-    textareaReplacements.push({ ta: ta, div: div, saved: saved });
-  });
   // Ocultar elementos marcados como pdf-hide (ej: botón borrar firma)
   var pdfHideEls = el.querySelectorAll('.pdf-hide');
   pdfHideEls.forEach(function(e){ e.style.display = 'none'; });
