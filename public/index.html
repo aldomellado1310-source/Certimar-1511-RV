@@ -1814,6 +1814,19 @@ function getVisibleHistColumns() {
 function saveVisibleHistColumns(keys) {
   localStorage.setItem('certimar_hist_columns', JSON.stringify(keys));
 }
+
+function getHistColOrder() {
+  try {
+    var saved = localStorage.getItem('certimar_hist_col_order');
+    if (saved) return JSON.parse(saved);
+  } catch(e) {}
+  return HIST_COL_DEFS.map(function(c){ return c.key; });
+}
+
+function saveHistColOrder(keys) {
+  localStorage.setItem('certimar_hist_col_order', JSON.stringify(keys));
+}
+
 var isFirmaDrawing = false;
 var firmaClienteHasData = false;
 var cameraStream = null;
@@ -3511,6 +3524,18 @@ function toggleHistColumn(key) {
   if (idx === -1) visible.push(key);
   else visible.splice(idx, 1);
   saveVisibleHistColumns(visible);
+  renderColumnSelector();
+  filtrarHistorico();
+}
+
+function moveHistColumn(key, dir) {
+  var order = getHistColOrder();
+  var idx = order.indexOf(key);
+  if (idx === -1) return;
+  var swapIdx = dir === 'up' ? idx - 1 : idx + 1;
+  if (swapIdx < 0 || swapIdx >= order.length) return;
+  var tmp = order[idx]; order[idx] = order[swapIdx]; order[swapIdx] = tmp;
+  saveHistColOrder(order);
   renderColumnSelector();
   filtrarHistorico();
 }
