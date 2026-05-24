@@ -538,6 +538,11 @@ video{width:100%;border-radius:8px;background:black}
 .hist-table th.sortable:hover{background:#f1f5f9;color:#475569}
 .hist-sort-icon{opacity:.3;font-size:11px;margin-left:3px;display:inline-block}
 .hist-table th.sort-active .hist-sort-icon{opacity:1;color:#0099CC}
+.hist-col-order-btn{background:none;border:1px solid var(--border,#e2e8f0);border-radius:3px;cursor:pointer;font-size:9px;padding:1px 4px;color:var(--text-muted,#94a3b8);line-height:1.4;transition:.15s}
+.hist-col-order-btn:hover:not(:disabled){background:var(--surface-2,#f1f5f9);color:var(--text-pri,#374151)}
+.hist-col-order-btn:disabled{opacity:.25;cursor:default}
+.hist-col-row{display:flex;align-items:center;gap:5px;margin-bottom:5px}
+.hist-col-row .hist-col-option{margin-bottom:0;flex:1}
 [data-theme="dark"] .hist-table th.sortable:hover{background:var(--surface-2)}
 [data-theme="dark"] .hist-table th.sort-active .hist-sort-icon{color:#38bdf8}
 .hist-table td{padding:11px 14px;border-bottom:1px solid #f1f5f9}
@@ -551,6 +556,9 @@ video{width:100%;border-radius:8px;background:black}
 .hist-col-btn.open{border-bottom-left-radius:0;border-bottom-right-radius:0}
 #hist-col-dropdown{position:absolute;top:100%;right:0;width:220px;background:white;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 8px 8px;padding:12px;box-shadow:0 8px 24px rgba(0,0,0,.12);z-index:1000;max-height:400px;overflow-y:auto}
 #hist-col-dropdown.hidden{display:none}
+#adm-col-dropdown{position:absolute;top:100%;right:0;width:230px;background:white;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 8px 8px;padding:12px;box-shadow:0 8px 24px rgba(0,0,0,.12);z-index:1000;max-height:400px;overflow-y:auto}
+#adm-col-dropdown.hidden{display:none}
+[data-theme="dark"] #adm-col-dropdown{background:var(--surface-1);border-color:var(--border)}
 .hist-col-fixed-chips{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px}
 .hist-col-fixed-chip{background:#f1f5f9;color:#64748b;border-radius:4px;padding:2px 7px;font-size:10px}
 .hist-col-group-label{font-size:10px;color:#0099CC;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin:8px 0 5px}
@@ -834,7 +842,7 @@ video{width:100%;border-radius:8px;background:black}
   </div>
   <div class="login-footer" style="display:flex;flex-direction:column;align-items:center;gap:6px">
     <span>© <span id="login-year"></span> Certimar SpA. Todos los derechos reservados.</span>
-    <span style="display:flex;align-items:center;gap:5px;opacity:.7;font-size:11px">
+    <span style="display:flex;align-items:center;gap:5px;opacity:.7;font-size:13px">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M12 2C7.5 2 3 5.8 3 10c0 .6.1 1 .3 1.5C4.2 13 6 14 8 14h.5v5a1.5 1.5 0 003 0v-5h1v5a1.5 1.5 0 003 0v-5H16c2 0 3.8-1 4.7-2.5.2-.5.3-.9.3-1.5 0-4.2-4.5-8-9-8z" fill="#7c3aed" opacity=".85"/>
         <circle cx="9" cy="7.5" r="1.2" fill="white" opacity=".7"/>
@@ -4923,7 +4931,7 @@ function toast(msg, type) {
 }
 </script>
 <!-- Developed by Micorriza -->
-<div style="position:fixed;bottom:14px;right:16px;z-index:100;display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-muted,#94a3b8);opacity:.55;pointer-events:none;user-select:none">
+<div style="position:fixed;bottom:14px;right:16px;z-index:100;display:flex;align-items:center;gap:5px;font-size:13px;color:var(--text-muted,#94a3b8);opacity:.55;pointer-events:none;user-select:none">
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
     <path d="M12 2C7.5 2 3 5.8 3 10c0 .6.1 1 .3 1.5C4.2 13 6 14 8 14h.5v5a1.5 1.5 0 003 0v-5h1v5a1.5 1.5 0 003 0v-5H16c2 0 3.8-1 4.7-2.5.2-.5.3-.9.3-1.5 0-4.2-4.5-8-9-8z" fill="#7c3aed"/>
     <circle cx="9" cy="7.5" r="1.2" fill="white" opacity=".7"/>
