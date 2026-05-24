@@ -1504,6 +1504,13 @@ video{width:100%;border-radius:8px;background:black}
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
             Limpiar filtros
           </button>
+          <div style="position:relative;flex-shrink:0">
+            <button id="adm-col-btn" class="hist-col-btn" onclick="toggleAdminColDropdown()">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+              Columnas ▾
+            </button>
+            <div id="adm-col-dropdown" class="hidden"></div>
+          </div>
         </div>
       </div>
     </div>
@@ -1513,23 +1520,7 @@ video{width:100%;border-radius:8px;background:black}
       <div class="admin-table-card">
         <div style="overflow-x:auto">
           <table class="admin-table">
-            <thead>
-              <tr>
-                <th data-sort="nroRegistro">N° Registro <span class="sort-ind"></span></th>
-                <th data-sort="fecha">Fecha <span class="sort-ind"></span></th>
-                <th data-sort="centroCultivo">Centro de Cultivo <span class="sort-ind"></span></th>
-                <th data-sort="nroCentro">N° Centro <span class="sort-ind"></span></th>
-                <th data-sort="titular">Titular <span class="sort-ind"></span></th>
-                <th data-sort="acs">ACS <span class="sort-ind"></span></th>
-                <th data-sort="region">Región <span class="sort-ind"></span></th>
-                <th data-sort="sector">Sector <span class="sort-ind"></span></th>
-                <th data-sort="resoluciones">Resoluciones <span class="sort-ind"></span></th>
-                <th data-sort="nombreResponsable">Responsable <span class="sort-ind"></span></th>
-                <th data-sort="estado">Estado <span class="sort-ind"></span></th>
-                <th data-sort="certNombre">Certificador <span class="sort-ind"></span></th>
-                <th>Acciones</th>
-              </tr>
-            </thead>
+            <thead id="adm-thead"></thead>
             <tbody id="adm-tbody">
               <tr><td colspan="13" class="admin-empty">
                 <div class="spinner dark" style="margin:0 auto 10px"></div>
@@ -4458,7 +4449,7 @@ function cargarAdmin() {
   }
 
   document.getElementById('adm-tbody').innerHTML =
-    '<tr><td colspan="13" class="admin-empty"><div class="spinner dark" style="margin:0 auto 8px"></div>Cargando todos los registros…</td></tr>';
+    '<tr><td colspan="'+getAdminColspan()+'" class="admin-empty"><div class="spinner dark" style="margin:0 auto 8px"></div>Cargando todos los registros…</td></tr>';
   document.getElementById('adm-footer-count').textContent = 'Cargando…';
 
   pushNotif('admin-load','info','🛡️ Panel Admin cargando…',[
@@ -4514,7 +4505,7 @@ function cargarAdmin() {
   }).catch(function(e) {
     updateNotifCard('admin-load','error','❌ Error Admin', String(e));
     document.getElementById('adm-tbody').innerHTML =
-      '<tr><td colspan="13" class="admin-empty" style="color:var(--error)">Error al cargar: '+esc(String(e))+'</td></tr>';
+      '<tr><td colspan="'+getAdminColspan()+'" class="admin-empty" style="color:var(--error)">Error al cargar: '+esc(String(e))+'</td></tr>';
   });
 }
 
