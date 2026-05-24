@@ -50,39 +50,45 @@ async function callAppsScript(datos, urlCertificado, internalCopy) {
 }
 
 // ─── Plantilla HTML del correo ────────────────────────────────────────────────
+function escHtml(s) {
+  return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
 function plantillaEmail(datos, urlCert) {
-  const resoluciones = buildResExt(datos.resoluciones) || '—';
-  const linkBtn = urlCert
-    ? `<a href="${urlCert}" style="display:inline-block;background:#003366;color:#fff;padding:13px 32px;text-decoration:none;border-radius:6px;font-size:14px;font-weight:700;font-family:Arial,sans-serif">Ver Certificado →</a>`
+  const resoluciones = escHtml(buildResExt(datos.resoluciones) || '—');
+  const safeUrlCert  = encodeURI(urlCert || '').replace(/"/g, '%22');
+  const linkBtn = safeUrlCert
+    ? `<a href="${safeUrlCert}" style="display:inline-block;background:#003366;color:#fff;padding:13px 32px;text-decoration:none;border-radius:6px;font-size:14px;font-weight:700;font-family:Arial,sans-serif">Ver Certificado →</a>`
     : '';
 
+  const e = escHtml;
   const filas = [
-    ['N° Registro',          `<strong style="color:#003366">${datos.nroRegistro || '—'}</strong>`],
-    ['Fecha',                 datos.fecha                     || '—'],
-    ['Centro de Cultivo',     datos.centroCultivo             || '—'],
-    ['N° Centro',             datos.nroCentro                 || '—'],
-    ['ACS',                   datos.acs                       || '—'],
-    ['Titular',               datos.titular                   || '—'],
-    ['Ubicación',             datos.ubicacion                 || '—'],
-    ['Región',                datos.region                    || '—'],
-    ['Sector',                datos.sector                    || '—'],
-    ['Fecha última siembra',  datos.fechaSiembra              || '—'],
-    ['Tamaño peces',          datos.tamanoPeces               || '—'],
-    ['Largo jaula (m)',       datos.jaulasLargo               || '—'],
-    ['Ancho jaula (m)',       datos.jaulasAncho               || '—'],
-    ['Cantidad jaulas',       datos.cantidadJaulas            || '—'],
-    ['Jaulas sembradas',      datos.cantidadJaulasSembradas   || '—'],
-    ['A/N Ensilaje',          datos.artefactoNaval            || '—'],
+    ['N° Registro',          `<strong style="color:#003366">${e(datos.nroRegistro) || '—'}</strong>`],
+    ['Fecha',                 e(datos.fecha)                     || '—'],
+    ['Centro de Cultivo',     e(datos.centroCultivo)             || '—'],
+    ['N° Centro',             e(datos.nroCentro)                 || '—'],
+    ['ACS',                   e(datos.acs)                       || '—'],
+    ['Titular',               e(datos.titular)                   || '—'],
+    ['Ubicación',             e(datos.ubicacion)                 || '—'],
+    ['Región',                e(datos.region)                    || '—'],
+    ['Sector',                e(datos.sector)                    || '—'],
+    ['Fecha última siembra',  e(datos.fechaSiembra)              || '—'],
+    ['Tamaño peces',          e(datos.tamanoPeces)               || '—'],
+    ['Largo jaula (m)',       e(datos.jaulasLargo)               || '—'],
+    ['Ancho jaula (m)',       e(datos.jaulasAncho)               || '—'],
+    ['Cantidad jaulas',       e(datos.cantidadJaulas)            || '—'],
+    ['Jaulas sembradas',      e(datos.cantidadJaulasSembradas)   || '—'],
+    ['A/N Ensilaje',          e(datos.artefactoNaval)            || '—'],
     ['Norma aplicable',       resoluciones],
-    ['Latitud S',             datos.latitud                   || '—'],
-    ['Longitud W',            datos.longitud                  || '—'],
-    ['Norte',                 datos.norte                     || '—'],
-    ['Este',                  datos.este                      || '—'],
-    ['Responsable',           datos.nombreResponsable         || '—'],
-    ['Tipo Observación',      datos.tipoObservacion           || '—'],
-    ['Observaciones',         (datos.observaciones            || 'S/O').replace(/\n/g, '<br>')],
-    ['Certificador',          datos.nombreCertificador        || '—'],
-    ['N° Registro Cert.',     datos.rutCertificador           || '—']
+    ['Latitud S',             e(datos.latitud)                   || '—'],
+    ['Longitud W',            e(datos.longitud)                  || '—'],
+    ['Norte',                 e(datos.norte)                     || '—'],
+    ['Este',                  e(datos.este)                      || '—'],
+    ['Responsable',           e(datos.nombreResponsable)         || '—'],
+    ['Tipo Observación',      e(datos.tipoObservacion)           || '—'],
+    ['Observaciones',         e(datos.observaciones || 'S/O').replace(/\n/g, '<br>')],
+    ['Certificador',          e(datos.nombreCertificador)        || '—'],
+    ['N° Registro Cert.',     e(datos.rutCertificador)           || '—']
   ].map((r, i) => {
     const bg = i % 2 === 0 ? '#ffffff' : '#f1f5f9';
     return `<tr style="background:${bg}">
@@ -107,12 +113,12 @@ function plantillaEmail(datos, urlCert) {
     <tr>
       <td style="padding:28px 32px 16px">
         <p style="margin:0 0 12px;color:#1e293b;font-size:15px;font-family:Arial,sans-serif">
-          Estimado(a) <strong>${datos.nombreResponsable || 'Responsable'}</strong>,
+          Estimado(a) <strong>${escHtml(datos.nombreResponsable || 'Responsable')}</strong>,
         </p>
         <p style="margin:0;color:#475569;font-size:14px;line-height:1.65;font-family:Arial,sans-serif">
           Adjunto encontrará el Registro de Visita oficial del centro
-          <strong style="color:#003366">${datos.centroCultivo}</strong>
-          con fecha <strong>${datos.fecha}</strong>, emitido por Certimar SpA.
+          <strong style="color:#003366">${escHtml(datos.centroCultivo)}</strong>
+          con fecha <strong>${escHtml(datos.fecha)}</strong>, emitido por Certimar SpA.
         </p>
       </td>
     </tr>

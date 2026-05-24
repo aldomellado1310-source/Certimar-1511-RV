@@ -9,7 +9,23 @@
       "Bash(python3 -c ' *)",
       "Bash(clasp run *)",
       "Bash(clasp open *)",
-      "Bash(git -C \"c:\\\\Users\\\\aldon\\\\Documents\\\\Proyectos\\\\Certimar-1511-RV\" log --oneline -5)"
+      "Bash(git -C \"c:\\\\Users\\\\aldon\\\\Documents\\\\Proyectos\\\\Certimar-1511-RV\" log --oneline -5)",
+      "Bash(dir \"c:\\\\Users\\\\aldon\\\\Documents\\\\Proyectos\\\\Certimar-1511-RV\\\\.claude\\\\skills\")",
+      "Bash(firebase login:list)",
+      "Bash(Get-ChildItem \"c:\\\\Users\\\\aldon\\\\Documents\\\\Proyectos\\\\Certimar-1511-RV\" -Directory)",
+      "Bash(Select-Object Name)",
+      "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\aldon\\\\Documents\\\\Proyectos\\\\Certimar-1511-RV\" -Directory)",
+      "Bash(bash \"C:/Users/aldon/.claude/skills/brainstorming/scripts/start-server.sh\" --project-dir \"c:/Users/aldon/Documents/Proyectos/Certimar-1511-RV\")",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(firebase login *)",
+      "Bash(git commit *)",
+      "Bash(firebase use *)",
+      "Bash(python \"c:\\\\tmp\\\\test_button.py\")",
+      "Bash(git checkout *)",
+      "Bash(git pull *)",
+      "Bash(git stash *)",
+      "Bash(git merge *)"
     ]
   }
 }

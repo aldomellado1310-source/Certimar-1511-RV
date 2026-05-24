@@ -1,7 +1,7 @@
 // Certimar RV — Service Worker
-// Estrategia: Cache First para assets estáticos, Network First para API/Firebase
-const CACHE_NAME    = 'certimar-rv-v2';
-const CACHE_ASSETS  = ['/', '/index.html', '/firebaseConfig.js', '/concesiones.js'];
+// Estrategia: Stale-While-Revalidate para assets estáticos, pass-through para API/Firebase
+const CACHE_NAME    = 'certimar-rv-v4';
+const CACHE_ASSETS  = ['/', '/index.html', '/firebaseConfig.js', '/concesiones.js', '/aquachile.js'];
 
 self.addEventListener('install', function(event) {
   event.waitUntil(
@@ -39,27 +39,21 @@ self.addEventListener('fetch', function(event) {
     return; // let browser handle normally
   }
 
-  // Cache First para assets estáticos
+  // Stale-While-Revalidate: responde con caché inmediatamente y actualiza en background
   event.respondWith(
-    caches.match(event.request).then(function(cached) {
-      if (cached) return cached;
-      return fetch(event.request).then(function(response) {
-        // Solo cachear respuestas válidas de mismo origen
-        if (
-          response.status === 200 &&
-          url.origin === self.location.origin
-        ) {
-          var cloned = response.clone();
-          caches.open(CACHE_NAME).then(function(cache) {
-            cache.put(event.request, cloned);
-          });
-        }
-        return response;
-      }).catch(function() {
-        // Offline fallback para navegación
-        if (event.request.mode === 'navigate') {
-          return caches.match('/index.html');
-        }
+    caches.open(CACHE_NAME).then(function(cache) {
+      return cache.match(event.request).then(function(cached) {
+        var fetchPromise = fetch(event.request).then(function(response) {
+          if (response.status === 200 && url.origin === self.location.origin) {
+            cache.put(event.request, response.clone());
+          }
+          return response;
+        }).catch(function() {
+          if (event.request.mode === 'navigate') {
+            return caches.match('/index.html');
+          }
+        });
+        return cached || fetchPromise;
       });
     })
   );
