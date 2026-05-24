@@ -1801,6 +1801,9 @@ var ADMIN_COL_DEFS = [
   { key: 'sector',            label: 'Sector',            sortField: 'sector',            defaultVisible: false },
   { key: 'resoluciones',      label: 'Resoluciones',      sortField: 'resoluciones',      defaultVisible: true  },
   { key: 'nombreResponsable', label: 'Responsable',       sortField: 'nombreResponsable', defaultVisible: true  },
+  { key: 'emailResponsable',  label: 'Correo Responsable',sortField: 'emailResponsable',  defaultVisible: false },
+  { key: 'estadoFirma',       label: 'Estado Firma',      sortField: 'estadoFirma',       defaultVisible: false },
+  { key: 'anEnsilaje',        label: 'A/N Ensilaje',      sortField: 'artefactoNaval',    defaultVisible: false },
   { key: 'estado',            label: 'Estado',            sortField: 'estado',            defaultVisible: true  },
   { key: 'certNombre',        label: 'Certificador',      sortField: 'certNombre',        defaultVisible: true  },
 ];
@@ -4449,7 +4452,7 @@ var _adminAll = [];
 var _adminFiltered = [];
 var _adminPage = 0;
 var _adminPageSize = 25;
-var _adminSort = { field: 'creadoEn', dir: 'desc' };
+var _adminSort = { field: 'fecha', dir: 'desc' };
 
 function cargarAdmin() {
   if (!currentUser || !currentUser.isAdmin) {
@@ -4546,6 +4549,9 @@ var ADMIN_EXTRACTORS = {
   sector:            function(r){ return '<td style="white-space:nowrap">'+esc(r.sector||'—')+'</td>'; },
   resoluciones:      function(r){ return '<td style="font-size:10px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(r.resoluciones||'—')+'</td>'; },
   nombreResponsable: function(r){ return '<td>'+esc(r.nombreResponsable||'—')+'</td>'; },
+  emailResponsable:  function(r){ return '<td>'+esc(r.emailResponsable||'—')+'</td>'; },
+  estadoFirma:       function(r){ return '<td>'+esc(r.estadoFirma||'—')+'</td>'; },
+  anEnsilaje:        function(r){ return '<td>'+esc(r.artefactoNaval||'—')+'</td>'; },
   estado:            function(r){
     var est=r.estado||'GUARDADO';
     var icon=est==='ENVIADO'?'✉️':est==='ARCHIVADO'?'📁':'💾';
@@ -4707,21 +4713,6 @@ function actualizarSortHeaders() {
     if (th.dataset.sort === _adminSort.field) {
       th.classList.add('sorted-' + _adminSort.dir);
     }
-  });
-}
-
-function initAdminSortListeners() {
-  document.querySelectorAll('.admin-table th[data-sort]').forEach(function(th) {
-    th.addEventListener('click', function() {
-      var field = th.dataset.sort;
-      if (_adminSort.field === field) {
-        _adminSort.dir = _adminSort.dir === 'asc' ? 'desc' : 'asc';
-      } else {
-        _adminSort.field = field;
-        _adminSort.dir = 'asc';
-      }
-      filtrarAdmin();
-    });
   });
 }
 
