@@ -3472,23 +3472,31 @@ function renderVencer(stats) {
 // =====================================================================
 function renderColumnSelector() {
   var visible = getVisibleHistColumns();
-  var groups = {};
-  HIST_COL_DEFS.forEach(function(c) {
-    if (!groups[c.grupo]) groups[c.grupo] = [];
-    groups[c.grupo].push(c);
+  var order   = getHistColOrder();
+  var orderedDefs = order.map(function(k){
+    return HIST_COL_DEFS.find(function(c){ return c.key === k; });
+  }).filter(Boolean);
+  // include any new defs not yet in stored order
+  HIST_COL_DEFS.forEach(function(c){
+    if (order.indexOf(c.key) === -1) orderedDefs.push(c);
   });
+
   var fixed = ['ID Registro','Fecha','Centro','Estado','Certificado','Acciones'];
   var html = '<div style="font-size:10px;color:#94a3b8;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">Siempre visibles</div>';
   html += '<div class="hist-col-fixed-chips">';
   fixed.forEach(function(f){ html += '<span class="hist-col-fixed-chip">'+esc(f)+'</span>'; });
-  html += '</div>';
-  html += '<div style="border-top:1px solid var(--border,#f1f5f9);margin-bottom:8px"></div>';
-  Object.keys(groups).forEach(function(grp) {
-    html += '<div class="hist-col-group-label">'+esc(grp)+'</div>';
-    groups[grp].forEach(function(c) {
-      var checked = visible.indexOf(c.key) !== -1 ? ' checked' : '';
-      html += '<label class="hist-col-option"><input type="checkbox" onchange="toggleHistColumn(\''+c.key+'\')"'+checked+'> '+esc(c.label)+'</label>';
-    });
+  html += '</div><div style="border-top:1px solid var(--border,#f1f5f9);margin:8px 0"></div>';
+  html += '<div style="font-size:10px;color:#94a3b8;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Opcionales</div>';
+
+  orderedDefs.forEach(function(c, i) {
+    var checked = visible.indexOf(c.key) !== -1 ? ' checked' : '';
+    var disUp   = i === 0 ? ' disabled' : '';
+    var disDown = i === orderedDefs.length - 1 ? ' disabled' : '';
+    html += '<div class="hist-col-row">' +
+      '<button class="hist-col-order-btn" onclick="moveHistColumn(\''+c.key+'\',\'up\')"'+disUp+'>↑</button>' +
+      '<button class="hist-col-order-btn" onclick="moveHistColumn(\''+c.key+'\',\'down\')"'+disDown+'>↓</button>' +
+      '<label class="hist-col-option"><input type="checkbox" onchange="toggleHistColumn(\''+c.key+'\')"'+checked+'> '+esc(c.label)+'</label>' +
+      '</div>';
   });
   document.getElementById('hist-col-dropdown').innerHTML = html;
 }
