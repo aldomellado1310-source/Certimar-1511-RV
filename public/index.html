@@ -3603,6 +3603,91 @@ function moveHistColumn(key, dir) {
   filtrarHistorico();
 }
 
+var _admColCloseHandler = null;
+
+function renderAdminColumnSelector() {
+  var visible = getVisibleAdminColumns();
+  var order   = getAdminColOrder();
+  var orderedDefs = order.map(function(k){
+    return ADMIN_COL_DEFS.find(function(c){ return c.key === k; });
+  }).filter(Boolean);
+  ADMIN_COL_DEFS.forEach(function(c){
+    if (order.indexOf(c.key) === -1) orderedDefs.push(c);
+  });
+
+  var fixed = ['N° Registro', 'Acciones'];
+  var html = '<div style="font-size:10px;color:#94a3b8;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">Siempre visibles</div>';
+  html += '<div class="hist-col-fixed-chips">';
+  fixed.forEach(function(f){ html += '<span class="hist-col-fixed-chip">'+esc(f)+'</span>'; });
+  html += '</div><div style="border-top:1px solid var(--border,#f1f5f9);margin:8px 0"></div>';
+  html += '<div style="font-size:10px;color:#94a3b8;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Opcionales</div>';
+
+  orderedDefs.forEach(function(c, i) {
+    var checked = visible.indexOf(c.key) !== -1 ? ' checked' : '';
+    var disUp   = i === 0 ? ' disabled' : '';
+    var disDown = i === orderedDefs.length - 1 ? ' disabled' : '';
+    html += '<div class="hist-col-row">' +
+      '<button class="hist-col-order-btn" onclick="moveAdminColumn(\''+c.key+'\',\'up\')"'+disUp+'>↑</button>' +
+      '<button class="hist-col-order-btn" onclick="moveAdminColumn(\''+c.key+'\',\'down\')"'+disDown+'>↓</button>' +
+      '<label class="hist-col-option"><input type="checkbox" onchange="toggleAdminColumn(\''+c.key+'\')"'+checked+'> '+esc(c.label)+'</label>' +
+      '</div>';
+  });
+  document.getElementById('adm-col-dropdown').innerHTML = html;
+}
+
+function toggleAdminColDropdown() {
+  var btn = document.getElementById('adm-col-btn');
+  var dd  = document.getElementById('adm-col-dropdown');
+  var isOpen = !dd.classList.contains('hidden');
+  if (isOpen) {
+    dd.classList.add('hidden');
+    btn.classList.remove('open');
+    return;
+  }
+  renderAdminColumnSelector();
+  dd.classList.remove('hidden');
+  btn.classList.add('open');
+  if (_admColCloseHandler) {
+    document.removeEventListener('click', _admColCloseHandler);
+    _admColCloseHandler = null;
+  }
+  setTimeout(function() {
+    _admColCloseHandler = function(e) {
+      var btnEl = document.getElementById('adm-col-btn');
+      var ddEl  = document.getElementById('adm-col-dropdown');
+      if (btnEl && ddEl && !btnEl.contains(e.target) && !ddEl.contains(e.target)) {
+        ddEl.classList.add('hidden');
+        btnEl.classList.remove('open');
+        document.removeEventListener('click', _admColCloseHandler);
+        _admColCloseHandler = null;
+      }
+    };
+    document.addEventListener('click', _admColCloseHandler);
+  }, 0);
+}
+
+function toggleAdminColumn(key) {
+  var visible = getVisibleAdminColumns();
+  var idx = visible.indexOf(key);
+  if (idx === -1) visible.push(key);
+  else visible.splice(idx, 1);
+  saveVisibleAdminColumns(visible);
+  renderAdminColumnSelector();
+  filtrarAdmin();
+}
+
+function moveAdminColumn(key, dir) {
+  var order = getAdminColOrder();
+  var idx = order.indexOf(key);
+  if (idx === -1) return;
+  var swapIdx = dir === 'up' ? idx - 1 : idx + 1;
+  if (swapIdx < 0 || swapIdx >= order.length) return;
+  var tmp = order[idx]; order[idx] = order[swapIdx]; order[swapIdx] = tmp;
+  saveAdminColOrder(order);
+  renderAdminColumnSelector();
+  filtrarAdmin();
+}
+
 // =====================================================================
 //  HISTÓRICO — carga desde Firestore
 // =====================================================================
