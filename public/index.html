@@ -2978,13 +2978,15 @@ async function generarPDF() {
   var _spacer = document.createElement('div');
   _spacer.style.cssText = 'height:160px;display:block;flex-shrink:0';
   el.appendChild(_spacer);
-  await new Promise(function(r){ requestAnimationFrame(r); });
+  await new Promise(function(r){ requestAnimationFrame(function(){ requestAnimationFrame(r); }); });
   canvas = await html2canvas(el, {
     scale: 1.5,
     backgroundColor: '#ffffff',
     useCORS: true,
     imageTimeout: 0,
-    logging: false
+    logging: false,
+    windowWidth : el.scrollWidth,
+    windowHeight: el.scrollHeight
   });
   var { jsPDF } = window.jspdf;
   var pdf    = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4', compress:true });
