@@ -2919,11 +2919,13 @@ async function generarPDF() {
   var replacements = [];
   var textareaReplacements = [];
   try {
-  el.querySelectorAll('input[type="text"], input:not([type])').forEach(function(inp) {
+  el.querySelectorAll('input[type="text"], input[type="email"], input:not([type])').forEach(function(inp) {
+    var cs = window.getComputedStyle(inp);
     var div = document.createElement('div');
     div.style.cssText =
       'width:100%;min-height:' + Math.max(inp.offsetHeight, 22) + 'px;' +
-      'padding:2px 4px;font-size:13px;font-family:inherit;' +
+      'padding:2px 4px;font-size:' + cs.fontSize + ';font-family:inherit;' +
+      'font-weight:' + cs.fontWeight + ';text-align:' + cs.textAlign + ';' +
       'word-break:break-word;white-space:normal;line-height:1.5;' +
       'color:' + (inp.value ? '#111827' : '#9ca3af') + ';box-sizing:border-box';
     div.textContent = inp.value || '—';
@@ -2969,20 +2971,22 @@ async function generarPDF() {
   var pdf    = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4', compress:true });
   // JPEG 88% = mucho más liviano que PNG y suficiente para impresión
   var imgData = canvas.toDataURL('image/jpeg', 0.88);
-  var pdfW    = pdf.internal.pageSize.getWidth();
-  var pdfH    = (canvas.height * pdfW) / canvas.width;
-
-  // Escalar para que quepa en una sola página A4
+  var pdfW  = pdf.internal.pageSize.getWidth();
   var pageH = pdf.internal.pageSize.getHeight();
-  var imgW = pdfW;
-  var imgH = (canvas.height / canvas.width) * pdfW;
-  if (imgH > pageH) {
-    imgH = pageH;
-    imgW = (canvas.width / canvas.height) * pageH;
+  var imgW  = pdfW;
+  var imgH  = (canvas.height / canvas.width) * pdfW;
+
+  if (imgH <= pageH) {
+    // Cabe en una sola página — centrar verticalmente
+    pdf.addImage(imgData, 'JPEG', 0, (pageH - imgH) / 2, imgW, imgH);
+  } else {
+    // Varias páginas: desplazar la imagen hacia arriba en cada página
+    var pages = Math.ceil(imgH / pageH);
+    for (var p = 0; p < pages; p++) {
+      if (p > 0) pdf.addPage();
+      pdf.addImage(imgData, 'JPEG', 0, -(p * pageH), imgW, imgH);
+    }
   }
-  var xOff = (pdfW - imgW) / 2;
-  var yOff = (pageH - imgH) / 2;
-  pdf.addImage(imgData, 'JPEG', xOff, yOff, imgW, imgH);
 
   if (appState.fotoB64) {
     pdf.addPage();
