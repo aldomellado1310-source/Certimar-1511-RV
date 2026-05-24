@@ -8,7 +8,8 @@
       "Bash(gcloud projects *)",
       "Bash(python3 -c ' *)",
       "Bash(clasp run *)",
-      "Bash(clasp open *)"
+      "Bash(clasp open *)",
+      "Bash(git -C \"c:\\\\Users\\\\aldon\\\\Documents\\\\Proyectos\\\\Certimar-1511-RV\" log --oneline -5)"
     ]
   }
 }

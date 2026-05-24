@@ -1,5 +1,5 @@
 // ============================================================
-//  CERTIMAR — Firebase Functions  (sin Google Sheets / Drive)
+//  CERTIMAR — Firebase Functions  v2
 // ============================================================
 'use strict';
 
@@ -49,6 +49,92 @@ async function callAppsScript(datos, urlCertificado, internalCopy) {
   return json;
 }
 
+// ─── Plantilla HTML del correo ────────────────────────────────────────────────
+function plantillaEmail(datos, urlCert) {
+  const resoluciones = buildResExt(datos.resoluciones) || '—';
+  const linkBtn = urlCert
+    ? `<a href="${urlCert}" style="display:inline-block;background:#003366;color:#fff;padding:13px 32px;text-decoration:none;border-radius:6px;font-size:14px;font-weight:700;font-family:Arial,sans-serif">Ver Certificado →</a>`
+    : '';
+
+  const filas = [
+    ['N° Registro',          `<strong style="color:#003366">${datos.nroRegistro || '—'}</strong>`],
+    ['Fecha',                 datos.fecha                     || '—'],
+    ['Centro de Cultivo',     datos.centroCultivo             || '—'],
+    ['N° Centro',             datos.nroCentro                 || '—'],
+    ['ACS',                   datos.acs                       || '—'],
+    ['Titular',               datos.titular                   || '—'],
+    ['Ubicación',             datos.ubicacion                 || '—'],
+    ['Región',                datos.region                    || '—'],
+    ['Sector',                datos.sector                    || '—'],
+    ['Fecha última siembra',  datos.fechaSiembra              || '—'],
+    ['Tamaño peces',          datos.tamanoPeces               || '—'],
+    ['Largo jaula (m)',       datos.jaulasLargo               || '—'],
+    ['Ancho jaula (m)',       datos.jaulasAncho               || '—'],
+    ['Cantidad jaulas',       datos.cantidadJaulas            || '—'],
+    ['Jaulas sembradas',      datos.cantidadJaulasSembradas   || '—'],
+    ['A/N Ensilaje',          datos.artefactoNaval            || '—'],
+    ['Norma aplicable',       resoluciones],
+    ['Latitud S',             datos.latitud                   || '—'],
+    ['Longitud W',            datos.longitud                  || '—'],
+    ['Norte',                 datos.norte                     || '—'],
+    ['Este',                  datos.este                      || '—'],
+    ['Responsable',           datos.nombreResponsable         || '—'],
+    ['Tipo Observación',      datos.tipoObservacion           || '—'],
+    ['Observaciones',         (datos.observaciones            || 'S/O').replace(/\n/g, '<br>')],
+    ['Certificador',          datos.nombreCertificador        || '—'],
+    ['N° Registro Cert.',     datos.rutCertificador           || '—']
+  ].map((r, i) => {
+    const bg = i % 2 === 0 ? '#ffffff' : '#f1f5f9';
+    return `<tr style="background:${bg}">
+      <td style="padding:9px 14px;font-weight:600;color:#64748b;font-size:13px;width:38%;border-bottom:1px solid #e2e8f0;font-family:Arial,sans-serif">${r[0]}</td>
+      <td style="padding:9px 14px;color:#1e293b;font-size:13px;border-bottom:1px solid #e2e8f0;font-family:Arial,sans-serif">${r[1]}</td>
+    </tr>`;
+  }).join('');
+
+  return `<!DOCTYPE html>
+<html lang="es">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#f1f5f9">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f1f5f9;padding:24px 0">
+  <tr><td align="center">
+  <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:10px;overflow:hidden;border:1px solid #e2e8f0">
+    <tr>
+      <td style="background:linear-gradient(135deg,#003366 0%,#005599 50%,#003366 100%);padding:28px 32px;border-bottom:4px solid #0099CC">
+        <div style="color:#ffffff;font-size:22px;font-weight:900;letter-spacing:3px;font-family:Arial,sans-serif">CERTIMAR</div>
+        <div style="color:rgba(180,220,255,.85);font-size:12px;font-family:Arial,sans-serif;margin-top:3px">Sistema de Certificación — Registro de Visita</div>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding:28px 32px 16px">
+        <p style="margin:0 0 12px;color:#1e293b;font-size:15px;font-family:Arial,sans-serif">
+          Estimado(a) <strong>${datos.nombreResponsable || 'Responsable'}</strong>,
+        </p>
+        <p style="margin:0;color:#475569;font-size:14px;line-height:1.65;font-family:Arial,sans-serif">
+          Adjunto encontrará el Registro de Visita oficial del centro
+          <strong style="color:#003366">${datos.centroCultivo}</strong>
+          con fecha <strong>${datos.fecha}</strong>, emitido por Certimar SpA.
+        </p>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding:8px 32px 24px">
+        <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e2e8f0;border-radius:8px;overflow:hidden">
+          ${filas}
+        </table>
+      </td>
+    </tr>
+    ${urlCert ? `<tr><td style="padding:4px 32px 28px;text-align:center">${linkBtn}</td></tr>` : ''}
+    <tr><td style="background:#1e293b;padding:18px 32px;text-align:center">
+      <p style="margin:0;color:#94a3b8;font-size:11px;font-family:Arial,sans-serif">
+        Certimar SpA · operaciones@certimar.cl · +56 9 6115 6322
+      </p>
+    </td></tr>
+  </table>
+  </td></tr>
+</table>
+</body></html>`;
+}
+
 // ════════════════════════════════════════════════════════════════════════════
 //  FUNCIÓN 1 — enviarNotificacion
 //  Envía correo + adjunto PDF + copia interna + actualiza Firestore
@@ -62,14 +148,47 @@ exports.enviarNotificacion = functions
   }
 
   const { datos, urlCertificado, pdfStoragePath } = data;
-  const destEmail = datos && datos.emailDestinatario;
+  const destEmail   = datos && datos.emailDestinatario;
+  const nroRegistro = datos && datos.nroRegistro;
 
   if (!destEmail) {
     throw new functions.https.HttpsError('invalid-argument', 'Email destinatario vacío.');
   }
+  if (!nroRegistro || /asignar/i.test(nroRegistro)) {
+    throw new functions.https.HttpsError('failed-precondition',
+      'El registro debe guardarse antes de enviar la notificación.');
+  }
+  // Verificar que el documento existe en Firestore antes de enviar el correo.
+  const snap = await db.collection('registros_visita').doc(nroRegistro).get();
+  if (!snap.exists) {
+    throw new functions.https.HttpsError('not-found',
+      `Registro ${nroRegistro} no encontrado en Firestore.`);
+  }
 
   await callAppsScript(datos, urlCertificado || '', context.auth.token.email);
   functions.logger.info('Correo enviado a:', destEmail, '| Registro:', datos.nroRegistro);
+
+  // Copia interna al equipo certificador (lista fija)
+  const COPIAS_CERTIFICADOR = [
+    'operaciones@certimar.cl',
+    'eflores@certimar.cl',
+    'informes@certimar.cl'
+  ];
+  const destLower = (destEmail || '').toLowerCase();
+  const copias = COPIAS_CERTIFICADOR.filter(e => e.toLowerCase() !== destLower);
+  if (copias.length) {
+    try {
+      await transporter.sendMail({
+        from       : mailOpts.from,
+        to         : copias.join(', '),
+        subject    : `[COPIA INTERNA] ${asunto}`,
+        html       : htmlBody,
+        attachments: mailOpts.attachments || []
+      });
+    } catch (eCopia) {
+      functions.logger.warn('Copia interna error (no fatal):', eCopia.message);
+    }
+  }
 
   // Actualizar estado en Firestore
   try {

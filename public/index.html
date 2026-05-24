@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>Registro de Visita – Certimar</title>
 <link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
@@ -17,7 +20,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-functions-compat.js"></script>
 <!-- Configuración Firebase del proyecto -->
-<script src="firebaseConfig.js"></script>
+<script src="firebaseConfig.js?v=20260522"></script>
 <style>
 /* ===================== TEMA: VARIABLES CSS ===================== */
 :root {
@@ -307,6 +310,12 @@ input::placeholder,textarea::placeholder{color:var(--text-muted)}
 [data-theme="dark"] .badge-red {background:rgba(220,38,38,.18);color:#f87171;border-color:rgba(248,113,113,.3)}
 /* ---- Barra búsqueda histórico dark mode ---- */
 [data-theme="dark"] .hist-search-bar{background:var(--surface-2);border-color:var(--border)}
+[data-theme="dark"] #hist-col-dropdown{background:var(--surface);border-color:var(--border)}
+[data-theme="dark"] .hist-col-fixed-chip{background:var(--surface-2);color:var(--text-sec)}
+[data-theme="dark"] .hist-col-option{color:var(--text-pri)}
+[data-theme="dark"] .hist-col-group-label{color:var(--accent,#0099CC)}
+[data-theme="dark"] .hist-col-btn{background:var(--accent)}
+[data-theme="dark"] .hist-col-btn:hover{background:#0ea5e9}
 /* ---- Botones acción tabla dark mode ---- */
 [data-theme="dark"] .admin-action-btn{background:var(--surface-2);border-color:var(--border-2);color:var(--text-sec)}
 [data-theme="dark"] .admin-action-btn:hover{background:var(--surface-3);color:var(--text-pri)}
@@ -323,20 +332,42 @@ input::placeholder,textarea::placeholder{color:var(--text-muted)}
 
 /* ===================== ADMIN VIEW ===================== */
 #view-admin{background:var(--bg);min-height:calc(100vh - 64px)}
-.admin-header{max-width:1200px;margin:0 auto;padding:28px 24px 0;display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
+.admin-header{max-width:1440px;margin:0 auto;padding:28px 32px 0;display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
 .admin-header h1{font-size:24px;font-weight:800;color:var(--text-pri)}
 .admin-header p{font-size:13px;color:var(--text-sec);margin-top:4px}
 .admin-badge{background:#7c3aed;color:white;font-size:10px;font-weight:700;padding:2px 8px;border-radius:9999px;text-transform:uppercase;letter-spacing:.5px;vertical-align:middle;margin-left:8px}
-.admin-stats{max-width:1200px;margin:20px auto 0;padding:0 24px;display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px}
-.admin-stat{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 18px;box-shadow:var(--shadow-sm)}
-.admin-stat-val{font-size:28px;font-weight:800;color:var(--brand)}
-.admin-stat-lbl{font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-top:2px}
-.admin-filters{max-width:1200px;margin:16px auto 0;padding:0 24px;background:var(--surface);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.admin-stats{max-width:1440px;margin:20px auto 0;padding:0 32px;display:grid;grid-template-columns:repeat(5,1fr);gap:16px}
+.admin-stat{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px 22px;box-shadow:var(--shadow-sm)}
+.admin-stat-val{font-size:32px;font-weight:800;color:var(--brand)}
+.admin-stat-lbl{font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-top:4px}
+.admin-stat.primary{background:var(--brand);border-color:var(--brand)}
+.admin-stat.primary .admin-stat-val{color:white}
+.admin-stat.primary .admin-stat-lbl{color:rgba(255,255,255,.7)}
+.admin-stat.success .admin-stat-val{color:#059669}
+.admin-stat.warning .admin-stat-val{color:#d97706}
+.adm-search-wrap{position:relative;flex:1;min-width:260px}
+.adm-search-wrap>svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text-muted);pointer-events:none}
+.adm-search-wrap .filtro-input{padding-left:32px;width:100%}
+.adm-date-group{display:flex;align-items:center;gap:6px;flex-shrink:0}
+.adm-date-sep{font-size:11px;color:var(--text-muted)}
+.adm-filters-row{display:flex;gap:10px;align-items:center}
+.adm-filters-row+.adm-filters-row{margin-top:10px}
+.adm-filters-label{display:flex;align-items:center;gap:6px;margin-bottom:12px}
+.adm-filters-label span{font-size:11px;font-weight:700;color:#1d4ed8;text-transform:uppercase;letter-spacing:.6px}
+.adm-filters-label svg{color:#1d4ed8}
+.admin-filters{max-width:1440px;margin:16px auto 0;padding:0 32px;background:var(--surface);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
 .admin-filters-inner{padding:14px 0;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-.admin-table-wrap{margin:20px 24px 40px;padding:0}
+.admin-table-wrap{margin:16px 0 40px;padding:0 16px}
+[data-theme="dark"] .adm-filters-card{background:rgba(29,78,216,.08);border-color:rgba(96,165,250,.3)}
+[data-theme="dark"] .adm-filters-label span,[data-theme="dark"] .adm-filters-label svg{color:#60a5fa}
 .admin-table-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;box-shadow:var(--shadow-sm)}
 .admin-table{width:100%;border-collapse:collapse;font-size:12px}
 .admin-table th{background:var(--surface-2);color:var(--text-sec);font-size:10px;text-transform:uppercase;letter-spacing:.6px;padding:10px 12px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap;font-weight:700}
+.admin-table th[data-sort]{cursor:pointer;user-select:none}
+.admin-table th[data-sort]:hover{background:var(--surface-3)}
+.admin-table th .sort-ind{opacity:.35;margin-left:3px;font-size:9px;font-style:normal}
+.admin-table th.sorted-asc .sort-ind::before{content:'▲';opacity:1}
+.admin-table th.sorted-desc .sort-ind::before{content:'▼';opacity:1}
 .admin-table td{padding:11px 12px;border-bottom:1px solid var(--border);color:var(--text-pri);vertical-align:middle}
 .admin-table tr:last-child td{border-bottom:none}
 .admin-table tr:hover td{background:var(--surface-2)}
@@ -497,7 +528,7 @@ video{width:100%;border-radius:8px;background:black}
 #view-historico{padding:28px 24px}
 .hist-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px;flex-wrap:wrap;gap:12px}
 .hist-header h1{font-size:26px;font-weight:700;color:#003366}
-.hist-table-wrap{background:white;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden}
+.hist-table-wrap{background:white;border:1px solid #e2e8f0;border-radius:12px;overflow:visible}
 .hist-search-bar{padding:14px 16px;border-bottom:1px solid #f1f5f9;display:flex;justify-content:space-between;align-items:center;background:#f8fafc;gap:12px;flex-wrap:wrap}
 .hist-search{padding:8px 12px 8px 36px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;background:white url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%2394a3b8' stroke-width='2' viewBox='0 0 24 24'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E") no-repeat 10px center;outline:none;width:280px;transition:.2s}
 .hist-search:focus{border-color:#0099CC;box-shadow:0 0 0 3px rgba(0,153,204,.12)}
@@ -509,6 +540,16 @@ video{width:100%;border-radius:8px;background:black}
 .hist-table .link-cert:hover{text-decoration:underline}
 .hist-empty{text-align:center;padding:48px;color:#94a3b8;font-size:14px}
 .hist-footer{padding:12px 16px;border-top:1px solid #f1f5f9;background:#f8fafc;font-size:12px;color:#64748b}
+.hist-col-btn{height:32px;background:#0099CC;color:white;border:none;border-radius:8px;padding:0 12px;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:5px;white-space:nowrap;transition:.2s}
+.hist-col-btn:hover{background:#007aaa}
+.hist-col-btn.open{border-bottom-left-radius:0;border-bottom-right-radius:0}
+#hist-col-dropdown{position:absolute;top:100%;right:0;width:220px;background:white;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 8px 8px;padding:12px;box-shadow:0 8px 24px rgba(0,0,0,.12);z-index:1000;max-height:400px;overflow-y:auto}
+#hist-col-dropdown.hidden{display:none}
+.hist-col-fixed-chips{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px}
+.hist-col-fixed-chip{background:#f1f5f9;color:#64748b;border-radius:4px;padding:2px 7px;font-size:10px}
+.hist-col-group-label{font-size:10px;color:#0099CC;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin:8px 0 5px}
+.hist-col-option{display:flex;align-items:center;gap:6px;color:#374151;font-size:12px;margin-bottom:5px;cursor:pointer}
+.hist-col-option input[type=checkbox]{cursor:pointer}
 /* Modal */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;display:flex;align-items:center;justify-content:center;padding:16px}
 .modal-box{background:white;border-radius:16px;max-width:520px;width:100%;max-height:90vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.2)}
@@ -605,9 +646,12 @@ video{width:100%;border-radius:8px;background:black}
 
   /* --- Admin --- */
   .admin-header{padding:16px 12px 0;flex-direction:column}
-  .admin-stats{padding:0 12px}
-  .admin-table-wrap{margin:12px 8px 32px;padding:0;overflow-x:auto}
+  .admin-stats{padding:0 12px;grid-template-columns:repeat(2,1fr)}
+  .admin-table-wrap{padding:0 8px;margin:12px 0 32px;overflow-x:auto}
   .admin-table{min-width:700px}
+  .adm-filters-row{flex-wrap:wrap}
+  .adm-date-group{width:100%}
+  .adm-date-group .filtro-input{flex:1;width:auto}
   .hist-table-wrap{overflow-x:auto}
   .hist-table{min-width:600px}
 
@@ -635,7 +679,8 @@ video{width:100%;border-radius:8px;background:black}
   .btn-archive{align-self:flex-end}
 }
 </style>
-<script src="concesiones.js"></script>
+<script src="concesiones.js?v=20260522"></script>
+<script src="aquachile.js?v=20260522"></script>
 </head>
 <body>
 
@@ -662,6 +707,14 @@ video{width:100%;border-radius:8px;background:black}
         <input type="text" id="cd-cc-input" class="completion-email-input" placeholder="CC (opcional)" style="font-size:11px;padding:6px 10px">
         <input type="text" id="cd-cco-input" class="completion-email-input" placeholder="CCO (oculto)" style="font-size:11px;padding:6px 10px">
       </div>
+      <div style="margin-top:10px;padding:8px 12px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;text-align:left">
+        <div style="font-size:11px;font-weight:700;color:#1d4ed8;margin-bottom:3px">📋 Copias internas automáticas</div>
+        <div style="font-size:11px;color:#1e40af;line-height:1.6">
+          Se enviará copia de este registro a:<br>
+          <strong>operaciones@certimar.cl · eflores@certimar.cl · informes@certimar.cl</strong>
+        </div>
+      </div>
+      <div id="cd-mail-result" style="display:none;margin-top:10px;padding:10px 12px;border-radius:8px;text-align:left;font-size:12px;line-height:1.6"></div>
     </div>
     <div class="completion-actions">
       <button class="completion-btn primary" onclick="completionGo('dashboard')">
@@ -818,6 +871,7 @@ video{width:100%;border-radius:8px;background:black}
         </button>
       </div>
       <div class="nav-right">
+        <span id="nav-version" style="font-size:10px;color:var(--text-muted);opacity:.55;letter-spacing:.3px;user-select:none"></span>
         <button class="btn-theme" onclick="toggleTheme()" id="btn-theme" title="Cambiar tema">🌙</button>
         <div class="user-chip hidden" id="user-chip">
           <div class="user-avatar" id="user-avatar">U</div>
@@ -1065,12 +1119,48 @@ video{width:100%;border-radius:8px;background:black}
               <td colspan="3"><input type="text" id="r-ubicacion" class="doc-input" placeholder="—"></td>
             </tr>
             <tr>
+              <td class="label-cell">Región</td>
+              <td>
+                <select id="r-region" class="doc-input" onchange="onRegionChange(); checkChecklist()">
+                  <option value="">—</option>
+                  <option value="X">X</option>
+                  <option value="XI">XI</option>
+                  <option value="XII">XII</option>
+                </select>
+              </td>
+              <td class="label-cell">Sector</td>
+              <td>
+                <select id="r-sector" class="doc-input" onchange="onSectorChange(); checkChecklist()">
+                  <option value="">—</option>
+                </select>
+                <input type="text" id="r-sectorOtro" class="doc-input"
+                       placeholder="Especificar sector" style="display:none;margin-top:6px"
+                       oninput="checkChecklist()">
+              </td>
+            </tr>
+            <tr>
               <td class="label-cell">Fecha última siembra</td>
               <td colspan="3"><input type="text" id="r-fechaSiembra" class="doc-input" placeholder="—" oninput="checkChecklist()"></td>
             </tr>
             <tr>
               <td class="label-cell">Tamaño peces</td>
               <td colspan="3"><input type="text" id="r-tamanoPeces" class="doc-input" placeholder="—" oninput="checkChecklist()"></td>
+            </tr>
+            <tr>
+              <td class="label-cell">Largo jaula (m)</td>
+              <td><input type="text" id="r-jaulasLargo" class="doc-input" placeholder="—" oninput="checkChecklist()"></td>
+              <td class="label-cell">Ancho jaula (m)</td>
+              <td><input type="text" id="r-jaulasAncho" class="doc-input" placeholder="—" oninput="checkChecklist()"></td>
+            </tr>
+            <tr>
+              <td class="label-cell">Cantidad jaulas</td>
+              <td><input type="text" id="r-cantidadJaulas" class="doc-input" placeholder="Total" oninput="checkChecklist()"></td>
+              <td class="label-cell">Jaulas sembradas</td>
+              <td><input type="text" id="r-cantidadJaulasSembradas" class="doc-input" placeholder="N°" oninput="checkChecklist()"></td>
+            </tr>
+            <tr>
+              <td class="label-cell">A/N Ensilaje</td>
+              <td colspan="3"><input type="text" id="r-artefactoNaval" class="doc-input" placeholder="—"></td>
             </tr>
           </tbody>
         </table>
@@ -1276,7 +1366,7 @@ video{width:100%;border-radius:8px;background:black}
     <div class="hist-table-wrap">
       <div class="hist-search-bar">
         <input type="text" id="hist-search" class="hist-search" placeholder="Buscar por centro, titular o ID..." oninput="filtrarHistorico()">
-        <div style="display:flex;gap:8px">
+        <div style="display:flex;gap:8px;align-items:center">
           <input type="date" id="hist-desde" class="filtro-input" style="width:140px" onchange="filtrarHistorico()">
           <input type="date" id="hist-hasta" class="filtro-input" style="width:140px" onchange="filtrarHistorico()">
           <select id="hist-estado" class="filtro-input" style="width:130px" onchange="filtrarHistorico()">
@@ -1285,18 +1375,22 @@ video{width:100%;border-radius:8px;background:black}
             <option value="ENVIADO">Enviado</option>
             <option value="ARCHIVADO">Archivado</option>
           </select>
+          <div style="position:relative">
+            <button id="hist-col-btn" class="hist-col-btn" onclick="toggleHistColDropdown()">⊞ Columnas ▾</button>
+            <div id="hist-col-dropdown" class="hidden"></div>
+          </div>
         </div>
       </div>
       <div style="overflow-x:auto">
         <table class="hist-table">
-          <thead>
+          <thead id="hist-thead">
             <tr>
               <th>ID Registro</th><th>Fecha</th><th>Centro</th><th>Titular</th>
               <th>Res. Ext.</th><th>Tipo Obs.</th><th>Responsable</th><th>Estado</th><th>Certificado</th><th>Acciones</th>
             </tr>
           </thead>
           <tbody id="hist-tbody">
-            <tr><td colspan="10" class="hist-empty">
+            <tr><td colspan="20" class="hist-empty">
               <div class="spinner dark" style="margin:0 auto 8px"></div>
               Cargando registros...
             </td></tr>
@@ -1315,6 +1409,10 @@ video{width:100%;border-radius:8px;background:black}
         <p id="admin-header-sub">Gestión global de todos los registros de visita</p>
       </div>
       <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <button class="btn-action" style="border-color:#d97706;color:#d97706;font-size:12px;padding:7px 14px" onclick="normalizarNombresCentros(this)" title="Convierte todos los nombres de centros a MAYÚSCULAS en Firestore">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+          Normalizar Nombres
+        </button>
         <button class="btn-action" style="border-color:var(--border);color:var(--text-sec);font-size:12px;padding:7px 14px" onclick="exportarCSV()">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7,10 12,15 17,10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           Exportar CSV
@@ -1329,7 +1427,7 @@ video{width:100%;border-radius:8px;background:black}
 
     <!-- Stats globales -->
     <div class="admin-stats" id="admin-stats-grid">
-      <div class="admin-stat">
+      <div class="admin-stat primary">
         <div class="admin-stat-val" id="adm-total">—</div>
         <div class="admin-stat-lbl">Total Registros</div>
       </div>
@@ -1341,32 +1439,58 @@ video{width:100%;border-radius:8px;background:black}
         <div class="admin-stat-val" id="adm-cert">—</div>
         <div class="admin-stat-lbl">Certificadores Activos</div>
       </div>
-      <div class="admin-stat">
+      <div class="admin-stat success">
         <div class="admin-stat-val" id="adm-enviados">—</div>
         <div class="admin-stat-lbl">Notificados</div>
       </div>
-      <div class="admin-stat">
+      <div class="admin-stat warning">
         <div class="admin-stat-val" id="adm-pendientes">—</div>
         <div class="admin-stat-lbl">Sin Notificar</div>
       </div>
     </div>
 
     <!-- Filtros admin -->
-    <div style="max-width:1200px;margin:16px auto 0;padding:0 24px">
-      <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 18px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">
-        <input type="text" id="adm-search" class="filtro-input" placeholder="🔍  Buscar por centro, titular, N° registro, certificador..." style="flex:1;min-width:220px" oninput="filtrarAdmin()">
-        <input type="date" id="adm-desde" class="filtro-input" style="width:145px" onchange="filtrarAdmin()">
-        <input type="date" id="adm-hasta" class="filtro-input" style="width:145px" onchange="filtrarAdmin()">
-        <select id="adm-estado" class="filtro-input" style="width:140px" onchange="filtrarAdmin()">
-          <option value="">Todos los estados</option>
-          <option value="GUARDADO">💾 Guardado</option>
-          <option value="ENVIADO">✉️ Enviado</option>
-          <option value="ARCHIVADO">📁 Archivado</option>
-        </select>
-        <select id="adm-cert-filter" class="filtro-input" style="width:160px" onchange="filtrarAdmin()">
-          <option value="">Todos los cert.</option>
-        </select>
-        <button class="btn-action" style="border-color:var(--border);color:var(--text-sec);font-size:12px;padding:7px 12px;white-space:nowrap" onclick="limpiarFiltrosAdmin()">✕ Limpiar</button>
+    <div style="margin:16px 0 0;padding:0 16px">
+      <div class="adm-filters-card" style="background:#eef4ff;border:1.5px solid #93c5fd;border-radius:12px;padding:16px 20px">
+        <div class="adm-filters-label">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="22,3 2,3 10,12.46 10,19 14,21 14,12.46"/></svg>
+          <span>Filtrar registros</span>
+        </div>
+        <div class="adm-filters-row">
+          <div class="adm-search-wrap">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            <input type="text" id="adm-search" class="filtro-input" placeholder="Buscar por centro, titular, N° registro, certificador..." style="width:100%" oninput="filtrarAdmin()">
+          </div>
+          <div class="adm-date-group">
+            <input type="date" id="adm-desde" class="filtro-input" style="width:148px" onchange="filtrarAdmin()">
+            <span class="adm-date-sep">—</span>
+            <input type="date" id="adm-hasta" class="filtro-input" style="width:148px" onchange="filtrarAdmin()">
+          </div>
+        </div>
+        <div class="adm-filters-row">
+          <select id="adm-estado" class="filtro-input" style="flex:1" onchange="filtrarAdmin()">
+            <option value="">Todos los estados</option>
+            <option value="GUARDADO">Guardado</option>
+            <option value="ENVIADO">Enviado</option>
+            <option value="ARCHIVADO">Archivado</option>
+          </select>
+          <select id="adm-region" class="filtro-input" style="flex:1" onchange="onAdmRegionChange(); filtrarAdmin()">
+            <option value="">Todas las regiones</option>
+            <option value="X">X</option>
+            <option value="XI">XI</option>
+            <option value="XII">XII</option>
+          </select>
+          <select id="adm-sector" class="filtro-input" style="flex:1" onchange="filtrarAdmin()">
+            <option value="">Todos los sectores</option>
+          </select>
+          <select id="adm-cert-filter" class="filtro-input" style="flex:1" onchange="filtrarAdmin()">
+            <option value="">Todos los certificadores</option>
+          </select>
+          <button class="btn-action" style="border-color:#3b82f6;color:#1d4ed8;font-size:12px;padding:8px 14px;white-space:nowrap;flex-shrink:0;font-weight:600" onclick="limpiarFiltrosAdmin()">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
+            Limpiar filtros
+          </button>
+        </div>
       </div>
     </div>
 
@@ -1377,22 +1501,24 @@ video{width:100%;border-radius:8px;background:black}
           <table class="admin-table">
             <thead>
               <tr>
-                <th>N° Registro</th>
-                <th>Fecha</th>
-                <th>Centro de Cultivo</th>
-                <th>N° Centro</th>
-                <th>Titular</th>
-                <th>ACS</th>
-                <th>Resoluciones</th>
-                <th>Responsable</th>
-                <th>Estado</th>
-                <th>Certificador</th>
+                <th data-sort="nroRegistro">N° Registro <span class="sort-ind"></span></th>
+                <th data-sort="fecha">Fecha <span class="sort-ind"></span></th>
+                <th data-sort="centroCultivo">Centro de Cultivo <span class="sort-ind"></span></th>
+                <th data-sort="nroCentro">N° Centro <span class="sort-ind"></span></th>
+                <th data-sort="titular">Titular <span class="sort-ind"></span></th>
+                <th data-sort="acs">ACS <span class="sort-ind"></span></th>
+                <th data-sort="region">Región <span class="sort-ind"></span></th>
+                <th data-sort="sector">Sector <span class="sort-ind"></span></th>
+                <th data-sort="resoluciones">Resoluciones <span class="sort-ind"></span></th>
+                <th data-sort="nombreResponsable">Responsable <span class="sort-ind"></span></th>
+                <th data-sort="estado">Estado <span class="sort-ind"></span></th>
+                <th data-sort="certNombre">Certificador <span class="sort-ind"></span></th>
                 <th>Acciones</th>
               </tr>
             </thead>
             <tbody id="adm-tbody">
-              <tr><td colspan="11" class="admin-empty">
-                <div style="font-size:32px;margin-bottom:10px">🔄</div>
+              <tr><td colspan="13" class="admin-empty">
+                <div class="spinner dark" style="margin:0 auto 10px"></div>
                 Cargando registros…
               </td></tr>
             </tbody>
@@ -1629,15 +1755,96 @@ video{width:100%;border-radius:8px;background:black}
 // =====================================================================
 //  ESTADO GLOBAL
 // =====================================================================
+var APP_VERSION = 'v1.0.3';
+
 var appState = { saved: false, sent: false, pdfB64: null, fotoB64: null };
 var chartMes = null, chartRes = null;
 var historicData = [];
 var localRecords = [];
+var HIST_COL_DEFS = [
+  { key: 'titular',           label: 'Titular',              grupo: 'Identificación',   defaultVisible: true  },
+  { key: 'nroCentro',         label: 'N° Centro',            grupo: 'Identificación',   defaultVisible: false },
+  { key: 'acs',               label: 'ACS',                  grupo: 'Identificación',   defaultVisible: false },
+  { key: 'area',              label: 'Área',                 grupo: 'Datos del centro', defaultVisible: false },
+  { key: 'fechaSiembra',      label: 'Fecha última siembra', grupo: 'Datos del centro', defaultVisible: false },
+  { key: 'tamanioPeces',      label: 'Tamaño peces',         grupo: 'Datos del centro', defaultVisible: false },
+  { key: 'ubicacion',         label: 'Ubicación',            grupo: 'Datos del centro', defaultVisible: false },
+  { key: 'latLong',           label: 'Lat / Long',           grupo: 'Datos del centro', defaultVisible: false },
+  { key: 'resExt',            label: 'Res. Externa',         grupo: 'Visita',           defaultVisible: true  },
+  { key: 'tipoObs',           label: 'Tipo Observación',     grupo: 'Visita',           defaultVisible: true  },
+  { key: 'observaciones',     label: 'Observaciones',        grupo: 'Visita',           defaultVisible: false },
+  { key: 'responsable',       label: 'Responsable',          grupo: 'Visita',           defaultVisible: true  },
+  { key: 'correoResponsable', label: 'Correo Responsable',   grupo: 'Visita',           defaultVisible: false },
+  { key: 'estadoFirma',       label: 'Estado Firma',         grupo: 'Visita',           defaultVisible: false },
+];
+var _histColCloseHandler = null;
+
+function getVisibleHistColumns() {
+  try {
+    var saved = localStorage.getItem('certimar_hist_columns');
+    if (saved) return JSON.parse(saved);
+  } catch(e) {}
+  return HIST_COL_DEFS.filter(function(c){ return c.defaultVisible; }).map(function(c){ return c.key; });
+}
+
+function saveVisibleHistColumns(keys) {
+  localStorage.setItem('certimar_hist_columns', JSON.stringify(keys));
+}
 var isFirmaDrawing = false;
 var firmaClienteHasData = false;
 var cameraStream = null;
 var currentUser  = null;   // { email, name, isAdmin }
 var _db = null;            // instancia Firestore
+
+// ─── Mapeo Región → Sectores ─────────────────────────────────────────────────
+var SECTORES_POR_REGION = {
+  'X':   ['Melinka'],
+  'XI':  ['Aysén', 'Cisnes'],
+  'XII': ['Natales', 'Punta Arenas']
+};
+
+function onRegionChange() {
+  var region = get('r-region');
+  var sel = document.getElementById('r-sector');
+  sel.innerHTML = '<option value="">—</option>';
+  document.getElementById('r-sectorOtro').style.display = 'none';
+  document.getElementById('r-sectorOtro').value = '';
+  sel.value = '';
+  if (region && SECTORES_POR_REGION[region]) {
+    SECTORES_POR_REGION[region].forEach(function(s) {
+      var opt = document.createElement('option');
+      opt.value = s; opt.textContent = s;
+      sel.appendChild(opt);
+    });
+    var optOtro = document.createElement('option');
+    optOtro.value = '__OTRO__'; optOtro.textContent = 'Otro…';
+    sel.appendChild(optOtro);
+  }
+}
+
+function onSectorChange() {
+  var val = get('r-sector');
+  document.getElementById('r-sectorOtro').style.display = (val === '__OTRO__') ? '' : 'none';
+}
+
+function resolveSector() {
+  var v = get('r-sector');
+  return (v === '__OTRO__') ? get('r-sectorOtro') : v;
+}
+
+function restoreRegionSector(region, sector) {
+  set('r-region', region || '');
+  onRegionChange();
+  if (!sector) return;
+  var validos = SECTORES_POR_REGION[region] || [];
+  if (validos.indexOf(sector) >= 0) {
+    set('r-sector', sector);
+  } else {
+    set('r-sector', '__OTRO__');
+    onSectorChange();
+    document.getElementById('r-sectorOtro').value = sector;
+  }
+}
 
 // =====================================================================
 //  FIREBASE — INIT
@@ -1667,13 +1874,17 @@ function dbCol() {
 async function callFn(name, payload) {
   var user = firebase.auth().currentUser;
   if (!user) throw new Error('No autenticado');
-  var idToken = await user.getIdToken();
+  var idToken = await user.getIdToken(true);
   var resp = await fetch('/api/' + name, {
     method : 'POST',
     headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + idToken },
     body   : JSON.stringify({ data: payload })
   });
-  var json = await resp.json();
+  var text = await resp.text();
+  var json;
+  try { json = JSON.parse(text); } catch(e) {
+    throw new Error('Error del servidor (HTTP ' + resp.status + '). Intenta nuevamente.');
+  }
   if (json.error) {
     var err = new Error(json.error.message || json.error.status || 'Error en función');
     err.code = json.error.status;
@@ -1723,10 +1934,7 @@ function enviarMailQueue(payload) {
 // =====================================================================
 //  FIREBASE — GUARDAR REGISTRO
 // =====================================================================
-async function fbGuardarRegistro(datos, urlCertificado, urlFoto) {
-  var db = initFirebase();
-  if (!db) throw new Error('Firebase no disponible');
-
+function buildDocData(datos, nroRegistro, urlCertificado, urlFoto) {
   var resArray = [];
   if (datos.resoluciones) {
     if (datos.resoluciones.cicE2)        resArray.push('1821-CIC E2');
@@ -1735,17 +1943,23 @@ async function fbGuardarRegistro(datos, urlCertificado, urlFoto) {
     if (datos.resoluciones.res1511)      resArray.push('1511');
     if (datos.resoluciones.desinfeccion) resArray.push('DESINFECCIÓN');
   }
-
-  var docData = {
-    nroRegistro      : datos.nroRegistro,
+  return {
+    nroRegistro      : nroRegistro,
     fecha            : datos.fecha,
-    centroCultivo    : datos.centroCultivo,
+    centroCultivo    : (datos.centroCultivo || '').toUpperCase(),
     nroCentro        : datos.nroCentro,
     acs              : datos.acs,
     titular          : datos.titular,
     ubicacion        : datos.ubicacion    || '',
+    region           : datos.region       || '',
+    sector           : datos.sector       || '',
     fechaSiembra     : datos.fechaSiembra || '',
     tamanoPeces      : datos.tamanoPeces  || '',
+    jaulasLargo             : datos.jaulasLargo             || '',
+    jaulasAncho             : datos.jaulasAncho             || '',
+    cantidadJaulas          : datos.cantidadJaulas          || '',
+    cantidadJaulasSembradas : datos.cantidadJaulasSembradas || '',
+    artefactoNaval   : datos.artefactoNaval  || '',
     latitud          : datos.latitud      || '',
     longitud         : datos.longitud     || '',
     norte            : datos.norte        || '',
@@ -1761,13 +1975,13 @@ async function fbGuardarRegistro(datos, urlCertificado, urlFoto) {
     certNombre       : currentUser ? currentUser.name  : '',
     creadoEn         : firebase.firestore.FieldValue.serverTimestamp()
   };
+}
 
-  // Solo incluir URLs si tienen valor, para no sobreescribir con vacío al editar
-  if (urlCertificado) docData.urlCertificado = urlCertificado;
-  if (urlFoto)        docData.urlFoto        = urlFoto;
-
-  // merge:true preserva campos existentes (urlFirmaCliente, pdfStoragePath, etc.) al editar
-  await db.collection('registros_visita').doc(datos.nroRegistro).set(docData, { merge: true });
+async function fbGuardarRegistro(datos, urlCertificado, urlFoto) {
+  var db = initFirebase();
+  if (!db) throw new Error('Firebase no disponible');
+  var docData = buildDocData(datos, datos.nroRegistro, urlCertificado, urlFoto);
+  await db.collection('registros_visita').doc(datos.nroRegistro).set(docData);
   return docData;
 }
 
@@ -1815,17 +2029,24 @@ async function fbObtenerTodos(filtros) {
 // =====================================================================
 //  FIREBASE — NÚMERO CORRELATIVO (atómico con Firestore counter)
 // =====================================================================
-async function fbGenerarNroRegistro() {
+// Reserva atómica del correlativo + creación del documento en una sola
+// transacción. Si la transacción falla, ni el contador se incrementa ni el doc
+// queda creado → no se generan huecos en la secuencia RV-YYYY-NNNN.
+async function fbCrearRegistroAtomico(datos) {
   var db = initFirebase();
-  if (!db) return 'RV-' + Date.now();
-  var cntRef = db.collection('meta').doc('contador');
-  var newNum = await db.runTransaction(async function(tx) {
-    var doc = await tx.get(cntRef);
-    var n   = doc.exists ? (doc.data().count + 1) : 1;
+  if (!db) throw new Error('Firebase no disponible');
+  var year   = new Date().getFullYear();
+  var cntRef = db.collection('meta').doc('contador_' + year);
+
+  return await db.runTransaction(async function(tx) {
+    var cnt = await tx.get(cntRef);
+    var n   = cnt.exists ? (cnt.data().count + 1) : 1;
+    var nro = 'RV-' + year + '-' + String(n).padStart(4, '0');
+    var docData = buildDocData(datos, nro, '', '');
     tx.set(cntRef, { count: n });
-    return n;
+    tx.set(db.collection('registros_visita').doc(nro), docData);
+    return nro;
   });
-  return 'RV-' + String(newNum).padStart(4, '0');
 }
 
 // =====================================================================
@@ -1872,6 +2093,8 @@ async function fbObtenerEstadisticas() {
 // =====================================================================
 document.addEventListener('DOMContentLoaded', function() {
   document.getElementById('login-year').textContent = new Date().getFullYear();
+  document.getElementById('login-version').textContent = APP_VERSION;
+  document.getElementById('nav-version').textContent   = APP_VERSION + ' · Micorriza';
   initFirebase();
   loadTheme();
   // Firebase Auth — detecta sesión activa automáticamente
@@ -1898,6 +2121,7 @@ document.addEventListener('DOMContentLoaded', function() {
   initFirmaCliente();
 
   initChecklist();
+  initBorradorAutosave();
   resetFormulario();
   generarParticulas();
 });
@@ -2011,9 +2235,12 @@ function resetFormulario() {
   set('r-fecha', hoy);
   set('r-nroRegistro', 'Se asignará al guardar');
   ['centroCultivo','nroCentro','acs','titular','ubicacion','fechaSiembra','tamanoPeces',
-   'latitud','longitud','norte','este','observaciones','nombreResponsable','emailResponsable'].forEach(function(id) {
+   'jaulasLargo','jaulasAncho','cantidadJaulas','cantidadJaulasSembradas','artefactoNaval',
+   'latitud','longitud','norte','este','observaciones','nombreResponsable','emailResponsable',
+   'sectorOtro'].forEach(function(id) {
     set('r-'+id,'');
   });
+  onRegionChange();
   document.getElementById('r-obs-si').checked = true;
   toggleTipoObs();
   ['cicE2','ca','vs','res1511','desinfeccion'].forEach(function(id) {
@@ -2037,6 +2264,148 @@ function resetFormulario() {
   appState = { saved: false, sent: false, archived: false, pdfB64: null, fotoB64: null, savedData: null };
   checkChecklist();
   setBtnGuardar(false);
+  // Mostrar banner de borrador en el próximo tick para que cargarRegistroEnFormulario
+  // pueda haber seteado appState.editMode antes y se evite el flash.
+  setTimeout(maybeShowBorradorBanner, 0);
+}
+
+// =====================================================================
+//  BORRADOR — autosave local en localStorage mientras se llena el form
+// =====================================================================
+var BORRADOR_KEY    = 'certimar_borrador_v1';
+var borradorTimer   = null;
+var borradorSuspend = false;
+
+function captureBorrador() {
+  var datos = getDatos();
+  if (!datos.centroCultivo && !datos.nroCentro && !datos.titular && !datos.observaciones) {
+    return null;  // form vacío → no guardar
+  }
+  var firmaCliente = '';
+  try {
+    if (firmaClienteHasData) {
+      var c = document.getElementById('firma-cliente');
+      if (c) firmaCliente = c.toDataURL('image/png');
+    }
+  } catch(e) {}
+  return { datos: datos, firmaCliente: firmaCliente, foto: appState.fotoB64 || '', ts: Date.now() };
+}
+
+function saveBorrador() {
+  if (borradorSuspend || appState.editMode || appState.saved) return;
+  var payload = captureBorrador();
+  if (!payload) { try { localStorage.removeItem(BORRADOR_KEY); } catch(e){} return; }
+  try { localStorage.setItem(BORRADOR_KEY, JSON.stringify(payload)); }
+  catch(e) { console.warn('Borrador: no se pudo guardar', e); }
+}
+
+function scheduleBorrador() {
+  if (borradorTimer) clearTimeout(borradorTimer);
+  borradorTimer = setTimeout(saveBorrador, 1500);
+}
+
+function clearBorrador() {
+  try { localStorage.removeItem(BORRADOR_KEY); } catch(e) {}
+  var bn = document.getElementById('borrador-banner');
+  if (bn) bn.remove();
+}
+
+function loadBorrador() {
+  try { var raw = localStorage.getItem(BORRADOR_KEY); return raw ? JSON.parse(raw) : null; }
+  catch(e) { return null; }
+}
+
+function applyBorrador(b) {
+  if (!b || !b.datos) return;
+  borradorSuspend = true;
+  var d = b.datos;
+  ['fecha','centroCultivo','nroCentro','acs','titular','ubicacion','fechaSiembra','tamanoPeces',
+   'jaulasLargo','jaulasAncho','cantidadJaulas','cantidadJaulasSembradas','artefactoNaval',
+   'latitud','longitud','norte','este','observaciones','nombreResponsable']
+    .forEach(function(k){ set('r-'+k, d[k] || ''); });
+  restoreRegionSector(d.region, d.sector);
+  set('r-emailResponsable', d.emailDestinatario || '');
+  if (d.resoluciones) {
+    var chk = function(id, v){ var el=document.getElementById(id); if(el) el.checked = !!v; };
+    chk('r-cicE2',        d.resoluciones.cicE2);
+    chk('r-ca',           d.resoluciones.ca);
+    chk('r-vs',           d.resoluciones.vs);
+    chk('r-res1511',      d.resoluciones.res1511);
+    chk('r-desinfeccion', d.resoluciones.desinfeccion);
+  }
+  if (d.tipoObservacion) {
+    var r = document.querySelector('input[name="tipoObs"][value="'+d.tipoObservacion+'"]');
+    if (r) r.checked = true;
+  }
+  if (b.firmaCliente) {
+    var img = new Image();
+    img.onload = function() {
+      var c = document.getElementById('firma-cliente');
+      if (!c) return;
+      var ctx = c.getContext('2d');
+      ctx.clearRect(0,0,c.width,c.height);
+      ctx.drawImage(img, 0, 0, c.width, c.height);
+      firmaClienteHasData = true;
+      var ph = document.getElementById('firma-placeholder');
+      if (ph) ph.style.display = 'none';
+      checkChecklist();
+    };
+    img.src = b.firmaCliente;
+  }
+  if (b.foto) {
+    appState.fotoB64 = b.foto;
+    var badge = document.getElementById('foto-badge');
+    if (badge) badge.classList.remove('hidden');
+  }
+  borradorSuspend = false;
+  checkChecklist();
+}
+
+function maybeShowBorradorBanner() {
+  if (appState.editMode || appState.saved) return;
+  var b = loadBorrador();
+  if (!b) return;
+  var view = document.getElementById('view-registro');
+  if (!view) return;
+  var existing = document.getElementById('borrador-banner');
+  if (existing) existing.remove();
+  var fecha = '';
+  try { fecha = new Date(b.ts||Date.now()).toLocaleString('es-CL', { dateStyle:'short', timeStyle:'short' }); } catch(e){}
+  var bn = document.createElement('div');
+  bn.id = 'borrador-banner';
+  bn.style.cssText = 'background:#fef3c7;border:2px solid #f59e0b;border-radius:10px;padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap';
+  bn.innerHTML =
+    '<div><strong>📝 Borrador detectado</strong>' +
+    (fecha ? ' <span style="color:#92400e;font-size:12px">guardado el ' + fecha + '</span>' : '') +
+    '<div style="font-size:11px;color:#92400e;margin-top:2px">Datos sin enviar de una sesión anterior. No se ha consumido número de registro.</div></div>' +
+    '<div style="display:flex;gap:8px">' +
+      '<button onclick="restaurarBorrador()" style="background:#1e3a5f;color:white;border:none;padding:8px 16px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer">Restaurar</button>' +
+      '<button onclick="descartarBorrador()" style="background:white;color:#92400e;border:1px solid #f59e0b;padding:8px 16px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer">Descartar</button>' +
+    '</div>';
+  view.insertBefore(bn, view.firstChild);
+}
+
+function restaurarBorrador() {
+  var b = loadBorrador();
+  if (!b) return;
+  applyBorrador(b);
+  set('r-nroRegistro', 'Se asignará al guardar');
+  var bn = document.getElementById('borrador-banner');
+  if (bn) bn.remove();
+  toast('Borrador restaurado', 'success');
+}
+
+function descartarBorrador() {
+  clearBorrador();
+  toast('Borrador descartado', 'info');
+}
+
+function initBorradorAutosave() {
+  var doc = document.getElementById('registro-documento');
+  if (!doc || doc.dataset.borradorListener) return;
+  doc.dataset.borradorListener = '1';
+  doc.addEventListener('input',  scheduleBorrador);
+  doc.addEventListener('change', scheduleBorrador);
 }
 
 function set(id, val) {
@@ -2056,6 +2425,8 @@ var checkItems = [
   { id:'ck-centro',     text:'¿Se ingresó el nombre del centro de cultivo?', auto:true },
   { id:'ck-fecha',      text:'¿Se completó la fecha de última siembra y tamaño peces?', auto:true },
   { id:'ck-norma',      text:'¿Se seleccionó al menos una norma aplicable?', auto:true },
+  { id:'ck-area',       text:'¿Se seleccionó Región y Sector?', auto:true },
+  { id:'ck-jaulas',     text:'¿Se completó el tamaño de jaulas (largo y ancho) y la cantidad total/sembradas?', auto:true },
   { id:'ck-obs',        text:'¿Se han registrado las observaciones y su tipo correspondiente?', auto:true },
   { id:'ck-responsable',text:'¿Se completó el nombre del responsable del centro?', auto:true },
   { id:'ck-firma',      text:'¿El responsable del centro ha firmado digitalmente?', auto:true },
@@ -2103,6 +2474,8 @@ function checkChecklist() {
     'ck-centro':      !!(get('r-centroCultivo') || '').trim(),
     'ck-fecha':       !!get('r-fechaSiembra') && !!get('r-tamanoPeces'),
     'ck-norma':       ['r-cicE2','r-ca','r-vs','r-res1511','r-desinfeccion'].some(function(id){ return document.getElementById(id) && document.getElementById(id).checked; }),
+    'ck-area':        !!get('r-region') && !!resolveSector(),
+    'ck-jaulas':      !!get('r-jaulasLargo') && !!get('r-jaulasAncho') && !!get('r-cantidadJaulas') && !!get('r-cantidadJaulasSembradas'),
     'ck-obs':         !!get('r-observaciones') && (document.getElementById('r-obs-no').checked || !!getSelectedRadio('tipoObs')),
     'ck-responsable': !!get('r-nombreResponsable'),
     'ck-firma':       firmaClienteHasData,
@@ -2188,6 +2561,7 @@ function firmaStop() {
   firmaClienteHasData = true;
   document.getElementById('firma-placeholder').style.display = 'none';
   checkChecklist();
+  scheduleBorrador();
 }
 
 function clearFirmaCliente() {
@@ -2235,6 +2609,7 @@ function capturePhoto() {
     document.getElementById('photo-preview').classList.remove('hidden');
     document.getElementById('foto-badge').classList.remove('hidden');
     checkChecklist();
+    scheduleBorrador();
   });
 }
 
@@ -2288,6 +2663,7 @@ function _showPhotoPreview() {
   document.getElementById('photo-preview').classList.remove('hidden');
   document.getElementById('foto-badge').classList.remove('hidden');
   checkChecklist();
+  scheduleBorrador();
 }
 
 // Lee orientación EXIF y corrige rotación dibujando en canvas
@@ -2442,8 +2818,40 @@ async function generarPDF() {
   // Esperar un frame para que CSS variables se apliquen antes de capturar
   await new Promise(function(r){ requestAnimationFrame(function(){ requestAnimationFrame(r); }); });
   var canvas;
+  // html2canvas no envuelve fiablemente el contenido de inputs/textareas.
+  // Reemplazamos por divs estáticos con word-wrap antes de capturar
+  // (se restauran en el finally).
+  var replacements = [];
   var textareaReplacements = [];
   try {
+  el.querySelectorAll('input[type="text"], input:not([type])').forEach(function(inp) {
+    var div = document.createElement('div');
+    div.style.cssText =
+      'width:100%;min-height:' + Math.max(inp.offsetHeight, 22) + 'px;' +
+      'padding:2px 4px;font-size:13px;font-family:inherit;' +
+      'word-break:break-word;white-space:normal;line-height:1.5;' +
+      'color:' + (inp.value ? '#111827' : '#9ca3af') + ';box-sizing:border-box';
+    div.textContent = inp.value || '—';
+    inp.parentNode.insertBefore(div, inp);
+    inp.style.display = 'none';
+    replacements.push({ original: inp, replacement: div });
+  });
+
+  el.querySelectorAll('textarea').forEach(function(ta) {
+    var div = document.createElement('div');
+    div.style.cssText =
+      'width:100%;min-height:160px;padding:12px;font-size:13px;' +
+      'font-family:inherit;line-height:1.8;white-space:pre-wrap;' +
+      'word-break:break-word;box-sizing:border-box';
+    div.textContent = ta.value || '';
+    ta.parentNode.insertBefore(div, ta);
+    ta.style.display = 'none';
+    replacements.push({ original: ta, replacement: div });
+  });
+
+  // Esperar a que el layout se recalcule tras los reemplazos antes de capturar
+  await new Promise(function(r){ requestAnimationFrame(function(){ requestAnimationFrame(r); }); });
+
   // scale 1.5 en JPEG = 60% menos datos que scale:2 PNG, misma calidad visual para A4
   // html2canvas no renderiza bien el texto de textareas (puede cortar en horizontal).
   // Reemplazamos temporalmente cada textarea visible por un div equivalente.
@@ -2515,6 +2923,11 @@ async function generarPDF() {
   }
   return pdf;
   } finally {
+    // Restaurar inputs/textareas originales
+    replacements.forEach(function(item) {
+      item.original.style.display = '';
+      if (item.replacement.parentNode) item.replacement.parentNode.removeChild(item.replacement);
+    });
     if (prevTheme === 'dark') root.setAttribute('data-theme', 'dark');
     if (_spacer && _spacer.parentNode) _spacer.parentNode.removeChild(_spacer);
     textareaReplacements.forEach(function(r) {
@@ -2528,79 +2941,73 @@ async function generarPDF() {
 //  SYNC DRIVE + SHEETS
 // =====================================================================
 async function handleSyncGoogle() {
+  if (appState.guardandoEnCurso) { toast('Ya hay un guardado en curso, espera un momento.','error'); return; }
   if (!checkChecklist()) { toast('Complete el checklist primero','error'); return; }
+  appState.guardandoEnCurso = true;
 
   pushNotif('sync', 'info', '☁️ Guardando en Firebase…', [
-    { id:'step-nro',      label:'Generando N° correlativo',   state:'active' },
-    { id:'step-pdf',      label:'Generando PDF',              state:'pending' },
-    { id:'step-firebase', label:'Escribiendo en Firestore',   state:'pending' },
-    { id:'step-drive',    label:'Subiendo archivos a Storage', state:'pending' },
-    { id:'step-update',   label:'Actualizando registro',      state:'pending' }
+    { id:'step-nro',      label:'Reservando N° y creando registro', state:'active' },
+    { id:'pdf-render',    label:'Generando PDF',                    state:'pending' },
+    { id:'step-drive',    label:'Subiendo archivos a Storage',      state:'pending' },
+    { id:'step-update',   label:'Actualizando URLs',                state:'pending' }
   ]);
-
   setBtnLoading('btn-sync', true);
 
-  // 1. Generar correlativo primero para que aparezca en el PDF
+  var datos = getDatos();
+  var emailDest = appState.pendingEmail || '';
+
+  // 1. Reservar correlativo y crear el documento en una sola transacción.
+  // Si falla, ni el contador se incrementa ni el doc queda creado.
   var nroGenerado;
-  if (appState.editMode && appState.editNro) {
-    nroGenerado = appState.editNro;
-    updateNotifStep('sync','step-nro','done');
-  } else {
-    try {
-      nroGenerado = await fbGenerarNroRegistro();
-      set('r-nroRegistro', nroGenerado);
-      updateNotifStep('sync','step-nro','done');
-    } catch(e) {
-      try {
-        nroGenerado = await fbGenerarNroRegistro();
-        set('r-nroRegistro', nroGenerado);
-        updateNotifStep('sync','step-nro','done');
-      } catch(e2) {
-        updateNotifCard('sync','error','❌ No se pudo obtener correlativo', String(e2));
-        setBtnLoading('btn-sync', false);
-        return;
-      }
+  try {
+    if (appState.editMode && appState.editNro) {
+      nroGenerado = appState.editNro;
+      datos.nroRegistro = nroGenerado;
+      await fbGuardarRegistro(datos, '', '');
+    } else {
+      nroGenerado = await fbCrearRegistroAtomico(datos);
+      datos.nroRegistro = nroGenerado;
     }
+    set('r-nroRegistro', nroGenerado);
+    updateNotifStep('sync','step-nro','done');
+  } catch(e) {
+    updateNotifCard('sync','error','❌ No se pudo crear el registro', String(e));
+    appState.guardandoEnCurso = false;
+    setBtnLoading('btn-sync', false);
+    return;
   }
 
-  // 2. Generar PDF (ya con el correlativo visible en el DOM)
+  // 2. Generar PDF con el N° de registro ya asignado en el form
   var pdfB64 = null;
   try {
-    updateNotifStep('sync','step-pdf','active');
+    updateNotifStep('sync','pdf-render','active');
     await cargarLibsPDF();
     var pdf = await generarPDF();
     pdfB64 = pdf.output('datauristring');
     appState.pdfB64 = pdfB64;
     appState.pdfArrayBuffer = pdf.output('arraybuffer');
-    updateNotifStep('sync','step-pdf','done');
-    updateNotifStep('sync','step-firebase','active');
+    updateNotifStep('sync','pdf-render','done');
   } catch(e) {
     updateNotifCard('sync','error','❌ Error al generar PDF', String(e));
+    appState.guardandoEnCurso = false;
     setBtnLoading('btn-sync', false);
     return;
   }
 
-  var datos = getDatos();
-  var emailDest = datos.emailDestinatario || appState.pendingEmail || '';
-
   try {
-    // 2. Subir PDF a Drive (via Apps Script) y guardar en Firestore en paralelo
-    var urlCertificado = '';
-    var urlFoto = '';
+    updateNotifStep('sync','step-drive','active');
 
-    // Subir PDF + foto + firma a Firebase Storage
-    var drivePromise = (async function() {
+    // 3. Subir PDF + foto + firma a Firebase Storage
+    var driveRes = await (async function() {
       if (!pdfB64) return { urlCert: '', urlFoto: '', urlFirma: '', pdfStoragePath: '' };
       try {
         var nombre = 'CertimarRV_' + datos.nroRegistro + '_' +
                      (datos.centroCultivo || '').replace(/\s+/g,'_') + '.pdf';
         var storagePath = 'certificados/' + nombre;
         var ref    = firebase.storage().ref(storagePath);
-        // Usar ArrayBuffer directo de jsPDF — evita problemas de atob con base64 multi-línea
         await ref.put(appState.pdfArrayBuffer, { contentType: 'application/pdf' });
         var url = await ref.getDownloadURL();
         var fotoUrl = '';
-        // Subir foto de evidencia si existe
         if (appState.fotoB64 && !appState.fotoB64.startsWith('data:application/pdf')) {
           try {
             var mt   = (appState.fotoB64.match(/^data:([^;]+);base64,/) || [])[1] || 'image/jpeg';
@@ -2613,7 +3020,6 @@ async function handleSyncGoogle() {
           } catch(eFoto) { console.warn('Foto upload error (no fatal):', eFoto); }
         }
         var firmaUrl = '';
-        // Subir firma del cliente si fue dibujada localmente
         if (firmaClienteHasData) {
           try {
             var firmaCanvas = document.getElementById('firma-cliente');
@@ -2630,23 +3036,16 @@ async function handleSyncGoogle() {
         console.error('Storage upload error:', eStorage);
         return { urlCert: '', urlFoto: '', urlFirma: '', pdfStoragePath: '' };
       }
-    })()
+    })();
 
-    // 3. Firestore — escritura inmediata (~200ms)
-    await fbGuardarRegistro(datos, '', '');
-    updateNotifStep('sync','step-firebase','done');
-    updateNotifStep('sync','step-drive','active');
-
-    // 4. Esperar Storage uploads (PDF + foto + firma)
-    var driveRes = await drivePromise;
-    urlCertificado = driveRes.urlCert;
-    urlFoto        = driveRes.urlFoto;
+    var urlCertificado  = driveRes.urlCert;
+    var urlFoto         = driveRes.urlFoto;
     var urlFirmaCliente = driveRes.urlFirma || '';
     var pdfStoragePath  = driveRes.pdfStoragePath || '';
     updateNotifStep('sync','step-drive', urlCertificado ? 'done' : 'warn');
     updateNotifStep('sync','step-update','active');
 
-    // 5. Actualizar Firestore con URLs obtenidas
+    // 4. Actualizar Firestore con URLs obtenidas
     var urlUpdate = {};
     if (urlCertificado)   urlUpdate.urlCertificado   = urlCertificado;
     if (urlFoto)          urlUpdate.urlFoto           = urlFoto;
@@ -2667,6 +3066,7 @@ async function handleSyncGoogle() {
     appState.savedData = Object.assign({}, datos, { urlCert: urlCertificado });
     setBtnGuardar(true);
     updateCustomCentroIfNeeded(datos);
+    clearBorrador();
 
     localRecords.unshift({
       nroReg: datos.nroRegistro, fecha: datos.fecha,
@@ -2683,9 +3083,10 @@ async function handleSyncGoogle() {
     showCompletionDialog(datos.nroRegistro, false, emailDest);
 
   } catch(e) {
-    updateNotifCard('sync','error','❌ Error al guardar', String(e));
+    updateNotifCard('sync','error','❌ Error al subir archivos', String(e));
     toast('Error: ' + String(e), 'error');
   } finally {
+    appState.guardandoEnCurso = false;
     setBtnLoading('btn-sync', false);
   }
 }
@@ -2744,18 +3145,15 @@ function lockForm(fullyLocked) {
 // =====================================================================
 function openModalMail() {
   if (!checkChecklist()) { toast('Complete el checklist primero','error'); return; }
-  if (appState.saved) {
-    // Ya guardado → solo enviar correo
-    var datos = getDatos();
-    document.getElementById('modal-email').value = datos.emailDestinatario || get('r-emailResponsable') || '';
-    document.getElementById('modal-cc').value = 'eflores@certimar.cl';
-    document.getElementById('modal-asunto').textContent = 'Registro de Visita — '+datos.centroCultivo+' — '+datos.fecha;
-    document.getElementById('modal-body-preview').textContent = generarMensaje(datos);
-    document.getElementById('modal-mail').classList.remove('hidden');
-  } else {
-    // No guardado → ir al flujo completo vía completion dialog
-    showCompletionDialog(get('r-nroRegistro'), false, '');
+  if (!appState.saved) {
+    toast('Debe guardar el registro antes de notificar', 'error');
+    return;
   }
+  var datos = getDatos();
+  document.getElementById('modal-email').value = datos.emailDestinatario || get('r-emailResponsable') || '';
+  document.getElementById('modal-asunto').textContent = 'Registro de Visita — '+datos.centroCultivo+' — '+datos.fecha;
+  document.getElementById('modal-body-preview').textContent = generarMensaje(datos);
+  document.getElementById('modal-mail').classList.remove('hidden');
 }
 
 function closeModalMail() {
@@ -2908,13 +3306,20 @@ function getDatos() {
   return {
     fecha          : get('r-fecha'),
     nroRegistro    : get('r-nroRegistro'),
-    centroCultivo  : get('r-centroCultivo'),
+    centroCultivo  : (get('r-centroCultivo') || '').toUpperCase(),
     nroCentro      : get('r-nroCentro'),
     acs            : get('r-acs'),
     titular        : get('r-titular'),
     ubicacion      : get('r-ubicacion'),
+    region         : get('r-region'),
+    sector         : resolveSector(),
     fechaSiembra   : get('r-fechaSiembra'),
     tamanoPeces    : get('r-tamanoPeces'),
+    jaulasLargo             : get('r-jaulasLargo'),
+    jaulasAncho             : get('r-jaulasAncho'),
+    cantidadJaulas          : get('r-cantidadJaulas'),
+    cantidadJaulasSembradas : get('r-cantidadJaulasSembradas'),
+    artefactoNaval : get('r-artefactoNaval'),
     latitud        : get('r-latitud'),
     longitud       : get('r-longitud'),
     norte          : get('r-norte'),
@@ -3016,11 +3421,79 @@ function renderVencer(stats) {
 }
 
 // =====================================================================
+//  HISTÓRICO — selector de columnas
+// =====================================================================
+function renderColumnSelector() {
+  var visible = getVisibleHistColumns();
+  var groups = {};
+  HIST_COL_DEFS.forEach(function(c) {
+    if (!groups[c.grupo]) groups[c.grupo] = [];
+    groups[c.grupo].push(c);
+  });
+  var fixed = ['ID Registro','Fecha','Centro','Estado','Certificado','Acciones'];
+  var html = '<div style="font-size:10px;color:#94a3b8;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">Siempre visibles</div>';
+  html += '<div class="hist-col-fixed-chips">';
+  fixed.forEach(function(f){ html += '<span class="hist-col-fixed-chip">'+esc(f)+'</span>'; });
+  html += '</div>';
+  html += '<div style="border-top:1px solid var(--border,#f1f5f9);margin-bottom:8px"></div>';
+  Object.keys(groups).forEach(function(grp) {
+    html += '<div class="hist-col-group-label">'+esc(grp)+'</div>';
+    groups[grp].forEach(function(c) {
+      var checked = visible.indexOf(c.key) !== -1 ? ' checked' : '';
+      html += '<label class="hist-col-option"><input type="checkbox" onchange="toggleHistColumn(\''+c.key+'\')"'+checked+'> '+esc(c.label)+'</label>';
+    });
+  });
+  document.getElementById('hist-col-dropdown').innerHTML = html;
+}
+
+function toggleHistColDropdown() {
+  var btn = document.getElementById('hist-col-btn');
+  var dd  = document.getElementById('hist-col-dropdown');
+  var isOpen = !dd.classList.contains('hidden');
+  if (isOpen) {
+    dd.classList.add('hidden');
+    btn.classList.remove('open');
+    return;
+  }
+  renderColumnSelector();
+  dd.classList.remove('hidden');
+  btn.classList.add('open');
+  if (_histColCloseHandler) {
+    document.removeEventListener('click', _histColCloseHandler);
+    _histColCloseHandler = null;
+  }
+  setTimeout(function() {
+    _histColCloseHandler = function(e) {
+      var btnEl = document.getElementById('hist-col-btn');
+      var ddEl  = document.getElementById('hist-col-dropdown');
+      if (btnEl && ddEl && !btnEl.contains(e.target) && !ddEl.contains(e.target)) {
+        ddEl.classList.add('hidden');
+        btnEl.classList.remove('open');
+        document.removeEventListener('click', _histColCloseHandler);
+        _histColCloseHandler = null;
+      }
+    };
+    document.addEventListener('click', _histColCloseHandler);
+  }, 0);
+}
+
+function toggleHistColumn(key) {
+  var visible = getVisibleHistColumns();
+  var idx = visible.indexOf(key);
+  if (idx === -1) visible.push(key);
+  else visible.splice(idx, 1);
+  saveVisibleHistColumns(visible);
+  renderColumnSelector();
+  filtrarHistorico();
+}
+
+// =====================================================================
 //  HISTÓRICO — carga desde Firestore
 // =====================================================================
 function cargarHistorico() {
+  renderHistorico([]);
   document.getElementById('hist-tbody').innerHTML =
-    '<tr><td colspan="10" class="hist-empty"><div class="spinner dark" style="margin:0 auto 8px"></div>Cargando registros…</td></tr>';
+    '<tr><td colspan="'+(getVisibleHistColumns().length+6)+'" class="hist-empty"><div class="spinner dark" style="margin:0 auto 8px"></div>Cargando registros…</td></tr>';
   document.getElementById('hist-footer').textContent = 'Consultando Firestore…';
 
   pushNotif('hist-load', 'info', '📋 Cargando Histórico…', [
@@ -3051,7 +3524,7 @@ function cargarHistorico() {
 
     if (historicData.length === 0) {
       document.getElementById('hist-tbody').innerHTML =
-        '<tr><td colspan="10" class="hist-empty">' +
+        '<tr><td colspan="'+(getVisibleHistColumns().length+6)+'" class="hist-empty">' +
         '<div style="font-size:32px;margin-bottom:10px">📋</div>' +
         'No hay registros aún.<br>' +
         '<span style="font-size:11px;color:var(--text-muted)">Crea tu primer registro con "Nueva Visita"</span>' +
@@ -3074,7 +3547,7 @@ function cargarHistorico() {
       renderHistorico(historicData);
     } else {
       document.getElementById('hist-tbody').innerHTML =
-        '<tr><td colspan="10" class="hist-empty" style="color:var(--error)">⚠️ Sin conexión a Firestore<br>' +
+        '<tr><td colspan="'+(getVisibleHistColumns().length+6)+'" class="hist-empty" style="color:var(--error)">⚠️ Sin conexión a Firestore<br>' +
         '<span style="font-size:11px">'+esc(String(e))+'</span><br>' +
         '<span style="font-size:11px;color:var(--text-muted)">Verifica la configuración en FirebaseConfig.html</span></td></tr>';
     }
@@ -3102,51 +3575,77 @@ function filtrarHistorico() {
 
 function renderHistorico(data) {
   var tbody  = document.getElementById('hist-tbody');
+  var thead  = document.getElementById('hist-thead');
   var footer = document.getElementById('hist-footer');
+
+  var visible = getVisibleHistColumns();
+
+  var fixedHeaders  = ['ID Registro', 'Fecha', 'Centro'];
+  var optHeaders    = HIST_COL_DEFS.filter(function(c){ return visible.indexOf(c.key) !== -1; }).map(function(c){ return c.label; });
+  var trailHeaders  = ['Estado', 'Certificado', 'Acciones'];
+  var allHeaders    = fixedHeaders.concat(optHeaders).concat(trailHeaders);
+  var totalCols     = allHeaders.length;
+
+  thead.innerHTML = '<tr>' + allHeaders.map(function(h){ return '<th>'+esc(h)+'</th>'; }).join('') + '</tr>';
+
   if (!data || !data.length) {
-    tbody.innerHTML = '<tr><td colspan="10" class="hist-empty">No se encontraron registros</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="'+totalCols+'" class="hist-empty">No se encontraron registros</td></tr>';
     footer.textContent = '0 registros';
     return;
   }
-  // Soporte both old (Sheets) and new (Firestore) field names
+
+  var extractors = {
+    titular:           function(r){ return esc(r.titular || '—'); },
+    nroCentro:         function(r){ return esc(r.nroCentro || '—'); },
+    acs:               function(r){ return esc(r.acs || '—'); },
+    area:              function(r){ return esc(r.area || '—'); },
+    fechaSiembra:      function(r){ return esc(r.fechaUltimaSiembra || r.fechaSiembra || '—'); },
+    tamanioPeces:      function(r){ return esc(r.tamanioPeces || '—'); },
+    ubicacion:         function(r){ return esc(r.ubicacion || '—'); },
+    latLong:           function(r){ return esc(r.latLong || '—'); },
+    resExt:            function(r){ return '<span class="badge badge-blue" style="font-size:10px">'+esc(r.resoluciones || r.resExt || '—')+'</span>'; },
+    tipoObs:           function(r){ return esc(r.tipoObservacion || r.tipoObs || '—'); },
+    observaciones:     function(r){ return esc(r.observaciones || '—'); },
+    responsable:       function(r){ return esc(r.nombreResponsable || r.responsable || '—'); },
+    correoResponsable: function(r){ return esc(r.emailResponsable || '—'); },
+    estadoFirma:       function(r){ return esc(r.estadoFirma || '—'); },
+  };
+
   tbody.innerHTML = data.map(function(r) {
-    var nro      = r.nroRegistro || r.nroReg || '—';
-    var fecha    = r.fecha || '—';
-    var centro   = r.centroCultivo || r.centro || '—';
-    var titular  = r.titular || '—';
-    var res      = r.resoluciones || r.resExt || '—';
-    var tipoObs  = r.tipoObservacion || r.tipoObs || '—';
-    var resp     = r.nombreResponsable || r.responsable || '—';
-    var urlCert  = r.urlCertificado || r.urlCert || '';
-    var estado   = r.estado || 'GUARDADO';
-    var certLink = urlCert ? '<a href="'+esc(urlCert)+'" target="_blank" class="link-cert"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/></svg> PDF</a>' : '<span style="color:var(--text-muted);font-size:11px">—</span>';
+    var nro     = r.nroRegistro || r.nroReg || '—';
+    var fecha   = r.fecha || '—';
+    var centro  = r.centroCultivo || r.centro || '—';
+    var urlCert = r.urlCertificado || r.urlCert || '';
+    var estado  = r.estado || 'GUARDADO';
+    var certLink = urlCert
+      ? '<a href="'+esc(urlCert)+'" target="_blank" class="link-cert"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/></svg> PDF</a>'
+      : '<span style="color:var(--text-muted);font-size:11px">—</span>';
     var badgeCls = estado === 'ENVIADO' ? 'badge-ok' : estado === 'ARCHIVADO' ? 'badge-warn' : 'badge-blue';
-    var rJson    = esc(JSON.stringify(r).replace(/'/g,"\\'"));
     var canEdit  = estado === 'GUARDADO';
     var hasPdf   = !urlCert;
-    return '<tr>'+
-      '<td style="font-weight:600;color:var(--brand)">'+esc(nro)+'</td>'+
-      '<td>'+esc(fecha)+'</td>'+
-      '<td style="font-weight:600">'+esc(centro)+'</td>'+
-      '<td>'+esc(titular)+'</td>'+
-      '<td><span class="badge badge-blue" style="font-size:10px">'+esc(res)+'</span></td>'+
-      '<td>'+esc(tipoObs)+'</td>'+
-      '<td>'+esc(resp)+'</td>'+
-      '<td><span class="badge '+badgeCls+'">'+estado+'</span></td>'+
-      '<td>'+certLink+'</td>'+
-      '<td><div style="display:flex;gap:4px;flex-wrap:wrap;align-items:center">'+
-        '<button class="admin-action-btn ok" onclick="verRegistroHistorico(\''+esc(nro)+'\')">'+
-          '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> Ver'+
-        '</button> '+
-        (canEdit ? '<button class="admin-action-btn" onclick="editarRegistroHistorico(\''+esc(nro)+'\')">'+
-          '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Editar'+
-        '</button> ' : '')+
-        (hasPdf ? '<button class="admin-action-btn warn" onclick="regenerarPDFHistorico(\''+esc(nro)+'\')">'+
-          '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg> Regen. PDF'+
-        '</button>' : '')+
-      '</div></td>'+
-      '</tr>';
+
+    var cells = '<td style="font-weight:600;color:var(--brand)">'+esc(nro)+'</td>'+
+                '<td>'+esc(fecha)+'</td>'+
+                '<td style="font-weight:600">'+esc(centro)+'</td>';
+    visible.forEach(function(key) {
+      if (extractors[key]) cells += '<td>' + extractors[key](r) + '</td>';
+    });
+    cells += '<td><span class="badge '+badgeCls+'">'+estado+'</span></td>'+
+             '<td>'+certLink+'</td>'+
+             '<td><div style="display:flex;gap:4px;flex-wrap:wrap;align-items:center">'+
+               '<button class="admin-action-btn ok" onclick="verRegistroHistorico(\''+esc(nro)+'\')">'+
+                 '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> Ver'+
+               '</button> '+
+               (canEdit ? '<button class="admin-action-btn" onclick="editarRegistroHistorico(\''+esc(nro)+'\')">'+
+                 '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Editar'+
+               '</button> ' : '')+
+               (hasPdf ? '<button class="admin-action-btn warn" onclick="regenerarPDFHistorico(\''+esc(nro)+'\')">'+
+                 '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg> Regen. PDF'+
+               '</button>' : '')+
+             '</div></td>';
+    return '<tr>'+cells+'</tr>';
   }).join('');
+
   footer.textContent = 'Mostrando ' + data.length + ' registro' + (data.length!==1?'s':'') + ' · Firestore';
 }
 
@@ -3338,7 +3837,7 @@ function saveNewCentro(code) {
   closeAcDropdown();
   // Capturar datos actuales del formulario para este centro
   var newEntry = {
-    centroCultivo: get('r-centroCultivo') || code,
+    centroCultivo: (get('r-centroCultivo') || code).toUpperCase(),
     titular      : get('r-titular') || '',
     ubicacion    : get('r-ubicacion') || '',
     acs          : get('r-acs') || '',
@@ -3425,6 +3924,17 @@ function fillConcesion(code, c) {
     set('r-latitud',  Math.abs(c.coords.lat).toFixed(6));
     set('r-longitud', Math.abs(c.coords.lon).toFixed(6));
     highlightFilled('r-latitud'); highlightFilled('r-longitud');
+  }
+  // Autocompletar región y área desde datos AquaChile
+  var aq = (typeof AQUACHILE_CENTROS !== 'undefined') && AQUACHILE_CENTROS[String(code)];
+  if (aq && aq.region && !get('r-region')) {
+    set('r-region', aq.region);
+    onRegionChange();
+    if (aq.area) {
+      set('r-sector', aq.area);
+      highlightFilled('r-sector');
+    }
+    highlightFilled('r-region');
   }
   var input = document.getElementById('r-nroCentro');
   if (input) {
@@ -3600,15 +4110,22 @@ function completionGo(view) {
 
 function handleCompletionEnviar() {
   var email = document.getElementById('cd-email-input').value.trim();
-  if (!email || !email.includes('@')) { 
+  if (!email || !email.includes('@')) {
     document.getElementById('cd-email-input').style.borderColor = '#dc2626';
-    return; 
+    return;
+  }
+  // Defensa: el correo solo puede enviarse después de un guardado exitoso.
+  if (!appState.saved || !appState.savedData || !appState.savedData.nroRegistro
+      || /asignar/i.test(appState.savedData.nroRegistro)) {
+    toast('El registro aún no está guardado. Guarde primero y vuelva a intentar.', 'error');
+    return;
   }
   document.getElementById('cd-send-btn').disabled = true;
   document.getElementById('cd-send-btn').textContent = '⏳ Enviando…';
 
   appState.pendingEmail = email;
   var datos = getDatos();
+  datos.nroRegistro = appState.savedData.nroRegistro;
   datos.emailDestinatario = email;
   datos.emailCC  = document.getElementById('cd-cc-input')  ? document.getElementById('cd-cc-input').value.trim()  : '';
   datos.emailCCO = document.getElementById('cd-cco-input') ? document.getElementById('cd-cco-input').value.trim() : '';
@@ -3617,7 +4134,10 @@ function handleCompletionEnviar() {
     { id:'mail-send', label:'Enviando a ' + email, state:'active' }
   ]);
 
-  enviarMailQueue({
+  var resultBox = document.getElementById('cd-mail-result');
+  resultBox.style.display = 'none';
+
+  callFn('enviarNotificacion', {
     datos           : datos,
     urlCertificado  : appState.savedData ? appState.savedData.urlCert : '',
     pdfStoragePath  : appState.pdfStoragePath || ''
@@ -3626,10 +4146,18 @@ function handleCompletionEnviar() {
     if (res && res.ok) {
       updateNotifCard('mail', 'success', '✉️ Correo enviado', 'Notificación enviada a ' + email);
       document.getElementById('cd-send-btn').textContent = '✓ Enviado';
-      document.getElementById('cd-email-section').style.display = 'none';
       document.getElementById('cd-icon').textContent = '🎉';
       document.getElementById('cd-title').textContent = 'Registro Guardado y Notificado';
-      document.getElementById('cd-sub').textContent = 'Correo enviado a ' + email + '.';
+      document.getElementById('cd-sub').textContent = '';
+      // Ocultar campos de entrada, mostrar resultado de éxito
+      document.getElementById('cd-email-input').parentNode.style.display = 'none';
+      document.querySelectorAll('#cd-email-section .completion-email-row, #cd-email-section > div:nth-child(3), #cd-email-section > div:nth-child(4)').forEach(function(el){ el.style.display='none'; });
+      resultBox.style.cssText = 'display:block;margin-top:10px;padding:12px 14px;background:#f0fdf4;border:1px solid #86efac;border-radius:8px;text-align:left;font-size:12px;line-height:1.7';
+      resultBox.innerHTML =
+        '<div style="font-weight:700;color:#15803d;margin-bottom:4px">✅ Correo enviado exitosamente</div>' +
+        '<div style="color:#166534">📨 Destinatario: <strong>' + email + '</strong></div>' +
+        '<div style="color:#166534;margin-top:2px">📋 Copias internas enviadas a:<br>' +
+        '<strong>operaciones@certimar.cl · eflores@certimar.cl · informes@certimar.cl</strong></div>';
       appState.sent = true;
       lockForm(true);
       var nro = get('r-nroRegistro');
@@ -3638,14 +4166,26 @@ function handleCompletionEnviar() {
         if (localRecords[i].nroReg === nro) { localRecords[i].estado = 'ENVIADO'; localRecords[i].emailResp = email; break; }
       }
     } else {
-      updateNotifCard('mail', 'error', '❌ Error al enviar', res ? res.error : 'Reintenta');
+      var errMsg = (res && res.error) ? res.error : 'Error desconocido. Reintenta.';
+      updateNotifCard('mail', 'error', '❌ Error al enviar', errMsg);
       document.getElementById('cd-send-btn').disabled = false;
       document.getElementById('cd-send-btn').textContent = '✉️ Reintentar';
+      resultBox.style.cssText = 'display:block;margin-top:10px;padding:12px 14px;background:#fef2f2;border:1px solid #fca5a5;border-radius:8px;text-align:left;font-size:12px;line-height:1.7';
+      resultBox.innerHTML =
+        '<div style="font-weight:700;color:#dc2626;margin-bottom:4px">❌ Error al enviar el correo</div>' +
+        '<div style="color:#991b1b">' + esc(errMsg) + '</div>' +
+        '<div style="color:#991b1b;margin-top:4px;font-size:11px">Verifica la dirección de correo e intenta nuevamente. Si el problema persiste, contacta soporte técnico.</div>';
     }
   }).catch(function(e) {
-    updateNotifCard('mail', 'error', '❌ Error de conexión', String(e || ''));
+    var errMsg = (e && e.message) ? e.message : String(e || 'Error de conexión');
+    updateNotifCard('mail', 'error', '❌ Error de conexión', errMsg);
     document.getElementById('cd-send-btn').disabled = false;
     document.getElementById('cd-send-btn').textContent = '✉️ Reintentar';
+    resultBox.style.cssText = 'display:block;margin-top:10px;padding:12px 14px;background:#fef2f2;border:1px solid #fca5a5;border-radius:8px;text-align:left;font-size:12px;line-height:1.7';
+    resultBox.innerHTML =
+      '<div style="font-weight:700;color:#dc2626;margin-bottom:4px">❌ Error de conexión</div>' +
+      '<div style="color:#991b1b">' + esc(errMsg) + '</div>' +
+      '<div style="color:#991b1b;margin-top:4px;font-size:11px">Verifica tu conexión a internet e intenta nuevamente.</div>';
   });
 }
 
@@ -3678,6 +4218,7 @@ var _adminAll = [];
 var _adminFiltered = [];
 var _adminPage = 0;
 var _adminPageSize = 25;
+var _adminSort = { field: 'creadoEn', dir: 'desc' };
 
 function cargarAdmin() {
   if (!currentUser || !currentUser.isAdmin) {
@@ -3687,7 +4228,7 @@ function cargarAdmin() {
   }
 
   document.getElementById('adm-tbody').innerHTML =
-    '<tr><td colspan="11" class="admin-empty"><div class="spinner dark" style="margin:0 auto 8px"></div>Cargando todos los registros…</td></tr>';
+    '<tr><td colspan="13" class="admin-empty"><div class="spinner dark" style="margin:0 auto 8px"></div>Cargando todos los registros…</td></tr>';
   document.getElementById('adm-footer-count').textContent = 'Cargando…';
 
   pushNotif('admin-load','info','🛡️ Panel Admin cargando…',[
@@ -3736,13 +4277,14 @@ function cargarAdmin() {
     updateNotifStep('admin-load','a1','done');
     updateNotifStep('admin-load','a2','active');
     _adminPage = 0;
-    renderAdminTabla();
+    filtrarAdmin();
+    initAdminSortListeners();
     updateNotifStep('admin-load','a2','done');
     setTimeout(function(){ updateNotifCard('admin-load','success','🛡️ Panel Admin listo', docs.length + ' registros cargados'); }, 300);
   }).catch(function(e) {
     updateNotifCard('admin-load','error','❌ Error Admin', String(e));
     document.getElementById('adm-tbody').innerHTML =
-      '<tr><td colspan="11" class="admin-empty" style="color:var(--error)">⚠️ Error: '+esc(String(e))+'</td></tr>';
+      '<tr><td colspan="13" class="admin-empty" style="color:var(--error)">Error al cargar: '+esc(String(e))+'</td></tr>';
   });
 }
 
@@ -3753,7 +4295,7 @@ function renderAdminTabla() {
   var total = _adminFiltered.length;
 
   if (!total) {
-    tbody.innerHTML = '<tr><td colspan="11" class="admin-empty">No hay registros con esos filtros</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="13" class="admin-empty">No hay registros con esos filtros</td></tr>';
     document.getElementById('adm-footer-count').textContent = '0 resultados';
     document.getElementById('adm-pag-info').textContent = '';
     return;
@@ -3773,6 +4315,8 @@ function renderAdminTabla() {
       '<td style="white-space:nowrap">'+esc(r.nroCentro||'—')+'</td>'+
       '<td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+esc(r.titular||'')+'">'+esc(r.titular||'—')+'</td>'+
       '<td>'+esc(r.acs||'—')+'</td>'+
+      '<td style="white-space:nowrap">'+esc(r.region||'—')+'</td>'+
+      '<td style="white-space:nowrap">'+esc(r.sector||'—')+'</td>'+
       '<td style="font-size:10px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(r.resoluciones||'—')+'</td>'+
       '<td>'+esc(r.nombreResponsable||'—')+'</td>'+
       '<td><span class="badge '+bdg+'">'+icon+' '+estado+'</span></td>'+
@@ -3795,27 +4339,65 @@ function renderAdminTabla() {
   document.getElementById('adm-next').disabled = _adminPage >= pages - 1;
 }
 
+function onAdmRegionChange() {
+  var region = document.getElementById('adm-region').value;
+  var sel = document.getElementById('adm-sector');
+  sel.innerHTML = '<option value="">Todos los sectores</option>';
+  var sectores = region
+    ? (SECTORES_POR_REGION[region] || [])
+    : Object.values(SECTORES_POR_REGION).reduce(function(a, b) { return a.concat(b); }, []);
+  sectores.forEach(function(s) {
+    var opt = document.createElement('option');
+    opt.value = s; opt.textContent = s;
+    sel.appendChild(opt);
+  });
+}
+
 function filtrarAdmin() {
-  var q    = (document.getElementById('adm-search').value || '').toLowerCase().trim();
-  var est  = document.getElementById('adm-estado').value;
-  var cert = document.getElementById('adm-cert-filter').value;
-  var desde= document.getElementById('adm-desde').value;
-  var hasta= document.getElementById('adm-hasta').value;
+  var q      = (document.getElementById('adm-search').value || '').toLowerCase().trim();
+  var est    = document.getElementById('adm-estado').value;
+  var cert   = document.getElementById('adm-cert-filter').value;
+  var region = document.getElementById('adm-region').value;
+  var sector = document.getElementById('adm-sector').value;
+  var desde  = document.getElementById('adm-desde').value;
+  var hasta  = document.getElementById('adm-hasta').value;
 
   _adminFiltered = _adminAll.filter(function(r) {
     if (q && !( (r.nroRegistro||'').toLowerCase().includes(q) ||
                 (r.centroCultivo||'').toLowerCase().includes(q) ||
                 (r.titular||'').toLowerCase().includes(q) ||
                 (r.creadoPor||'').toLowerCase().includes(q) ||
-                (r.certNombre||'').toLowerCase().includes(q) )) return false;
-    if (est  && r.estado !== est)         return false;
-    if (cert && r.creadoPor !== cert)     return false;
-    if (desde && fechaToISO(r.fecha) < desde) return false;
-    if (hasta && fechaToISO(r.fecha) > hasta) return false;
+                (r.certNombre||'').toLowerCase().includes(q) ||
+                (r.region||'').toLowerCase().includes(q) ||
+                (r.sector||'').toLowerCase().includes(q) )) return false;
+    if (est    && r.estado !== est)             return false;
+    if (cert   && r.creadoPor !== cert)         return false;
+    if (region && r.region !== region)          return false;
+    if (sector && r.sector !== sector)          return false;
+    if (desde  && fechaToISO(r.fecha) < desde) return false;
+    if (hasta  && fechaToISO(r.fecha) > hasta) return false;
     return true;
   });
+
+  var sf = _adminSort.field;
+  var sd = _adminSort.dir === 'asc' ? 1 : -1;
+  _adminFiltered.sort(function(a, b) {
+    var av = sf === 'creadoEn'
+      ? (a.creadoEn && a.creadoEn.toDate ? a.creadoEn.toDate().getTime() : 0)
+      : sf === 'fecha' ? fechaToISO(a.fecha)
+      : (a[sf] || '');
+    var bv = sf === 'creadoEn'
+      ? (b.creadoEn && b.creadoEn.toDate ? b.creadoEn.toDate().getTime() : 0)
+      : sf === 'fecha' ? fechaToISO(b.fecha)
+      : (b[sf] || '');
+    if (av < bv) return -sd;
+    if (av > bv) return sd;
+    return 0;
+  });
+
   _adminPage = 0;
   renderAdminTabla();
+  actualizarSortHeaders();
 }
 
 function fechaToISO(fecha) {
@@ -3826,12 +4408,39 @@ function fechaToISO(fecha) {
 }
 
 function limpiarFiltrosAdmin() {
-  document.getElementById('adm-search').value   = '';
-  document.getElementById('adm-estado').value   = '';
+  document.getElementById('adm-search').value      = '';
+  document.getElementById('adm-estado').value      = '';
   document.getElementById('adm-cert-filter').value = '';
-  document.getElementById('adm-desde').value    = '';
-  document.getElementById('adm-hasta').value    = '';
+  document.getElementById('adm-region').value      = '';
+  document.getElementById('adm-sector').value      = '';
+  document.getElementById('adm-desde').value       = '';
+  document.getElementById('adm-hasta').value       = '';
+  onAdmRegionChange();
   filtrarAdmin();
+}
+
+function actualizarSortHeaders() {
+  document.querySelectorAll('.admin-table th[data-sort]').forEach(function(th) {
+    th.classList.remove('sorted-asc', 'sorted-desc');
+    if (th.dataset.sort === _adminSort.field) {
+      th.classList.add('sorted-' + _adminSort.dir);
+    }
+  });
+}
+
+function initAdminSortListeners() {
+  document.querySelectorAll('.admin-table th[data-sort]').forEach(function(th) {
+    th.addEventListener('click', function() {
+      var field = th.dataset.sort;
+      if (_adminSort.field === field) {
+        _adminSort.dir = _adminSort.dir === 'asc' ? 'desc' : 'asc';
+      } else {
+        _adminSort.field = field;
+        _adminSort.dir = 'asc';
+      }
+      filtrarAdmin();
+    });
+  });
 }
 
 function admPagina(dir) {
@@ -3869,13 +4478,49 @@ function admReenviarMail(nro, email) {
   }).catch(function(e){ updateNotifCard('adm-mail','error','❌ Error',String(e && e.message ? e.message : e)); });
 }
 
+async function normalizarNombresCentros(btn) {
+  if (!confirm('¿Convertir TODOS los nombres de centros a mayúsculas en Firestore?\nEsta acción es irreversible.')) return;
+  var orig = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = 'Normalizando…';
+  try {
+    var db = initFirebase();
+    var snap = await db.collection('registros_visita').get();
+    var batch = db.batch();
+    var count = 0;
+    snap.forEach(function(doc) {
+      var nombre = doc.data().centroCultivo || '';
+      var upper  = nombre.toUpperCase();
+      if (nombre !== upper) {
+        batch.update(doc.ref, { centroCultivo: upper });
+        count++;
+      }
+    });
+    if (count === 0) {
+      toast('✓ Todos los nombres ya estaban en mayúsculas.', 'success');
+    } else {
+      await batch.commit();
+      // Actualizar la memoria local
+      _adminAll.forEach(function(r) { r.centroCultivo = (r.centroCultivo || '').toUpperCase(); });
+      _adminFiltered.forEach(function(r) { r.centroCultivo = (r.centroCultivo || '').toUpperCase(); });
+      renderAdminTabla();
+      toast('✓ ' + count + ' registros normalizados a MAYÚSCULAS.', 'success');
+    }
+  } catch(e) {
+    toast('❌ Error: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = orig;
+  }
+}
+
 function exportarCSV() {
   var data = _adminFiltered.length ? _adminFiltered : _adminAll;
   if (!data.length) { toast('No hay datos para exportar','error'); return; }
-  var headers = ['N° Registro','Fecha','Centro','N° Centro','Titular','ACS','Resoluciones','Responsable','Email','Estado','Certificador'];
+  var headers = ['N° Registro','Fecha','Centro','N° Centro','Titular','ACS','Región','Sector','Resoluciones','Responsable','Email','Estado','Certificador'];
   var rows = data.map(function(r) {
     return [r.nroRegistro, r.fecha, r.centroCultivo, r.nroCentro, r.titular, r.acs,
-      r.resoluciones, r.nombreResponsable, r.emailResponsable, r.estado,
+      r.region, r.sector, r.resoluciones, r.nombreResponsable, r.emailResponsable, r.estado,
       r.certNombre||r.creadoPor].map(function(v){ return '"'+(v||'').replace(/"/g,'""')+'"'; }).join(',');
   });
   var csv = [headers.map(function(h){ return '"'+h+'"'; }).join(',')].concat(rows).join('\n');
@@ -3897,13 +4542,19 @@ function cargarRegistroEnFormulario(r, modoLectura) {
   // Campos de texto
   set('r-fecha',             r.fecha             || '');
   set('r-nroRegistro',       r.nroRegistro       || r.nroReg || '');
-  set('r-centroCultivo',     r.centroCultivo      || r.centro || '');
+  set('r-centroCultivo',     (r.centroCultivo || r.centro || '').toUpperCase());
   set('r-nroCentro',         r.nroCentro          || '');
   set('r-acs',               r.acs               || '');
   set('r-titular',           r.titular           || '');
   set('r-ubicacion',         r.ubicacion         || '');
+  restoreRegionSector(r.region, r.sector);
   set('r-fechaSiembra',      r.fechaSiembra      || '');
   set('r-tamanoPeces',       r.tamanoPeces       || '');
+  set('r-jaulasLargo',             r.jaulasLargo             || '');
+  set('r-jaulasAncho',             r.jaulasAncho             || '');
+  set('r-cantidadJaulas',          r.cantidadJaulas          || '');
+  set('r-cantidadJaulasSembradas', r.cantidadJaulasSembradas || '');
+  set('r-artefactoNaval',          r.artefactoNaval          || '');
   set('r-latitud',           r.latitud           || '');
   set('r-longitud',          r.longitud          || '');
   set('r-norte',             r.norte             || '');
