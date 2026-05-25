@@ -4501,6 +4501,17 @@ async function sendViaGmailAPI(raw) {
   return resp.json();
 }
 
+async function _getPdfB64ParaEnvio() {
+  if (appState.pdfB64) return appState.pdfB64;
+  if (appState.pdfStoragePath) {
+    var url  = await firebase.storage().ref(appState.pdfStoragePath).getDownloadURL();
+    var resp = await fetch(url);
+    var buf  = await resp.arrayBuffer();
+    return 'data:application/pdf;base64,' + arrayBufferToBase64(buf);
+  }
+  return null;
+}
+
 function handleCompletionEnviar() {
   var email = document.getElementById('cd-email-input').value.trim();
   if (!email || !email.includes('@')) {
@@ -4530,27 +4541,43 @@ function handleCompletionEnviar() {
   var resultBox = document.getElementById('cd-mail-result');
   resultBox.style.display = 'none';
 
-  callFn('enviarNotificacion', {
-    datos           : datos,
-    urlCertificado  : appState.savedData ? appState.savedData.urlCert : '',
-    pdfStoragePath  : appState.pdfStoragePath || ''
-  }).then(function(result) {
-    var res = result.data;
-    if (res && res.ok) {
+  (async function() {
+    try {
+      var pdfB64    = await _getPdfB64ParaEnvio();
+      var urlCert   = appState.savedData ? (appState.savedData.urlCert || appState.savedData.urlCertificado || '') : '';
+      var htmlBody  = plantillaEmailFrontend(datos, urlCert);
+      var pdfNombre = pdfB64
+        ? 'CertimarRV_' + datos.nroRegistro + '_' + (datos.centroCultivo || '').replace(/[^a-zA-Z0-9]/g,'_') + '.pdf'
+        : '';
+      var fixedCCs  = ['operaciones@certimar.cl', 'eflores@certimar.cl']
+        .filter(function(c) { return c !== email; });
+      var extraCC   = datos.emailCC ? datos.emailCC.split(',').map(function(x){ return x.trim(); }).filter(Boolean) : [];
+      var allCC     = Array.from(new Set(fixedCCs.concat(extraCC))).join(', ');
+      var raw = buildRawEmail({
+        from       : currentUser.email,
+        to         : email,
+        cc         : allCC,
+        bcc        : datos.emailCCO || '',
+        subject    : '[Certimar] Registro de Visita – ' + datos.centroCultivo + ' – ' + datos.fecha,
+        htmlBody   : htmlBody,
+        pdfB64     : pdfB64 || '',
+        pdfFilename: pdfNombre
+      });
+      await sendViaGmailAPI(raw);
+
       updateNotifCard('mail', 'success', '✉️ Correo enviado', 'Notificación enviada a ' + email);
       document.getElementById('cd-send-btn').textContent = '✓ Enviado';
       document.getElementById('cd-icon').textContent = '🎉';
       document.getElementById('cd-title').textContent = 'Registro Guardado y Notificado';
       document.getElementById('cd-sub').textContent = '';
-      // Ocultar campos de entrada, mostrar resultado de éxito
       document.getElementById('cd-email-input').parentNode.style.display = 'none';
       document.querySelectorAll('#cd-email-section .completion-email-row, #cd-email-section > div:nth-child(3), #cd-email-section > div:nth-child(4)').forEach(function(el){ el.style.display='none'; });
+      var resultBox = document.getElementById('cd-mail-result');
       resultBox.style.cssText = 'display:block;margin-top:10px;padding:12px 14px;background:#f0fdf4;border:1px solid #86efac;border-radius:8px;text-align:left;font-size:12px;line-height:1.7';
       resultBox.innerHTML =
         '<div style="font-weight:700;color:#15803d;margin-bottom:4px">✅ Correo enviado exitosamente</div>' +
         '<div style="color:#166534">📨 Destinatario: <strong>' + email + '</strong></div>' +
-        '<div style="color:#166534;margin-top:2px">📋 Copias internas enviadas a:<br>' +
-        '<strong>operaciones@certimar.cl · eflores@certimar.cl · informes@certimar.cl</strong></div>';
+        '<div style="color:#166534;margin-top:2px">Enviado desde: <strong>' + esc(currentUser.email) + '</strong></div>';
       appState.sent = true;
       lockForm(true);
       var nro = get('r-nroRegistro');
@@ -4558,28 +4585,18 @@ function handleCompletionEnviar() {
       for (var i=0; i<localRecords.length; i++) {
         if (localRecords[i].nroReg === nro) { localRecords[i].estado = 'ENVIADO'; localRecords[i].emailResp = email; break; }
       }
-    } else {
-      var errMsg = (res && res.error) ? res.error : 'Error desconocido. Reintenta.';
+    } catch(e) {
+      var errMsg = e && e.message ? e.message : String(e || 'Error desconocido');
       updateNotifCard('mail', 'error', '❌ Error al enviar', errMsg);
       document.getElementById('cd-send-btn').disabled = false;
       document.getElementById('cd-send-btn').textContent = '✉️ Reintentar';
+      var resultBox = document.getElementById('cd-mail-result');
       resultBox.style.cssText = 'display:block;margin-top:10px;padding:12px 14px;background:#fef2f2;border:1px solid #fca5a5;border-radius:8px;text-align:left;font-size:12px;line-height:1.7';
       resultBox.innerHTML =
         '<div style="font-weight:700;color:#dc2626;margin-bottom:4px">❌ Error al enviar el correo</div>' +
-        '<div style="color:#991b1b">' + esc(errMsg) + '</div>' +
-        '<div style="color:#991b1b;margin-top:4px;font-size:11px">Verifica la dirección de correo e intenta nuevamente. Si el problema persiste, contacta soporte técnico.</div>';
+        '<div style="color:#991b1b">' + esc(errMsg) + '</div>';
     }
-  }).catch(function(e) {
-    var errMsg = (e && e.message) ? e.message : String(e || 'Error de conexión');
-    updateNotifCard('mail', 'error', '❌ Error de conexión', errMsg);
-    document.getElementById('cd-send-btn').disabled = false;
-    document.getElementById('cd-send-btn').textContent = '✉️ Reintentar';
-    resultBox.style.cssText = 'display:block;margin-top:10px;padding:12px 14px;background:#fef2f2;border:1px solid #fca5a5;border-radius:8px;text-align:left;font-size:12px;line-height:1.7';
-    resultBox.innerHTML =
-      '<div style="font-weight:700;color:#dc2626;margin-bottom:4px">❌ Error de conexión</div>' +
-      '<div style="color:#991b1b">' + esc(errMsg) + '</div>' +
-      '<div style="color:#991b1b;margin-top:4px;font-size:11px">Verifica tu conexión a internet e intenta nuevamente.</div>';
-  });
+  })();
 }
 
 // =====================================================================
