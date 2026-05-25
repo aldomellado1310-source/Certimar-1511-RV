@@ -3297,43 +3297,51 @@ function handleEnviarMail() {
   datos.emailCC  = emailCC;
   datos.emailCCO = emailCCO;
 
-  setTimeout(function() { updateNotifStep('mail-send','m1','done'); updateNotifStep('mail-send','m2','active'); }, 800);
-
-  enviarMailQueue({
-    datos           : datos,
-    urlCertificado  : appState.savedData ? appState.savedData.urlCert : '',
-    pdfStoragePath  : appState.pdfStoragePath || ''
-  }).then(function(result) {
-    setBtnLoading('btn-enviar-mail', false);
-    var res = result.data;
-    if (res && res.ok) {
+  (async function() {
+    try {
+      updateNotifStep('mail-send','m1','active');
+      var pdfB64    = await _getPdfB64ParaEnvio();
+      var urlCert   = appState.savedData ? (appState.savedData.urlCert || appState.savedData.urlCertificado || '') : '';
+      var htmlBody  = plantillaEmailFrontend(datos, urlCert);
+      var pdfNombre = pdfB64
+        ? 'CertimarRV_' + datos.nroRegistro + '_' + (datos.centroCultivo || '').replace(/[^a-zA-Z0-9]/g,'_') + '.pdf'
+        : '';
+      var fixedCCs  = ['operaciones@certimar.cl', 'eflores@certimar.cl']
+        .filter(function(c) { return c !== emailDest; });
+      var extraCC   = emailCC ? emailCC.split(',').map(function(x){ return x.trim(); }).filter(Boolean) : [];
+      var allCC     = Array.from(new Set(fixedCCs.concat(extraCC))).join(', ');
+      updateNotifStep('mail-send','m1','done');
+      updateNotifStep('mail-send','m2','active');
+      var raw = buildRawEmail({
+        from       : currentUser.email,
+        to         : emailDest,
+        cc         : allCC,
+        bcc        : emailCCO || '',
+        subject    : '[Certimar] Registro de Visita – ' + datos.centroCultivo + ' – ' + datos.fecha,
+        htmlBody   : htmlBody,
+        pdfB64     : pdfB64 || '',
+        pdfFilename: pdfNombre
+      });
+      await sendViaGmailAPI(raw);
       updateNotifStep('mail-send','m2','done');
       updateNotifStep('mail-send','m3','done');
+      setBtnLoading('btn-enviar-mail', false);
       setTimeout(function() {
         updateNotifCard('mail-send', 'success', '✉️ Correo enviado correctamente',
           'Para: ' + emailDest + (emailCC ? ' · CC: ' + emailCC : ''));
       }, 500);
-
       appState.sent = true;
       var nro = datos.nroRegistro;
+      fbActualizarEstado(nro, 'ENVIADO', { emailResponsable: emailDest }).catch(function(){});
       for (var i=0; i<localRecords.length; i++) {
-        if (localRecords[i].nroReg === nro) {
-          localRecords[i].estado = 'ENVIADO';
-          localRecords[i].emailResp = emailDest;
-          break;
-        }
+        if (localRecords[i].nroReg === nro) { localRecords[i].estado = 'ENVIADO'; break; }
       }
-      lockForm(true);
-      showCompletionDialog(nro, true, emailDest);
-    } else {
-      updateNotifCard('mail-send', 'error', '❌ Error al enviar', res ? (res.error||'Error desconocido') : 'Sin respuesta del servidor');
-      toast('Error al enviar: '+(res && res.error ? res.error : 'sin respuesta'),'error');
+    } catch(e) {
+      setBtnLoading('btn-enviar-mail', false);
+      var errMsg = e && e.message ? e.message : String(e || 'Error desconocido');
+      updateNotifCard('mail-send', 'error', '❌ Error al enviar', errMsg);
     }
-  }).catch(function(e) {
-    setBtnLoading('btn-enviar-mail', false);
-    updateNotifCard('mail-send', 'error', '❌ Error de conexión', String(e && e.message ? e.message : e));
-    toast('Error al enviar correo','error');
-  });
+  })();
 }
 
 // =====================================================================
