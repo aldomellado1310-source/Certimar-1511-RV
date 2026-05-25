@@ -1239,8 +1239,9 @@ video{width:100%;border-radius:8px;background:black}
               <td colspan="2" style="padding:0;border:1px solid #94a3b8">
                 <div style="font-size:11px;font-weight:700;padding:6px 12px;border-bottom:1px solid #94a3b8">TIPO OBSERVACIÓN (MARQUE UNA):</div>
                 <div class="tipo-obs-row">
-                  <label class="tipo-obs-label"><input type="radio" name="tipoObs" value="EXTRACCION" onchange="checkChecklist()"> EXTRACCION</label>
-                  <label class="tipo-obs-label"><input type="radio" name="tipoObs" value="DESNATURALIZACION" onchange="checkChecklist()"> DESNATURALIZACION</label>
+                  <label class="tipo-obs-label"><input type="radio" name="tipoObs" value="GENERAL" onchange="checkChecklist()"> GENERAL</label>
+                  <label class="tipo-obs-label"><input type="radio" name="tipoObs" value="EXTRACCION" onchange="checkChecklist()"> EXTRACCIÓN</label>
+                  <label class="tipo-obs-label"><input type="radio" name="tipoObs" value="DESNATURALIZACION" onchange="checkChecklist()"> DESNATURALIZACIÓN</label>
                   <label class="tipo-obs-label"><input type="radio" name="tipoObs" value="ALMACENAMIENTO" onchange="checkChecklist()"> ALMACENAMIENTO</label>
                   <label class="tipo-obs-label"><input type="radio" name="tipoObs" value="OTRO" onchange="checkChecklist()"> OTRO</label>
                 </div>
@@ -1431,6 +1432,10 @@ video{width:100%;border-radius:8px;background:black}
         <p id="admin-header-sub">Gestión global de todos los registros de visita</p>
       </div>
       <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <button class="btn-action" style="border-color:#0891b2;color:#0891b2;font-size:12px;padding:7px 14px" onclick="revisarObservaciones()" title="Lista textos únicos agrupados por categoría para detectar near-duplicates">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          Revisar Observaciones
+        </button>
         <button class="btn-action" style="border-color:#d97706;color:#d97706;font-size:12px;padding:7px 14px" onclick="normalizarNombresCentros(this)" title="Convierte todos los nombres de centros a MAYÚSCULAS en Firestore">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
           Normalizar Nombres
@@ -2060,7 +2065,7 @@ function buildDocData(datos, nroRegistro, urlCertificado, urlFoto) {
     norte            : datos.norte        || '',
     este             : datos.este         || '',
     resoluciones     : resArray.join(', '),
-    observaciones    : datos.observaciones  || '',
+    observaciones    : normalizarObs(datos.observaciones),
     tipoObservacion  : datos.tipoObservacion|| '',
     nombreResponsable: datos.nombreResponsable || '',
     emailResponsable : datos.emailDestinatario || '',
@@ -2091,10 +2096,25 @@ async function fbActualizarEstado(nroRegistro, nuevoEstado, extraData) {
 }
 
 // =====================================================================
-//  NORMALIZACIÓN DE TEXTO — corrige typos conocidos al leer de Firestore
+//  NORMALIZACIÓN DE TEXTO — corrige typos conocidos al leer/guardar
 // =====================================================================
+var TYPOS_OBS = [
+  [/\bacido\s+formico\b/gi,        'ÁCIDO FÓRMICO'],
+  [/\bcalculo\b/gi,                 'CÁLCULO'],
+  [/\bextraccion\b/gi,              'EXTRACCIÓN'],
+  [/\bdesnaturalizacion\b/gi,       'DESNATURALIZACIÓN'],
+  [/\balmacenamiento\b/gi,          'ALMACENAMIENTO'],
+  [/\btn\s*\/\s*m3\b/gi,            'TN/M3'],
+  [/\bformico\b/gi,                 'FÓRMICO'],
+  [/\bacido\b/gi,                   'ÁCIDO']
+];
+
 function normalizarObs(str) {
-  return (str || '').replace(/\b(\w[\w\s]{2,}?)\s+\1\b/gi, '$1').trim();
+  var s = (str || '').toString();
+  s = s.replace(/[ \t]+/g, ' ').replace(/ *\n */g, '\n').trim();
+  s = s.replace(/\b(\w[\w\s]{2,}?)\s+\1\b/gi, '$1');
+  TYPOS_OBS.forEach(function(r) { s = s.replace(r[0], r[1]); });
+  return s;
 }
 
 // =====================================================================
@@ -4407,6 +4427,80 @@ function plantillaEmailFrontend(datos, urlCert) {
     '</table></td></tr></table></body></html>';
 }
 
+function buildRawEmail(params) {
+  var from       = params.from;
+  var to         = params.to;
+  var cc         = params.cc  || '';
+  var bcc        = params.bcc || '';
+  var subject    = params.subject;
+  var htmlBody   = params.htmlBody;
+  var pdfB64     = params.pdfB64 || '';
+  var pdfFilename= params.pdfFilename || 'certificado.pdf';
+
+  var boundary = 'certimar_' + Date.now();
+  var nl = '\r\n';
+
+  // RFC 2047 encoding for subject (handles tildes, ñ, etc.)
+  var encSubject = '=?UTF-8?B?' + btoa(unescape(encodeURIComponent(subject))) + '?=';
+
+  var headerLines = [
+    'From: ' + from,
+    'To: ' + to,
+    cc  ? 'Cc: '  + cc  : null,
+    bcc ? 'Bcc: ' + bcc : null,
+    'Subject: ' + encSubject,
+    'MIME-Version: 1.0',
+    'Content-Type: multipart/mixed; boundary="' + boundary + '"'
+  ].filter(Boolean).join(nl);
+
+  var htmlB64 = btoa(unescape(encodeURIComponent(htmlBody)));
+  var htmlPart = [
+    '--' + boundary,
+    'Content-Type: text/html; charset=UTF-8',
+    'Content-Transfer-Encoding: base64',
+    '',
+    htmlB64
+  ].join(nl);
+
+  var parts = [headerLines, '', htmlPart];
+
+  if (pdfB64) {
+    var rawPdf = pdfB64.replace(/^data:application\/pdf;base64,/, '');
+    var pdfPart = [
+      '--' + boundary,
+      'Content-Type: application/pdf; name="' + pdfFilename + '"',
+      'Content-Transfer-Encoding: base64',
+      'Content-Disposition: attachment; filename="' + pdfFilename + '"',
+      '',
+      rawPdf
+    ].join(nl);
+    parts.push(pdfPart);
+  }
+
+  parts.push('--' + boundary + '--');
+
+  var raw = parts.join(nl);
+  return btoa(raw).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+async function sendViaGmailAPI(raw) {
+  if (!_gmailToken) throw new Error('Sin token Gmail. Vuelve a iniciar sesión.');
+  var resp = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
+    method : 'POST',
+    headers: { 'Authorization': 'Bearer ' + _gmailToken, 'Content-Type': 'application/json' },
+    body   : JSON.stringify({ raw: raw })
+  });
+  if (resp.status === 401 || resp.status === 403) {
+    _gmailToken = null;
+    throw new Error('Sesión de correo expirada. Vuelve a iniciar sesión.');
+  }
+  if (!resp.ok) {
+    var err = await resp.json().catch(function() { return {}; });
+    throw new Error((err.error && err.error.message) ? err.error.message : 'Error Gmail API ' + resp.status);
+  }
+  return resp.json();
+}
+
 function handleCompletionEnviar() {
   var email = document.getElementById('cd-email-input').value.trim();
   if (!email || !email.includes('@')) {
@@ -4814,6 +4908,106 @@ function admReenviarMail(nro, email) {
       updateNotifCard('adm-mail','error','❌ Error al reenviar', res ? res.error : 'Sin respuesta');
     }
   }).catch(function(e){ updateNotifCard('adm-mail','error','❌ Error',String(e && e.message ? e.message : e)); });
+}
+
+// =====================================================================
+//  REVISAR OBSERVACIONES — vista admin de near-duplicates por categoría
+// =====================================================================
+function revisarObservaciones() {
+  var data = _adminAll;
+  if (!data || !data.length) { toast('Cargue el panel admin primero', 'error'); return; }
+
+  var ORDEN = ['GENERAL','EXTRACCION','DESNATURALIZACION','ALMACENAMIENTO','OTRO'];
+
+  // Agrupar por tipoObservacion, luego clusterizar near-duplicates
+  var grupos = {};
+  data.forEach(function(r) {
+    var tipo = (r.tipoObservacion || 'SIN TIPO').trim().toUpperCase();
+    var obs  = (r.observaciones || '').trim();
+    if (!obs) return;
+    if (!grupos[tipo]) grupos[tipo] = {};
+    // clave normalizada: minúsculas, sin tildes, espacios colapsados
+    var clave = obs.toLowerCase()
+      .normalize('NFD').replace(/[̀-ͯ]/g, '')
+      .replace(/\s+/g, ' ').trim();
+    if (!grupos[tipo][clave]) grupos[tipo][clave] = { variantes: {}, total: 0 };
+    grupos[tipo][clave].variantes[obs] = (grupos[tipo][clave].variantes[obs] || 0) + 1;
+    grupos[tipo][clave].total++;
+  });
+
+  // Construir HTML
+  var categorias = Object.keys(grupos).sort(function(a, b) {
+    var ia = ORDEN.indexOf(a), ib = ORDEN.indexOf(b);
+    if (ia === -1) ia = 99; if (ib === -1) ib = 99;
+    return ia - ib;
+  });
+
+  var html = '';
+  categorias.forEach(function(tipo) {
+    var clusters = Object.values(grupos[tipo]).sort(function(a, b) { return b.total - a.total; });
+    var conDups = clusters.filter(function(c){ return Object.keys(c.variantes).length > 1; }).length;
+    html += '<div style="margin-bottom:24px">'
+      + '<div style="font-size:11px;font-weight:700;letter-spacing:.08em;color:#0891b2;text-transform:uppercase;margin-bottom:8px;display:flex;gap:8px;align-items:center">'
+      + esc(tipo)
+      + '<span style="font-weight:400;color:#64748b;text-transform:none">'
+      + clusters.length + ' texto(s) únicos'
+      + (conDups ? ' · <span style="color:#dc2626">'+conDups+' con variantes</span>' : '')
+      + '</span></div>'
+      + '<table style="width:100%;border-collapse:collapse;font-size:12px">'
+      + '<thead><tr style="background:#f8fafc">'
+      + '<th style="padding:6px 10px;text-align:left;border:1px solid #e2e8f0;font-weight:600">Texto (1ª variante)</th>'
+      + '<th style="padding:6px 10px;text-align:center;border:1px solid #e2e8f0;font-weight:600;width:70px">Variantes</th>'
+      + '<th style="padding:6px 10px;text-align:center;border:1px solid #e2e8f0;font-weight:600;width:60px">Registros</th>'
+      + '</tr></thead><tbody>';
+
+    clusters.forEach(function(c, idx) {
+      var vars = Object.keys(c.variantes);
+      var hasDup = vars.length > 1;
+      var rowId = 'obs-row-' + tipo + '-' + idx;
+      html += '<tr style="cursor:'+(hasDup?'pointer':'default')+';background:'+(hasDup?'#fff7ed':'white')+'"'
+        + (hasDup ? ' onclick="var d=document.getElementById(\''+rowId+'\');d.style.display=d.style.display===\'none\'?\'table-row\':\'none\'"' : '')
+        + '>'
+        + '<td style="padding:6px 10px;border:1px solid #e2e8f0;color:#1e293b;word-break:break-word">'
+        + (hasDup ? '<span style="color:#d97706;margin-right:4px">▶</span>' : '')
+        + esc(vars[0])
+        + '</td>'
+        + '<td style="padding:6px 10px;border:1px solid #e2e8f0;text-align:center;font-weight:600;color:'+(hasDup?'#dc2626':'#64748b')+'">'+vars.length+'</td>'
+        + '<td style="padding:6px 10px;border:1px solid #e2e8f0;text-align:center;color:#64748b">'+c.total+'</td>'
+        + '</tr>';
+
+      if (hasDup) {
+        html += '<tr id="'+rowId+'" style="display:none"><td colspan="3" style="padding:0;border:1px solid #e2e8f0">'
+          + '<table style="width:100%;border-collapse:collapse;background:#fff7ed">';
+        vars.forEach(function(v) {
+          html += '<tr><td style="padding:5px 10px 5px 28px;font-size:11px;color:#92400e;word-break:break-word;border-top:1px dashed #fcd34d">'
+            + esc(v) + '</td>'
+            + '<td style="padding:5px 10px;text-align:center;font-size:11px;color:#92400e;width:60px;border-top:1px dashed #fcd34d">×'+c.variantes[v]+'</td></tr>';
+        });
+        html += '</table></td></tr>';
+      }
+    });
+    html += '</tbody></table></div>';
+  });
+
+  if (!html) html = '<p style="color:#64748b;text-align:center;padding:32px">No hay observaciones registradas.</p>';
+
+  // Inyectar modal
+  var existing = document.getElementById('modal-revisar-obs');
+  if (existing) existing.remove();
+  var div = document.createElement('div');
+  div.id = 'modal-revisar-obs';
+  div.className = 'modal-overlay';
+  div.style.zIndex = '300';
+  div.innerHTML = '<div class="modal-box" style="max-width:800px;width:100%">'
+    + '<div class="modal-header">'
+    + '<h2>Revisar Observaciones por Categoría</h2>'
+    + '<button class="modal-close" onclick="document.getElementById(\'modal-revisar-obs\').remove()">×</button>'
+    + '</div>'
+    + '<div class="modal-body" style="padding:20px 24px">'
+    + '<p style="font-size:12px;color:#64748b;margin-bottom:16px">Las filas en <span style="color:#dc2626;font-weight:600">rojo</span> tienen variantes del mismo texto. Haz clic para expandir y ver las diferencias exactas. Usa esos textos para agregar reglas a <code>TYPOS_OBS</code>.</p>'
+    + html
+    + '</div></div>';
+  document.body.appendChild(div);
 }
 
 async function normalizarNombresCentros(btn) {
