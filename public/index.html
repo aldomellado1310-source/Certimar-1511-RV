@@ -4330,6 +4330,83 @@ function completionGo(view) {
   showView(view);
 }
 
+// =====================================================================
+//  GMAIL API — HELPERS
+// =====================================================================
+function arrayBufferToBase64(buf) {
+  var bytes = new Uint8Array(buf);
+  var binary = '';
+  for (var i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
+  return btoa(binary);
+}
+
+function plantillaEmailFrontend(datos, urlCert) {
+  var resoluciones = esc(buildResExt(datos.resoluciones) || '—');
+  var safeUrlCert  = encodeURI(urlCert || '').replace(/"/g, '%22');
+  var linkBtn      = safeUrlCert
+    ? '<a href="' + safeUrlCert + '" style="display:inline-block;background:#003366;color:#fff;padding:13px 32px;text-decoration:none;border-radius:6px;font-size:14px;font-weight:700;font-family:Arial,sans-serif">Ver Certificado →</a>'
+    : '';
+  var e = esc;
+  var filas = [
+    ['N° Registro',         '<strong style="color:#003366">' + (e(datos.nroRegistro) || '—') + '</strong>'],
+    ['Fecha',                    e(datos.fecha)                     || '—'],
+    ['Centro de Cultivo',        e(datos.centroCultivo)             || '—'],
+    ['N° Centro',           e(datos.nroCentro)                 || '—'],
+    ['ACS',                      e(datos.acs)                       || '—'],
+    ['Titular',                  e(datos.titular)                   || '—'],
+    ['Ubicación',           e(datos.ubicacion)                 || '—'],
+    ['Región',              e(datos.region)                    || '—'],
+    ['Sector',                   e(datos.sector)                    || '—'],
+    ['Fecha última siembra',e(datos.fechaSiembra)              || '—'],
+    ['Tamaño peces',        e(datos.tamanoPeces)               || '—'],
+    ['Largo jaula (m)',          e(datos.jaulasLargo)               || '—'],
+    ['Ancho jaula (m)',          e(datos.jaulasAncho)               || '—'],
+    ['Cantidad jaulas',          e(datos.cantidadJaulas)            || '—'],
+    ['Jaulas sembradas',         e(datos.cantidadJaulasSembradas)   || '—'],
+    ['A/N Ensilaje',             e(datos.artefactoNaval)            || '—'],
+    ['Norma aplicable',          resoluciones],
+    ['Latitud S',                e(datos.latitud)                   || '—'],
+    ['Longitud W',               e(datos.longitud)                  || '—'],
+    ['Norte',                    e(datos.norte)                     || '—'],
+    ['Este',                     e(datos.este)                      || '—'],
+    ['Responsable',              e(datos.nombreResponsable)         || '—'],
+    ['Tipo Observación',    e(datos.tipoObservacion)           || '—'],
+    ['Observaciones',            e(datos.observaciones || 'S/O').replace(/\n/g, '<br>')],
+    ['Certificador',             e(datos.nombreCertificador)        || '—'],
+    ['N° Registro Cert.',   e(datos.rutCertificador)           || '—']
+  ].map(function(r, i) {
+    var bg = i % 2 === 0 ? '#ffffff' : '#f1f5f9';
+    return '<tr style="background:' + bg + '">' +
+      '<td style="padding:9px 14px;font-weight:600;color:#64748b;font-size:13px;width:38%;border-bottom:1px solid #e2e8f0;font-family:Arial,sans-serif">' + r[0] + '</td>' +
+      '<td style="padding:9px 14px;color:#1e293b;font-size:13px;border-bottom:1px solid #e2e8f0;font-family:Arial,sans-serif">' + r[1] + '</td>' +
+      '</tr>';
+  }).join('');
+
+  return '<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>' +
+    '<body style="margin:0;padding:0;background:#f1f5f9">' +
+    '<table width="100%" cellpadding="0" cellspacing="0" style="background:#f1f5f9;padding:24px 0">' +
+    '<tr><td align="center">' +
+    '<table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:10px;overflow:hidden;border:1px solid #e2e8f0">' +
+    '<tr><td style="background:linear-gradient(135deg,#003366 0%,#005599 50%,#003366 100%);padding:28px 32px;border-bottom:4px solid #0099CC">' +
+    '<div style="color:#ffffff;font-size:22px;font-weight:900;letter-spacing:3px;font-family:Arial,sans-serif">CERTIMAR</div>' +
+    '<div style="color:rgba(180,220,255,.85);font-size:12px;font-family:Arial,sans-serif;margin-top:3px">Sistema de Certificación — Registro de Visita</div>' +
+    '</td></tr>' +
+    '<tr><td style="padding:28px 32px 16px">' +
+    '<p style="margin:0 0 12px;color:#1e293b;font-size:15px;font-family:Arial,sans-serif">Estimado(a) <strong>' + e(datos.nombreResponsable || 'Responsable') + '</strong>,</p>' +
+    '<p style="margin:0;color:#475569;font-size:14px;line-height:1.65;font-family:Arial,sans-serif">' +
+    'Adjunto encontrará el Registro de Visita oficial del centro <strong style="color:#003366">' + e(datos.centroCultivo) + '</strong>' +
+    ' con fecha <strong>' + e(datos.fecha) + '</strong>, emitido por Certimar SpA.</p>' +
+    '</td></tr>' +
+    '<tr><td style="padding:8px 32px 24px">' +
+    '<table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e2e8f0;border-radius:8px;overflow:hidden">' + filas + '</table>' +
+    '</td></tr>' +
+    (safeUrlCert ? '<tr><td style="padding:4px 32px 28px;text-align:center">' + linkBtn + '</td></tr>' : '') +
+    '<tr><td style="background:#1e293b;padding:18px 32px;text-align:center">' +
+    '<p style="margin:0;color:#94a3b8;font-size:11px;font-family:Arial,sans-serif">Certimar SpA · operaciones@certimar.cl · +56 9 6115 6322</p>' +
+    '</td></tr>' +
+    '</table></td></tr></table></body></html>';
+}
+
 function handleCompletionEnviar() {
   var email = document.getElementById('cd-email-input').value.trim();
   if (!email || !email.includes('@')) {
