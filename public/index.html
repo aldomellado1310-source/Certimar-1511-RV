@@ -3331,7 +3331,9 @@ function handleEnviarMail() {
           'Para: ' + emailDest + (emailCC ? ' · CC: ' + emailCC : ''));
       }, 500);
       appState.sent = true;
+      lockForm(true);
       var nro = datos.nroRegistro;
+      showCompletionDialog(nro, true, emailDest);
       fbActualizarEstado(nro, 'ENVIADO', { emailResponsable: emailDest }).catch(function(){});
       for (var i=0; i<localRecords.length; i++) {
         if (localRecords[i].nroReg === nro) { localRecords[i].estado = 'ENVIADO'; break; }
