@@ -1771,6 +1771,7 @@ video{width:100%;border-radius:8px;background:black}
 var APP_VERSION = 'v1.0.3';
 
 var appState = { saved: false, sent: false, pdfB64: null, fotoB64: null };
+var _gmailToken = null;   // OAuth access token con scope gmail.send
 var chartMes = null, chartRes = null;
 var historicData = [];
 var localRecords = [];
@@ -2090,6 +2091,13 @@ async function fbActualizarEstado(nroRegistro, nuevoEstado, extraData) {
 }
 
 // =====================================================================
+//  NORMALIZACIÓN DE TEXTO — corrige typos conocidos al leer de Firestore
+// =====================================================================
+function normalizarObs(str) {
+  return (str || '').replace(/\b(\w[\w\s]{2,}?)\s+\1\b/gi, '$1').trim();
+}
+
+// =====================================================================
 //  FIREBASE — OBTENER REGISTROS (del usuario actual)
 // =====================================================================
 async function fbObtenerRegistros(filtros) {
@@ -2102,7 +2110,7 @@ async function fbObtenerRegistros(filtros) {
   q = q.orderBy('creadoEn', 'desc').limit(200);
   var snap = await q.get();
   var docs = [];
-  snap.forEach(function(d) { docs.push(Object.assign({ id: d.id }, d.data())); });
+  snap.forEach(function(d) { var data = d.data(); docs.push(Object.assign({ id: d.id }, data, { observaciones: normalizarObs(data.observaciones) })); });
   return docs;
 }
 
@@ -2115,7 +2123,7 @@ async function fbObtenerTodos(filtros) {
   var q = db.collection('registros_visita').orderBy('creadoEn', 'desc').limit(500);
   var snap = await q.get();
   var docs = [];
-  snap.forEach(function(d) { docs.push(Object.assign({ id: d.id }, d.data())); });
+  snap.forEach(function(d) { var data = d.data(); docs.push(Object.assign({ id: d.id }, data, { observaciones: normalizarObs(data.observaciones) })); });
   console.log('[admin] fbObtenerTodos:', docs.length, 'registros en Firestore');
   return docs;
 }
@@ -2259,7 +2267,10 @@ function generarParticulas() {
 // =====================================================================
 function loginGoogle() {
   var provider = new firebase.auth.GoogleAuthProvider();
-  firebase.auth().signInWithPopup(provider).catch(function(e) {
+  provider.addScope('https://www.googleapis.com/auth/gmail.send');
+  firebase.auth().signInWithPopup(provider).then(function(result) {
+    _gmailToken = result.credential ? result.credential.accessToken : null;
+  }).catch(function(e) {
     toast('Error al iniciar sesión: ' + e.message, 'error');
   });
 }
