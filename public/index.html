@@ -4919,22 +4919,53 @@ function admReenviarMail(nro, email) {
     nroCentro: r.nroCentro, acs: r.acs, titular: r.titular, nombreResponsable: r.nombreResponsable,
     emailDestinatario: dest, observaciones: r.observaciones, tipoObservacion: r.tipoObservacion,
     nombreCertificador: r.nombreCertificador || r.certNombre || '', rutCertificador: r.rutCertificador || '' };
-  enviarMailQueue({
-    datos          : datos,
-    urlCertificado : r.urlCertificado || '',
-    pdfStoragePath : r.pdfStoragePath || ''
-  }).then(function(result) {
-    var res = result.data;
-    if (res && res.ok) {
+  (async function() {
+    try {
+      // Obtain PDF from Storage or public URL
+      var pdfB64 = null;
+      if (r.pdfStoragePath) {
+        var pdfUrl  = await firebase.storage().ref(r.pdfStoragePath).getDownloadURL();
+        var pdfResp = await fetch(pdfUrl);
+        var pdfBuf  = await pdfResp.arrayBuffer();
+        pdfB64 = 'data:application/pdf;base64,' + arrayBufferToBase64(pdfBuf);
+      } else if (r.urlCertificado) {
+        try {
+          var pdfResp2 = await fetch(r.urlCertificado);
+          if (pdfResp2.ok) {
+            var pdfBuf2 = await pdfResp2.arrayBuffer();
+            pdfB64 = 'data:application/pdf;base64,' + arrayBufferToBase64(pdfBuf2);
+          }
+        } catch(_) {}
+      }
+      var urlCert   = r.urlCertificado || '';
+      var htmlBody  = plantillaEmailFrontend(datos, urlCert);
+      var pdfNombre = pdfB64
+        ? 'CertimarRV_' + datos.nroRegistro + '_' + (datos.centroCultivo || '').replace(/[^a-zA-Z0-9]/g,'_') + '.pdf'
+        : '';
+      var fixedCCs  = ['operaciones@certimar.cl', 'eflores@certimar.cl']
+        .filter(function(c) { return c !== dest; });
+      var allCC     = fixedCCs.join(', ');
+      var raw = buildRawEmail({
+        from       : currentUser.email,
+        to         : dest,
+        cc         : allCC,
+        subject    : '[Certimar] Registro de Visita – ' + (datos.centroCultivo || '') + ' – ' + (datos.fecha || ''),
+        htmlBody   : htmlBody,
+        pdfB64     : pdfB64 || '',
+        pdfFilename: pdfNombre
+      });
+      await sendViaGmailAPI(raw);
+
       updateNotifCard('adm-mail','success','✉️ Reenviado correctamente','Para: '+dest);
       fbActualizarEstado(nro, 'ENVIADO', { emailResponsable: dest }).catch(function(){});
       var idx = _adminAll.findIndex(function(x){ return x.nroRegistro === nro; });
       if (idx >= 0) { _adminAll[idx].estado = 'ENVIADO'; _adminAll[idx].emailResponsable = dest; }
       filtrarAdmin();
-    } else {
-      updateNotifCard('adm-mail','error','❌ Error al reenviar', res ? res.error : 'Sin respuesta');
+    } catch(e) {
+      var errMsg = e && e.message ? e.message : String(e || 'Error desconocido');
+      updateNotifCard('adm-mail','error','❌ Error al reenviar', errMsg);
     }
-  }).catch(function(e){ updateNotifCard('adm-mail','error','❌ Error',String(e && e.message ? e.message : e)); });
+  })();
 }
 
 // =====================================================================
