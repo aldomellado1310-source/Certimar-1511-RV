@@ -2726,10 +2726,23 @@ function initFirmaExpandListeners(canvas, ctx) {
   canvas.addEventListener('touchstart', onDown, {passive:false});
   canvas.addEventListener('touchmove',  onMove, {passive:false});
   canvas.addEventListener('touchend',   onUp);
+  canvas.addEventListener('touchcancel',onUp);
   _firmaExpandHandlers = { canvas:canvas, onDown:onDown, onMove:onMove, onUp:onUp };
 }
 
 function openFirmaExpand() {
+  if (_firmaExpandHandlers) {
+    var c = _firmaExpandHandlers.canvas;
+    c.removeEventListener('mousedown',  _firmaExpandHandlers.onDown);
+    c.removeEventListener('mousemove',  _firmaExpandHandlers.onMove);
+    c.removeEventListener('mouseup',    _firmaExpandHandlers.onUp);
+    c.removeEventListener('mouseleave', _firmaExpandHandlers.onUp);
+    c.removeEventListener('touchstart', _firmaExpandHandlers.onDown);
+    c.removeEventListener('touchmove',  _firmaExpandHandlers.onMove);
+    c.removeEventListener('touchend',   _firmaExpandHandlers.onUp);
+    c.removeEventListener('touchcancel',_firmaExpandHandlers.onUp);
+    _firmaExpandHandlers = null;
+  }
   var modal   = document.getElementById('modal-firma-expand');
   var canvas  = document.getElementById('firma-expand-canvas');
   var ph      = document.getElementById('firma-expand-placeholder');
