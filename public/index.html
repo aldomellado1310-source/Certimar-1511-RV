@@ -1276,6 +1276,7 @@ video{width:100%;border-radius:8px;background:black}
                 </svg>
               </div>
               <canvas id="firma-cliente" width="280" height="90" class="firma-canvas"></canvas>
+              <button class="pdf-hide firma-expand-btn" onclick="openFirmaExpand()" title="Ampliar para firmar"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg></button>
               <button onclick="clearFirmaCliente()" class="pdf-hide" style="position:absolute;top:4px;right:4px;z-index:10;background:rgba(255,255,255,.85);border:1px solid #fecaca;color:#ef4444;padding:3px 7px;border-radius:5px;cursor:pointer;font-size:13px;font-weight:700;line-height:1" title="Borrar firma">✕</button>
             </div>
             <div class="firma-line"></div>
@@ -5485,6 +5486,27 @@ function toast(msg, type) {
 
 <!-- Dropdown autocomplete global (fuera de doc-paper para evitar overflow:hidden) -->
 <div id="ac-dropdown" class="autocomplete-dropdown" style="display:none;position:fixed"></div>
+
+<!-- ===================== MODAL FIRMA EXPAND ===================== -->
+<div id="modal-firma-expand" class="hidden">
+  <div class="modal-firma-card">
+    <div style="font-weight:700;font-size:15px;color:#1e293b">Firma del Responsable</div>
+    <div style="position:relative">
+      <div id="firma-expand-placeholder" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;opacity:.2;pointer-events:none">
+        <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M12 2a3 3 0 00-3 3v7a3 3 0 006 0V5a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/>
+          <line x1="12" y1="19" x2="12" y2="22"/>
+        </svg>
+      </div>
+      <canvas id="firma-expand-canvas"></canvas>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end">
+      <button onclick="clearFirmaExpand()" style="background:#fee2e2;border:1px solid #fecaca;color:#ef4444;padding:7px 14px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:700">✕ Limpiar</button>
+      <button onclick="closeFirmaExpand(false)" style="background:#f1f5f9;border:1px solid #cbd5e1;color:#475569;padding:7px 14px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600">Cancelar</button>
+      <button onclick="saveFirmaExpand()" style="background:#16a34a;border:none;color:#fff;padding:7px 16px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:700">Guardar firma</button>
+    </div>
+  </div>
+</div>
 
 <script>
 if ('serviceWorker' in navigator) {
