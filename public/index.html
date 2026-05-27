@@ -2236,6 +2236,12 @@ document.addEventListener('DOMContentLoaded', function() {
     setTimeout(function() {
       document.getElementById('view-splash').style.display = 'none';
       if (user) {
+        if (!user.email.endsWith('@certimar.cl')) {
+          firebase.auth().signOut();
+          document.getElementById('view-login').classList.remove('hidden');
+          toast('Acceso restringido a cuentas @certimar.cl', 'error');
+          return;
+        }
         var name = user.displayName ||
           user.email.split('@')[0].replace(/\./g,' ').replace(/\b\w/g, function(c){ return c.toUpperCase(); });
         currentUser = {
