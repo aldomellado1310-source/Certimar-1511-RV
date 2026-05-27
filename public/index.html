@@ -1899,6 +1899,9 @@ function getAdminColspan() {
 
 var isFirmaDrawing = false;
 var firmaClienteHasData = false;
+var isFirmaExpandDrawing = false;
+var firmaExpandHasData   = false;
+var _firmaExpandHandlers = null; // keeps references for removeEventListener
 var cameraStream = null;
 var currentUser  = null;   // { email, name, isAdmin }
 var _db = null;            // instancia Firestore
@@ -2705,6 +2708,49 @@ function clearFirmaCliente() {
   // Si el form estaba bloqueado parcialmente, reactivar el canvas para poder refirmar
   canvas.style.pointerEvents = '';
   checkChecklist();
+}
+
+function initFirmaExpandListeners(canvas, ctx) {
+  function getPos(e) {
+    var rect = canvas.getBoundingClientRect();
+    var src = e.touches ? e.touches[0] : e;
+    return { x: src.clientX - rect.left, y: src.clientY - rect.top };
+  }
+  function onDown(e)  { e.preventDefault(); isFirmaExpandDrawing=true; ctx.beginPath(); var p=getPos(e); ctx.moveTo(p.x,p.y); }
+  function onMove(e)  { e.preventDefault(); if(!isFirmaExpandDrawing) return; ctx.strokeStyle='#1e3a5f'; ctx.lineWidth=3; ctx.lineCap='round'; var p=getPos(e); ctx.lineTo(p.x,p.y); ctx.stroke(); ctx.beginPath(); ctx.moveTo(p.x,p.y); document.getElementById('firma-expand-placeholder').style.display='none'; firmaExpandHasData=true; }
+  function onUp()     { isFirmaExpandDrawing=false; }
+  canvas.addEventListener('mousedown',  onDown);
+  canvas.addEventListener('mousemove',  onMove);
+  canvas.addEventListener('mouseup',    onUp);
+  canvas.addEventListener('mouseleave', onUp);
+  canvas.addEventListener('touchstart', onDown, {passive:false});
+  canvas.addEventListener('touchmove',  onMove, {passive:false});
+  canvas.addEventListener('touchend',   onUp);
+  _firmaExpandHandlers = { canvas:canvas, onDown:onDown, onMove:onMove, onUp:onUp };
+}
+
+function openFirmaExpand() {
+  var modal   = document.getElementById('modal-firma-expand');
+  var canvas  = document.getElementById('firma-expand-canvas');
+  var ph      = document.getElementById('firma-expand-placeholder');
+  var expandW = Math.min(Math.round(window.innerWidth * 0.9), 580);
+  var expandH = 220;
+  canvas.width  = expandW;
+  canvas.height = expandH;
+  var ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, expandW, expandH);
+  isFirmaExpandDrawing = false;
+  firmaExpandHasData   = false;
+  if (firmaClienteHasData) {
+    var small = document.getElementById('firma-cliente');
+    ctx.drawImage(small, 0, 0, expandW, expandH);
+    firmaExpandHasData = true;
+    ph.style.display = 'none';
+  } else {
+    ph.style.display = '';
+  }
+  initFirmaExpandListeners(canvas, ctx);
+  modal.classList.remove('hidden');
 }
 
 // =====================================================================
