@@ -2770,6 +2770,7 @@ function clearFirmaExpand() {
   var canvas = document.getElementById('firma-expand-canvas');
   canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
   firmaExpandHasData = false;
+  isFirmaExpandDrawing = false;
   document.getElementById('firma-expand-placeholder').style.display = '';
 }
 
