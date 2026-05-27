@@ -484,6 +484,12 @@ label.filtro-label{font-size:11px;font-weight:600;color:#64748b;text-transform:u
 .firma-input-name{font-weight:700;font-size:13px;text-align:center;border:none;background:transparent;outline:none;width:100%}
 .firma-input-name:hover{border-bottom:1px dashed #93c5fd}
 .firma-role{font-size:11px;font-weight:700;color:#374151;text-align:center}
+.firma-expand-btn{position:absolute;top:4px;left:4px;z-index:2;background:rgba(255,255,255,.85);border:1px solid #cbd5e1;border-radius:4px;padding:2px 5px;cursor:pointer;color:#475569;font-size:11px;line-height:1}
+.firma-expand-btn:hover{background:#f1f5f9}
+#modal-firma-expand{position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center}
+#modal-firma-expand.hidden{display:none}
+.modal-firma-card{background:#fff;border-radius:12px;padding:20px 24px;display:flex;flex-direction:column;gap:16px;box-shadow:0 20px 60px rgba(0,0,0,.4)}
+#firma-expand-canvas{border:1.5px solid #cbd5e1;border-radius:8px;cursor:crosshair;touch-action:none;background:#fff;display:block}
 /* Checklist */
 .checklist-card{background:#fffbeb;border:2px solid #fbbf24;border-radius:14px;padding:24px;margin-top:24px}
 .checklist-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
