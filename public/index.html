@@ -2766,6 +2766,43 @@ function openFirmaExpand() {
   modal.classList.remove('hidden');
 }
 
+function clearFirmaExpand() {
+  var canvas = document.getElementById('firma-expand-canvas');
+  canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
+  firmaExpandHasData = false;
+  document.getElementById('firma-expand-placeholder').style.display = '';
+}
+
+function closeFirmaExpand(save) {
+  if (save && firmaExpandHasData) {
+    var expandCanvas = document.getElementById('firma-expand-canvas');
+    var small = document.getElementById('firma-cliente');
+    var ctx = small.getContext('2d');
+    ctx.clearRect(0, 0, 280, 90);
+    ctx.drawImage(expandCanvas, 0, 0, 280, 90);
+    firmaClienteHasData = true;
+    document.getElementById('firma-placeholder').style.display = 'none';
+    checkChecklist();
+    scheduleBorrador();
+  }
+  if (_firmaExpandHandlers) {
+    var c = _firmaExpandHandlers.canvas;
+    c.removeEventListener('mousedown',  _firmaExpandHandlers.onDown);
+    c.removeEventListener('mousemove',  _firmaExpandHandlers.onMove);
+    c.removeEventListener('mouseup',    _firmaExpandHandlers.onUp);
+    c.removeEventListener('mouseleave', _firmaExpandHandlers.onUp);
+    c.removeEventListener('touchstart', _firmaExpandHandlers.onDown);
+    c.removeEventListener('touchmove',  _firmaExpandHandlers.onMove);
+    c.removeEventListener('touchend',   _firmaExpandHandlers.onUp);
+    c.removeEventListener('touchcancel',_firmaExpandHandlers.onUp);
+    _firmaExpandHandlers = null;
+  }
+  isFirmaExpandDrawing = false;
+  document.getElementById('modal-firma-expand').classList.add('hidden');
+}
+
+function saveFirmaExpand() { closeFirmaExpand(true); }
+
 // =====================================================================
 //  CÁMARA
 // =====================================================================
