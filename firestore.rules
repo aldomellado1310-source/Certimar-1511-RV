@@ -2,6 +2,13 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // Roles de usuario — cada usuario lee solo su propio doc; solo admins pueden escribir
+    match /usuarios/{email} {
+      allow read: if request.auth != null && request.auth.token.email == email;
+      allow write: if request.auth != null &&
+        get(/databases/$(database)/documents/usuarios/$(request.auth.token.email)).data.rol == 'admin';
+    }
+
     // Registros de visita — solo usuarios autenticados
     match /registros_visita/{docId} {
       allow read, write: if request.auth != null;

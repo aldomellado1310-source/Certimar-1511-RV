@@ -7,9 +7,5 @@ var FIREBASE_CONFIG = {
   appId            : '1:272750169092:web:14e734d16daaf3f070f951'
 };
 
-// Emails con rol administrador
-var ADMIN_EMAILS = [
-  'operaciones@certimar.cl',
-  'eflores@certimar.cl'
-];
+// Los roles se gestionan en Firestore: colección /usuarios, campo rol: 'admin' | 'supervisor' | 'user'
 

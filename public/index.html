@@ -2153,7 +2153,7 @@ async function fbObtenerRegistros(filtros) {
   var db = initFirebase();
   if (!db) return [];
   var q = db.collection('registros_visita');
-  if (currentUser && !currentUser.isAdmin) {
+  if (currentUser && !currentUser.isAdmin && !currentUser.isSupervisor) {
     q = q.where('creadoPor', '==', currentUser.email);
   }
   q = q.orderBy('creadoEn', 'desc').limit(200);
@@ -2252,7 +2252,7 @@ document.addEventListener('DOMContentLoaded', function() {
   // Firebase Auth — detecta sesión activa automáticamente
   firebase.auth().onAuthStateChanged(function(user) {
     document.getElementById('view-splash').style.opacity = '0';
-    setTimeout(function() {
+    setTimeout(async function() {
       document.getElementById('view-splash').style.display = 'none';
       if (user) {
         if (!user.email.endsWith('@certimar.cl')) {
@@ -2263,10 +2263,19 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         var name = user.displayName ||
           user.email.split('@')[0].replace(/\./g,' ').replace(/\b\w/g, function(c){ return c.toUpperCase(); });
+        var rol = 'user';
+        try {
+          var db = initFirebase();
+          var docSnap = await db.collection('usuarios').doc(user.email).get();
+          if (docSnap.exists) rol = docSnap.data().rol || 'user';
+        } catch (e) {
+          console.warn('[auth] No se pudo leer rol desde Firestore:', e);
+        }
         currentUser = {
-          email  : user.email,
-          name   : name,
-          isAdmin: (typeof ADMIN_EMAILS !== 'undefined') && ADMIN_EMAILS.includes(user.email)
+          email       : user.email,
+          name        : name,
+          isAdmin     : rol === 'admin',
+          isSupervisor: rol === 'supervisor'
         };
         showApp();
       } else {
