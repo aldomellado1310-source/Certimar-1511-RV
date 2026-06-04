@@ -2102,7 +2102,25 @@ async function fbActualizarEstado(nroRegistro, nuevoEstado, extraData) {
   var db = initFirebase();
   if (!db) throw new Error('Firebase no disponible');
   var update = Object.assign({ estado: nuevoEstado }, extraData || {});
-  await db.collection('registros_visita').doc(nroRegistro).update(update);
+  // set+merge funciona incluso si el doc aún no existe (evita error "No document to update")
+  await db.collection('registros_visita').doc(nroRegistro).set(update, { merge: true });
+}
+
+// Actualiza estado en Firestore con un reintento automático.
+// Si ambos intentos fallan muestra un aviso al usuario (el correo YA fue enviado).
+async function _fbActualizarEnviado(nro, email) {
+  try {
+    await fbActualizarEstado(nro, 'ENVIADO', { emailResponsable: email });
+  } catch (e1) {
+    console.warn('[Certimar] Primer intento de actualizar estado falló, reintentando en 2s…', e1);
+    await new Promise(function(r) { setTimeout(r, 2000); });
+    try {
+      await fbActualizarEstado(nro, 'ENVIADO', { emailResponsable: email });
+    } catch (e2) {
+      console.error('[Certimar] No se pudo actualizar estado en Firestore:', e2);
+      toast('Correo enviado correctamente. Estado no pudo actualizarse automáticamente — recarga la página para reflejar el cambio.', 'warn');
+    }
+  }
 }
 
 // =====================================================================
@@ -3444,7 +3462,7 @@ function handleEnviarMail() {
       lockForm(true);
       var nro = datos.nroRegistro;
       showCompletionDialog(nro, true, emailDest);
-      fbActualizarEstado(nro, 'ENVIADO', { emailResponsable: emailDest }).catch(function(){});
+      _fbActualizarEnviado(nro, emailDest);
       for (var i=0; i<localRecords.length; i++) {
         if (localRecords[i].nroReg === nro) { localRecords[i].estado = 'ENVIADO'; break; }
       }
@@ -4701,7 +4719,7 @@ function handleCompletionEnviar() {
       appState.sent = true;
       lockForm(true);
       var nro = get('r-nroRegistro');
-      fbActualizarEstado(nro, 'ENVIADO', { emailResponsable: email }).catch(function(){});
+      _fbActualizarEnviado(nro, email);
       for (var i=0; i<localRecords.length; i++) {
         if (localRecords[i].nroReg === nro) { localRecords[i].estado = 'ENVIADO'; localRecords[i].emailResp = email; break; }
       }
@@ -5067,7 +5085,7 @@ function admReenviarMail(nro, email) {
       await sendViaGmailAPI(raw);
 
       updateNotifCard('adm-mail','success','✉️ Reenviado correctamente','Para: '+dest);
-      fbActualizarEstado(nro, 'ENVIADO', { emailResponsable: dest }).catch(function(){});
+      _fbActualizarEnviado(nro, dest);
       var idx = _adminAll.findIndex(function(x){ return x.nroRegistro === nro; });
       if (idx >= 0) { _adminAll[idx].estado = 'ENVIADO'; _adminAll[idx].emailResponsable = dest; }
       filtrarAdmin();
