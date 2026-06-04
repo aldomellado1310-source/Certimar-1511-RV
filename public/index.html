@@ -1373,6 +1373,7 @@ video{width:100%;border-radius:8px;background:black}
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6,9 6,2 18,2 18,9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
         Imprimir
       </button>
+      <span id="borrador-cloud-status" title="Borrador guardado en la nube" style="display:none;font-size:11px;color:#15803d;align-self:center;margin-left:4px;cursor:default"></span>
     </div>
     <p class="warn-msg hidden" id="warn-checklist">
       ⚠️ Complete el checklist de bloqueo para habilitar las acciones.
@@ -2102,7 +2103,25 @@ async function fbActualizarEstado(nroRegistro, nuevoEstado, extraData) {
   var db = initFirebase();
   if (!db) throw new Error('Firebase no disponible');
   var update = Object.assign({ estado: nuevoEstado }, extraData || {});
-  await db.collection('registros_visita').doc(nroRegistro).update(update);
+  // set+merge funciona incluso si el doc aún no existe (evita error "No document to update")
+  await db.collection('registros_visita').doc(nroRegistro).set(update, { merge: true });
+}
+
+// Actualiza estado en Firestore con un reintento automático.
+// Si ambos intentos fallan muestra un aviso al usuario (el correo YA fue enviado).
+async function _fbActualizarEnviado(nro, email) {
+  try {
+    await fbActualizarEstado(nro, 'ENVIADO', { emailResponsable: email });
+  } catch (e1) {
+    console.warn('[Certimar] Primer intento de actualizar estado falló, reintentando en 2s…', e1);
+    await new Promise(function(r) { setTimeout(r, 2000); });
+    try {
+      await fbActualizarEstado(nro, 'ENVIADO', { emailResponsable: email });
+    } catch (e2) {
+      console.error('[Certimar] No se pudo actualizar estado en Firestore:', e2);
+      toast('Correo enviado correctamente. Estado no pudo actualizarse automáticamente — recarga la página para reflejar el cambio.', 'warn');
+    }
+  }
 }
 
 // =====================================================================
@@ -2444,12 +2463,14 @@ function saveBorrador() {
 function scheduleBorrador() {
   if (borradorTimer) clearTimeout(borradorTimer);
   borradorTimer = setTimeout(saveBorrador, 1500);
+  _scheduleBorradorCloud();
 }
 
 function clearBorrador() {
   try { localStorage.removeItem(BORRADOR_KEY); } catch(e) {}
   var bn = document.getElementById('borrador-banner');
   if (bn) bn.remove();
+  fbEliminarBorrador();
 }
 
 function loadBorrador() {
@@ -2505,24 +2526,47 @@ function applyBorrador(b) {
 
 function maybeShowBorradorBanner() {
   if (appState.editMode || appState.saved) return;
-  var b = loadBorrador();
-  if (!b) return;
+  var localB = loadBorrador();
+  if (localB) _renderBorradorBanner(localB, false);
+  // Verificar borrador en la nube de forma asíncrona
+  fbCargarBorrador().then(function(cloudB) {
+    if (!cloudB || appState.editMode || appState.saved) return;
+    // Mostrar banner de nube solo si es más reciente que el local
+    if (!localB || cloudB.ts > (localB.ts || 0)) {
+      var existing = document.getElementById('borrador-banner');
+      if (existing) existing.remove();
+      _renderBorradorBanner(cloudB, true);
+    }
+  }).catch(function(){});
+}
+
+function _renderBorradorBanner(b, fromCloud) {
   var view = document.getElementById('view-registro');
   if (!view) return;
   var existing = document.getElementById('borrador-banner');
+  if (existing && !fromCloud) return; // el banner local no reemplaza uno ya visible
   if (existing) existing.remove();
   var fecha = '';
   try { fecha = new Date(b.ts||Date.now()).toLocaleString('es-CL', { dateStyle:'short', timeStyle:'short' }); } catch(e){}
+  var bg   = fromCloud ? '#eff6ff' : '#fef3c7';
+  var bdr  = fromCloud ? '#3b82f6' : '#f59e0b';
+  var txt  = fromCloud ? '#1e40af' : '#92400e';
+  var icon = fromCloud ? '☁️ Borrador en la nube' : '📝 Borrador detectado';
+  var sub  = fromCloud
+    ? 'Datos guardados desde otro dispositivo o sesión anterior.'
+    : 'Datos sin enviar de una sesión anterior. No se ha consumido número de registro.';
+  var restoreFn = fromCloud ? 'restaurarBorradorCloud()' : 'restaurarBorrador()';
   var bn = document.createElement('div');
   bn.id = 'borrador-banner';
-  bn.style.cssText = 'background:#fef3c7;border:2px solid #f59e0b;border-radius:10px;padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap';
+  if (fromCloud) bn.dataset.cloudData = JSON.stringify(b);
+  bn.style.cssText = 'background:'+bg+';border:2px solid '+bdr+';border-radius:10px;padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap';
   bn.innerHTML =
-    '<div><strong>📝 Borrador detectado</strong>' +
-    (fecha ? ' <span style="color:#92400e;font-size:12px">guardado el ' + fecha + '</span>' : '') +
-    '<div style="font-size:11px;color:#92400e;margin-top:2px">Datos sin enviar de una sesión anterior. No se ha consumido número de registro.</div></div>' +
+    '<div><strong>'+icon+'</strong>' +
+    (fecha ? ' <span style="color:'+txt+';font-size:12px">guardado el '+fecha+'</span>' : '') +
+    '<div style="font-size:11px;color:'+txt+';margin-top:2px">'+sub+'</div></div>' +
     '<div style="display:flex;gap:8px">' +
-      '<button onclick="restaurarBorrador()" style="background:#1e3a5f;color:white;border:none;padding:8px 16px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer">Restaurar</button>' +
-      '<button onclick="descartarBorrador()" style="background:white;color:#92400e;border:1px solid #f59e0b;padding:8px 16px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer">Descartar</button>' +
+      '<button onclick="'+restoreFn+'" style="background:#1e3a5f;color:white;border:none;padding:8px 16px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer">Restaurar</button>' +
+      '<button onclick="descartarBorrador()" style="background:white;color:'+txt+';border:1px solid '+bdr+';padding:8px 16px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer">Descartar</button>' +
     '</div>';
   view.insertBefore(bn, view.firstChild);
 }
@@ -2537,6 +2581,16 @@ function restaurarBorrador() {
   toast('Borrador restaurado', 'success');
 }
 
+function restaurarBorradorCloud() {
+  var bn = document.getElementById('borrador-banner');
+  if (!bn || !bn.dataset.cloudData) return;
+  var cloudB = JSON.parse(bn.dataset.cloudData);
+  applyBorrador(cloudB);
+  set('r-nroRegistro', 'Se asignará al guardar');
+  bn.remove();
+  toast('Borrador de la nube restaurado', 'success');
+}
+
 function descartarBorrador() {
   clearBorrador();
   toast('Borrador descartado', 'info');
@@ -2548,6 +2602,65 @@ function initBorradorAutosave() {
   doc.dataset.borradorListener = '1';
   doc.addEventListener('input',  scheduleBorrador);
   doc.addEventListener('change', scheduleBorrador);
+}
+
+// =====================================================================
+//  BORRADOR EN LA NUBE — Firestore (auto-save cada 30 s)
+// =====================================================================
+var _borradorCloudTimer = null;
+
+function _borradorCloudKey() {
+  return currentUser ? currentUser.email.replace(/[^a-zA-Z0-9]/g, '_') : null;
+}
+
+async function fbGuardarBorrador() {
+  var key = _borradorCloudKey();
+  if (!key) return;
+  var payload = captureBorrador();
+  if (!payload) return;
+  var db = initFirebase();
+  if (!db) return;
+  await db.collection('borradores').doc(key).set({
+    datos       : payload.datos,
+    foto        : payload.foto         || '',
+    firmaCliente: payload.firmaCliente || '',
+    guardadoEn  : firebase.firestore.FieldValue.serverTimestamp()
+  });
+  var hora  = new Date().toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
+  var badge = document.getElementById('borrador-cloud-status');
+  if (badge) { badge.textContent = '☁️ ' + hora; badge.style.display = 'inline'; }
+}
+
+async function fbCargarBorrador() {
+  var key = _borradorCloudKey();
+  if (!key) return null;
+  var db = initFirebase();
+  if (!db) return null;
+  try {
+    var snap = await db.collection('borradores').doc(key).get();
+    if (!snap.exists) return null;
+    var d  = snap.data();
+    var ts = d.guardadoEn ? d.guardadoEn.toMillis() : Date.now();
+    return { datos: d.datos, foto: d.foto || '', firmaCliente: d.firmaCliente || '', ts: ts };
+  } catch(e) { console.warn('[borrador cloud] cargar:', e); return null; }
+}
+
+function fbEliminarBorrador() {
+  var key = _borradorCloudKey();
+  if (!key) return;
+  var db = initFirebase();
+  if (!db) return;
+  db.collection('borradores').doc(key).delete().catch(function(){});
+  var badge = document.getElementById('borrador-cloud-status');
+  if (badge) badge.style.display = 'none';
+}
+
+function _scheduleBorradorCloud() {
+  if (borradorSuspend || appState.editMode || appState.saved) return;
+  if (_borradorCloudTimer) clearTimeout(_borradorCloudTimer);
+  _borradorCloudTimer = setTimeout(function() {
+    fbGuardarBorrador().catch(function(e) { console.warn('[borrador cloud] auto-save:', e); });
+  }, 30000);
 }
 
 function set(id, val) {
@@ -3444,7 +3557,7 @@ function handleEnviarMail() {
       lockForm(true);
       var nro = datos.nroRegistro;
       showCompletionDialog(nro, true, emailDest);
-      fbActualizarEstado(nro, 'ENVIADO', { emailResponsable: emailDest }).catch(function(){});
+      _fbActualizarEnviado(nro, emailDest);
       for (var i=0; i<localRecords.length; i++) {
         if (localRecords[i].nroReg === nro) { localRecords[i].estado = 'ENVIADO'; break; }
       }
@@ -4701,7 +4814,7 @@ function handleCompletionEnviar() {
       appState.sent = true;
       lockForm(true);
       var nro = get('r-nroRegistro');
-      fbActualizarEstado(nro, 'ENVIADO', { emailResponsable: email }).catch(function(){});
+      _fbActualizarEnviado(nro, email);
       for (var i=0; i<localRecords.length; i++) {
         if (localRecords[i].nroReg === nro) { localRecords[i].estado = 'ENVIADO'; localRecords[i].emailResp = email; break; }
       }
@@ -5067,7 +5180,7 @@ function admReenviarMail(nro, email) {
       await sendViaGmailAPI(raw);
 
       updateNotifCard('adm-mail','success','✉️ Reenviado correctamente','Para: '+dest);
-      fbActualizarEstado(nro, 'ENVIADO', { emailResponsable: dest }).catch(function(){});
+      _fbActualizarEnviado(nro, dest);
       var idx = _adminAll.findIndex(function(x){ return x.nroRegistro === nro; });
       if (idx >= 0) { _adminAll[idx].estado = 'ENVIADO'; _adminAll[idx].emailResponsable = dest; }
       filtrarAdmin();
