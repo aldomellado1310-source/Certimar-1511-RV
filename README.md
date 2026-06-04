@@ -1,29 +1,36 @@
 # Certimar — Sistema de Registro de Visita (RV)
 
-Sistema web de registro de inspecciones técnicas en terreno para centros de cultivo acuícola, desarrollado sobre Google Apps Script. Permite crear, firmar, guardar y notificar registros de visita como documentos PDF, con trazabilidad completa en Google Sheets.
+Sistema web de registro de inspecciones técnicas en terreno para centros de cultivo acuícola. Permite crear, firmar, guardar y notificar registros de visita como documentos PDF, con trazabilidad completa en Google Sheets y Firestore.
+
+Desplegado sobre **Firebase Hosting** con **Firebase Functions** como backend serverless. Google Apps Script actúa como receptor de webhook para operaciones de Sheets/Drive/Gmail.
 
 ---
 
 ## Archivos del proyecto
 
-| Archivo | Descripción |
+| Archivo / Carpeta | Descripción |
 |---|---|
-| `Code.gs` | Backend: Sheets, Drive, Gmail, firma remota |
-| `Index.html` | Frontend SPA completo (vistas, estilos, lógica) |
-| `FirebaseConfig.html` | Configuración del SDK de Firebase (incluido en Index) |
-| `ConcesionesData` | Catálogo de concesiones para autocomplete |
-| `appsscript.json` | Manifiesto de permisos y scopes OAuth |
+| `public/index.html` | Frontend SPA completo (vistas, estilos, lógica JS) |
+| `functions/index.js` | Firebase Functions: envío de correo, firma remota, cola de mail |
+| `Code.gs` | Apps Script: webhook receptor (Sheets, Drive, Gmail) |
+| `Código.js` | Apps Script alternativo (versión standalone sin Firebase) |
+| `firebase.json` | Configuración de Firebase Hosting, Functions y reglas |
+| `firestore.rules` | Reglas de seguridad de Firestore |
+| `storage.rules` | Reglas de Firebase Storage |
+| `appsscript.json` | Manifiesto de permisos OAuth de Apps Script |
+| `.claude/commands/impeccable.md` | Comando personalizado `/impeccable` para Claude Code |
 
 ---
 
 ## Stack tecnológico
 
-- **Frontend/Backend:** Google Apps Script (web app, un solo despliegue)
-- **Base de datos:** Google Sheets (hoja `RV`) + Firebase Firestore (tiempo real)
+- **Hosting:** Firebase Hosting (SPA, `public/index.html`)
+- **Backend serverless:** Firebase Functions (Node.js 20)
+- **Base de datos:** Firebase Firestore + Google Sheets (hoja `RV`)
 - **Almacenamiento:** Firebase Storage (PDFs, fotos, firmas PNG)
-- **Funciones serverless:** Firebase Functions (Node.js 20) — envío de correo, firma remota, procesamiento de cola
+- **Email:** Gmail API (desde navegador) + GmailApp vía Apps Script webhook
 - **Librerías cliente:** jsPDF + html2canvas, Chart.js, Firebase SDK v10 compat
-- **Autenticación:** Google OAuth (login con cuenta Google)
+- **Autenticación:** Google OAuth (restringido a cuentas `@certimar.cl`)
 
 ---
 
@@ -126,12 +133,27 @@ Captura foto desde cámara del dispositivo o permite adjuntar imagen/PDF existen
 
 ### Barra de acciones
 
-| Botón | Función |
+| Botón / Elemento | Función |
 |---|---|
 | Guardar | Guarda en Drive + Sheets (sin correo) |
 | Generar PDF | Genera PDF en cliente con jsPDF/html2canvas |
 | Sincronizar | Fuerza re-subida a Drive/Sheets |
-| Enviar correo | Modal con previsualización de email, campos CC/CCO, envío con PDF adjunto |
+| Enviar correo | Modal con previsualización de email, campos CC/CCO, envío con PDF adjunto vía Gmail API |
+| Badge `☁️ HH:MM` | Indica la última hora en que el borrador se auto-guardó en Firestore |
+
+### Borrador en la nube
+
+El formulario auto-guarda un borrador en **localStorage** (1,5 s tras cada cambio) y en **Firestore** (cada 30 s) bajo la colección `borradores/{emailKey}`. Esto permite retomar el formulario desde cualquier dispositivo.
+
+| Situación | Comportamiento |
+|---|---|
+| Usuario llena el formulario | Auto-save local (1,5 s) y en Firestore (30 s); badge `☁️ HH:MM` visible |
+| Usuario cierra el navegador / cambia de PC | El borrador persiste en Firestore |
+| Usuario vuelve a iniciar sesión | Banner **azul** "☁️ Borrador en la nube" si existe uno más reciente que el local |
+| Borrador local más reciente | Banner **amarillo** "📝 Borrador detectado" |
+| Clic en Restaurar | Carga el borrador en el formulario sin consumir N° de registro |
+| Clic en Descartar | Borra localStorage **y** Firestore |
+| Al guardar o enviar el RV | Borrador eliminado de ambos lados automáticamente |
 
 ---
 
@@ -150,6 +172,16 @@ Captura foto desde cámara del dispositivo o permite adjuntar imagen/PDF existen
 - Tabla ampliada con filtros adicionales
 - Acciones: archivar registro (con motivo), regenerar PDF, gestionar tokens de firma
 - Badge visual púrpura que distingue el acceso de administrador
+
+---
+
+## Estado del registro y fiabilidad del envío
+
+El estado de cada RV sigue el ciclo: `GUARDADO` → `ENVIADO` → `ARCHIVADO` (opcional).
+
+El correo se envía directamente vía **Gmail API desde el navegador**. Tras el envío exitoso, el sistema actualiza Firestore con `estado: 'ENVIADO'` incluyendo un **reintento automático a los 2 s** si la primera llamada falla. Si ambos intentos fallan, se muestra un toast indicando al usuario que recargue la página — el correo ya fue enviado correctamente.
+
+> **Nota:** el estado en Google Sheets se actualiza por separado vía Apps Script webhook (`accion: 'actualizarEnviado'`). Si la hoja muestra `GUARDADO` pero Firestore ya registra `ENVIADO`, la fuente de verdad es Firestore.
 
 ---
 
@@ -194,6 +226,17 @@ Captura foto desde cámara del dispositivo o permite adjuntar imagen/PDF existen
 
 ---
 
+## Colecciones Firestore
+
+| Colección | Descripción |
+|---|---|
+| `registros_visita/{nroRegistro}` | Un doc por RV. Estado: `GUARDADO`, `ENVIADO`, `ARCHIVADO` |
+| `meta/contador_{año}` | Contador atómico para el correlativo `RV-YYYY-NNNN` |
+| `mail_queue/{docId}` | Cola de envío de correo procesada por `procesarMailQueue` |
+| `borradores/{emailKey}` | Un borrador por usuario (email normalizado). Se crea/actualiza cada 30 s y se borra al guardar el RV |
+
+---
+
 ## Estructura de la hoja Google Sheets (hoja `RV`)
 
 | Col | Encabezado |
@@ -234,7 +277,22 @@ Captura foto desde cámara del dispositivo o permite adjuntar imagen/PDF existen
 
 ---
 
+## Claude Code — comandos personalizados
+
+| Comando | Descripción |
+|---|---|
+| `/impeccable` | Revisa el diff del branch actual, aplica correcciones de bugs, seguridad y simplificación, y reporta hallazgos que requieren decisión del dev |
+
+---
+
 ## Guía de despliegue
+
+### 0. Prerrequisitos
+
+```bash
+npm install -g firebase-tools
+firebase login
+```
 
 ### 1. Crear el proyecto en Apps Script
 
@@ -275,9 +333,29 @@ const WEBHOOK_SECRET    = 'TU_SECRET_COMPARTIDO';
 4. Quién puede acceder: **Cualquier usuario de Google**
 5. Copiar la URL generada (`https://script.google.com/macros/s/.../exec`)
 
-### 6. Configurar Firebase (opcional, para tiempo real)
+### 6. Configurar Firebase
 
-Actualizar `FirebaseConfig.html` con las credenciales del proyecto Firebase. El sistema funciona sin Firebase, pero sin actualizaciones en tiempo real.
+Actualizar las credenciales del SDK en `public/index.html` (bloque `firebaseConfig`).
+
+### 7. Desplegar en Firebase
+
+```bash
+# Solo hosting y reglas (más rápido)
+firebase deploy --only hosting,firestore
+
+# Todo (hosting + functions + reglas)
+firebase deploy
+
+# Solo functions
+firebase deploy --only functions
+```
+
+### 8. Configurar variables de entorno de Functions
+
+```bash
+# URL del webhook de Apps Script
+firebase functions:config:set apps_script.url="https://script.google.com/macros/s/.../exec"
+```
 
 ---
 
