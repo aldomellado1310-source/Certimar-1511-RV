@@ -7,6 +7,7 @@ var _gmailTokenExp    = 0;      // timestamp (ms) de expiración
 var _gmailTokenClient = null;   // instancia de GIS token client
 var _gmailPendingResolve = null;
 var _gmailPendingReject  = null;
+var _gmailPendingPromise = null;
 var _GMAIL_SCOPE   = 'https://www.googleapis.com/auth/gmail.send';
 var _GMAIL_SKEW_MS = 5 * 60 * 1000; // refrescar 5 min antes de vencer
 
@@ -61,9 +62,10 @@ function initGmailAuth() {
   return true;
 }
 
-// Pide un token a GIS con el prompt indicado. prompt '' = silencioso; 'consent' = muestra UI.
+// Pide un token a GIS con el prompt indicado. prompt 'none' = silencioso; 'consent' = muestra UI.
 function _requestGmailToken(prompt, loginHint) {
-  return new Promise(function(resolve, reject) {
+  if (_gmailPendingPromise) return _gmailPendingPromise;
+  _gmailPendingPromise = new Promise(function(resolve, reject) {
     if (!initGmailAuth()) { reject(new Error('Google Identity Services no disponible.')); return; }
     _gmailPendingResolve = resolve;
     _gmailPendingReject  = reject;
@@ -75,14 +77,15 @@ function _requestGmailToken(prompt, loginHint) {
       _gmailPendingResolve = null; _gmailPendingReject = null;
       reject(e);
     }
-  });
+  }).finally(function() { _gmailPendingPromise = null; });
+  return _gmailPendingPromise;
 }
 
 // Warm-up silencioso tras el login. No molesta si aún no hay consentimiento.
 function warmGmailToken(loginHint) {
   return _whenGisReady(8000).then(function(ready) {
     if (!ready) return null;
-    return _requestGmailToken('', loginHint).catch(function(e) {
+    return _requestGmailToken('none', loginHint).catch(function(e) {
       console.warn('[gmailAuth] Warm-up silencioso sin token (se pedirá al enviar):', e.message);
       return null;
     });
@@ -96,7 +99,7 @@ function ensureGmailToken(loginHint) {
   }
   return _whenGisReady(8000).then(function(ready) {
     if (!ready) throw new Error('No se pudo cargar Google Identity Services. Revisa tu conexión y recarga.');
-    return _requestGmailToken('', loginHint).catch(function() {
+    return _requestGmailToken('none', loginHint).catch(function() {
       return _requestGmailToken('consent', loginHint);
     });
   });
