@@ -606,18 +606,20 @@ video{width:100%;border-radius:8px;background:black}
 .cl-dontshow input{width:15px;height:15px;cursor:pointer;accent-color:#002855}
 .cl-btn-ok{background:#002855;color:#fff;border:none;border-radius:10px;padding:10px 32px;font-size:13px;font-weight:600;cursor:pointer;transition:background .15s}
 .cl-btn-ok:hover{background:#003f80}
-/* ── Píldora de guardado automático (flotante fija) ── */
-.autosave-pill{position:fixed;left:20px;bottom:20px;z-index:400;display:none;align-items:center;gap:9px;background:#fff;border:1px solid #e2e8f0;border-radius:999px;padding:9px 17px 9px 13px;box-shadow:0 8px 24px rgba(0,0,40,.16);font-size:13px;font-weight:600;color:#0f172a;user-select:none;animation:asIn .25s cubic-bezier(.22,1,.36,1) both}
-.autosave-pill.show{display:inline-flex}
-.autosave-pill .autosave-ico{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;flex-shrink:0}
-.autosave-pill .autosave-ico svg{width:18px;height:18px;display:block}
-.autosave-pill.is-saving{color:#1d4ed8;border-color:#bfdbfe;background:#eff6ff}
-.autosave-pill.is-saved{color:#15803d;border-color:#bbf7d0;background:#f0fdf4}
-.autosave-pill.is-cloud{color:#15803d;border-color:#bbf7d0;background:#f0fdf4}
-.autosave-pill .autosave-sub{color:#94a3b8;font-weight:500;margin-left:2px}
-.autosave-spin{width:15px;height:15px;border:2px solid #bfdbfe;border-top-color:#2563eb;border-radius:50%;animation:spin .7s linear infinite;display:inline-block}
-@keyframes asIn{from{opacity:0;transform:translateY(10px) scale(.96)}to{opacity:1;transform:translateY(0) scale(1)}}
-@media(max-width:600px){.autosave-pill{left:10px;bottom:74px;font-size:12px;padding:8px 14px 8px 11px}}
+/* ── Píldora de guardado automático (flotante, centrada abajo, alta visibilidad) ── */
+.autosave-pill{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);z-index:400;display:none;align-items:center;gap:11px;border-radius:999px;padding:13px 24px;box-shadow:0 12px 34px rgba(0,0,40,.28);font-size:14.5px;font-weight:700;letter-spacing:.2px;color:#fff;user-select:none}
+.autosave-pill.show{display:inline-flex;animation:asPop .34s cubic-bezier(.34,1.56,.64,1) both}
+.autosave-pill.pulse{animation:asPulse .55s ease both}
+.autosave-pill .autosave-ico{display:inline-flex;align-items:center;justify-content:center;width:21px;height:21px;flex-shrink:0}
+.autosave-pill .autosave-ico svg{width:21px;height:21px;display:block}
+.autosave-pill.is-saving{background:#2563eb;box-shadow:0 12px 34px rgba(37,99,235,.45)}
+.autosave-pill.is-saved{background:#16a34a;box-shadow:0 12px 34px rgba(22,163,74,.45)}
+.autosave-pill.is-cloud{background:#0891b2;box-shadow:0 12px 34px rgba(8,145,178,.45)}
+.autosave-pill .autosave-sub{color:rgba(255,255,255,.82);font-weight:600;margin-left:1px}
+.autosave-spin{width:17px;height:17px;border:2.5px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;display:inline-block}
+@keyframes asPop{0%{opacity:0;transform:translateX(-50%) translateY(14px) scale(.8)}100%{opacity:1;transform:translateX(-50%) translateY(0) scale(1)}}
+@keyframes asPulse{0%{transform:translateX(-50%) scale(1)}38%{transform:translateX(-50%) scale(1.09)}100%{transform:translateX(-50%) scale(1)}}
+@media(max-width:600px){.autosave-pill{bottom:82px;font-size:13.5px;padding:12px 20px}}
 .email-preview{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:16px;font-family:monospace;font-size:12px;color:#374151;margin-bottom:16px}
 .email-row{display:grid;grid-template-columns:56px 1fr;gap:8px;align-items:center;margin-bottom:8px}
 .email-label{color:#94a3b8;font-size:12px}
@@ -2458,10 +2460,16 @@ function setAutosaveStatus(state, hora) {
     txt.innerHTML = 'Guardado<span class="autosave-sub">· ' + hora + '</span>';
   }
   pill.classList.add('show');
+  // Pulso de atención al CONFIRMAR el guardado (no en cada "Guardando…")
+  if (state === 'saved' || state === 'cloud') {
+    pill.classList.remove('pulse');
+    void pill.offsetWidth; // reinicia la animación
+    pill.classList.add('pulse');
+  }
 }
 function hideAutosavePill() {
   var pill = document.getElementById('autosave-pill');
-  if (pill) pill.classList.remove('show');
+  if (pill) { pill.classList.remove('show'); pill.classList.remove('pulse'); }
 }
 
 function captureBorrador() {
