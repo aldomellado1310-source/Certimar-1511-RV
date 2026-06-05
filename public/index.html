@@ -4771,6 +4771,11 @@ async function sendViaGmailAPI(raw) {
     token = await ensureGmailToken(hint);
     resp  = await _gmailSendRaw(raw, token);
   }
+  // Si tras el reintento sigue fallando la autenticación, mensaje accionable.
+  if (resp.status === 401 || resp.status === 403) {
+    invalidateGmailToken();
+    throw new Error('No se pudo autenticar con Gmail. Recarga la página e intenta de nuevo.');
+  }
   if (!resp.ok) {
     var err = await resp.json().catch(function() { return {}; });
     throw new Error((err.error && err.error.message) ? err.error.message : 'Error Gmail API ' + resp.status);
