@@ -81,17 +81,6 @@ function _requestGmailToken(prompt, loginHint) {
   return _gmailPendingPromise;
 }
 
-// Warm-up silencioso tras el login. No molesta si aún no hay consentimiento.
-function warmGmailToken(loginHint) {
-  return _whenGisReady(8000).then(function(ready) {
-    if (!ready) return null;
-    return _requestGmailToken('none', loginHint).catch(function(e) {
-      console.warn('[gmailAuth] Warm-up silencioso sin token (se pedirá al enviar):', e.message);
-      return null;
-    });
-  });
-}
-
 // Garantiza un token válido. Silencioso primero; consentimiento si hace falta.
 function ensureGmailToken(loginHint) {
   if (_isGmailTokenValid(_gmailToken, _gmailTokenExp, Date.now(), _GMAIL_SKEW_MS)) {

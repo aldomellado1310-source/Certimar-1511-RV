@@ -22,7 +22,7 @@
 <!-- Configuración Firebase del proyecto -->
 <script src="firebaseConfig.js?v=20260605"></script>
 <script src="https://accounts.google.com/gsi/client" async></script>
-<script src="gmailAuth.js?v=20260605"></script>
+<script src="gmailAuth.js?v=20260606"></script>
 <style>
 /* ===================== TEMA: VARIABLES CSS ===================== */
 :root {
@@ -2263,9 +2263,8 @@ document.addEventListener('DOMContentLoaded', function() {
           isAdmin     : rol === 'admin',
           isSupervisor: rol === 'supervisor'
         };
-        // Calienta el token de Gmail en silencio (sin popup) para que el envío funcione
-        // aunque la sesión se haya restaurado sin pasar por loginGoogle().
-        warmGmailToken(currentUser.email);
+        // El token de Gmail se obtiene en el primer envío (GIS necesita el gesto del click
+        // para abrir su popup; un warm-up sin gesto lo bloquearía el navegador).
         showApp();
       } else {
         document.getElementById('view-login').classList.remove('hidden');
@@ -3562,6 +3561,9 @@ function handleEnviarMail() {
   (async function() {
     try {
       updateNotifStep('mail-send','m1','active');
+      // Pide el token de Gmail con el gesto del click aún activo, ANTES de bajar el PDF
+      // (GIS necesita el click para abrir su popup; tras un fetch de red el gesto se pierde).
+      await ensureGmailToken(currentUser && currentUser.email ? currentUser.email : null);
       var pdfB64    = await _getPdfB64ParaEnvio();
       var urlCert   = appState.savedData ? (appState.savedData.urlCert || appState.savedData.urlCertificado || '') : '';
       var htmlBody  = plantillaEmailFrontend(datos, urlCert);
@@ -3665,7 +3667,7 @@ function handleConfirmarArchive() {
 
 function generarMensaje(datos) {
   return 'Estimado(a) '+datos.nombreResponsable+',\n\n'+
-    'En relación a la visita técnica de auditoría realizada en el Centro de Cultivo\n'+
+    'En relación a la visita técnica de certificación realizada en el Centro de Cultivo\n'+
     '"'+datos.centroCultivo+'" (RNA: '+datos.nroCentro+', ACS: '+datos.acs+') con fecha '+datos.fecha+',\n'+
     'adjunto encontrará el Registro de Visita oficial emitido por Certimar SpA.\n\n'+
     'Este documento corresponde al respaldo y evidencia de la inspección técnica en terreno\n'+
@@ -4827,6 +4829,9 @@ function handleCompletionEnviar() {
 
   (async function() {
     try {
+      // Token de Gmail con el gesto del click activo, ANTES de bajar el PDF
+      // (GIS necesita el click para abrir su popup). Queda cacheado para el envío.
+      await ensureGmailToken(currentUser && currentUser.email ? currentUser.email : null);
       var pdfB64    = await _getPdfB64ParaEnvio();
       var urlCert   = appState.savedData ? (appState.savedData.urlCert || appState.savedData.urlCertificado || '') : '';
       var htmlBody  = plantillaEmailFrontend(datos, urlCert);
@@ -5195,6 +5200,9 @@ function admReenviarMail(nro, email) {
     nombreCertificador: r.nombreCertificador || r.certNombre || '', rutCertificador: r.rutCertificador || '' };
   (async function() {
     try {
+      // Token de Gmail con el gesto del click activo, ANTES de bajar el PDF de Storage
+      // (GIS necesita el click para abrir su popup). Queda cacheado para el envío.
+      await ensureGmailToken(currentUser && currentUser.email ? currentUser.email : null);
       // Obtain PDF from Storage or public URL
       var pdfB64 = null;
       if (r.pdfStoragePath) {
