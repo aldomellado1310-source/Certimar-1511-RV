@@ -16,4 +16,4 @@ assert.strictEqual(_isGmailTokenValid('tok', NOW + 2 * 60 * 1000, NOW, SKEW), fa
 assert.strictEqual(_isGmailTokenValid(null,  NOW + 3600 * 1000, NOW, SKEW), false, 'sin token');
 
 assert.strictEqual(_isGmailTokenValid('tok', NOW + SKEW, NOW, SKEW), false, 'exactamente en el límite del skew -> inválido');
-console.log('OK: _isGmailTokenValid (4 casos)');
+console.log('OK: _isGmailTokenValid (5 casos)');
