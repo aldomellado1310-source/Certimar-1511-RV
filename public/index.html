@@ -2288,6 +2288,8 @@ document.addEventListener('DOMContentLoaded', function() {
 function cerrarSesion() {
   firebase.auth().signOut().then(function() {
     currentUser = null;
+    // Invalida el token de Gmail para que el siguiente usuario no envíe con la sesión anterior.
+    invalidateGmailToken();
     document.getElementById('user-chip').classList.add('hidden');
     document.getElementById('view-login').classList.remove('hidden');
   });
