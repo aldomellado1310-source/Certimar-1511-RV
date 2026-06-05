@@ -29,8 +29,8 @@
   --surface-2:    #f1f5f9;
   --surface-3:    #e2e8f0;
   --text-pri:     #1e293b;
-  --text-sec:     #64748b;
-  --text-muted:   #94a3b8;
+  --text-sec:     #475569;
+  --text-muted:   #566374;
   --border:       #e2e8f0;
   --border-2:     #cbd5e1;
   --brand:        #003366;
@@ -58,8 +58,8 @@
   --surface-2:    #263448;
   --surface-3:    #334155;
   --text-pri:     #f1f5f9;
-  --text-sec:     #94a3b8;
-  --text-muted:   #64748b;
+  --text-sec:     #b0c0d0;
+  --text-muted:   #94a3b8;
   --border:       #334155;
   --border-2:     #475569;
   --brand:        #4db8ff;
@@ -190,7 +190,7 @@ input::placeholder,textarea::placeholder{color:var(--text-muted)}
 .btn-adjuntar:hover{background:#334155}
 
 /* ===================== LOGIN ===================== */
-#view-login{min-height:100vh;background:#FAF8F3;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;overflow:hidden}
+#view-login{min-height:100vh;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;overflow:hidden}
 .login-bg{position:absolute;inset:0;pointer-events:none}
 .login-card{background:white;padding:48px 40px;border-radius:24px;box-shadow:0 8px 40px rgba(0,0,0,.12);max-width:420px;width:100%;margin:20px;display:flex;flex-direction:column;align-items:center;text-align:center}
 .login-card h1{font-size:26px;font-weight:700;color:#1e293b;margin:24px 0 8px}
@@ -204,12 +204,12 @@ input::placeholder,textarea::placeholder{color:var(--text-muted)}
 
 /* ===================== SIDEBAR NOTIFICATIONS ===================== */
 #notif-sidebar{position:fixed;top:80px;right:0;width:300px;z-index:800;display:flex;flex-direction:column;gap:8px;padding:0 12px;pointer-events:none}
-.notif-card{background:white;border-left:4px solid #003366;border-radius:0 10px 10px 0;box-shadow:0 4px 20px rgba(0,0,0,.13);padding:12px 14px;font-size:12px;color:#1e293b;pointer-events:all;transform:translateX(110%);transition:transform .35s cubic-bezier(.34,1.2,.64,1);position:relative;min-width:260px}
+.notif-card{background:white;border:1px solid var(--border);border-top:3px solid #003366;border-radius:10px;box-shadow:0 4px 20px rgba(0,0,0,.13);padding:12px 14px;font-size:12px;color:#1e293b;pointer-events:all;transform:translateX(110%);transition:transform .35s cubic-bezier(.22,1,.36,1);position:relative;min-width:260px}
 .notif-card.show{transform:translateX(0)}
-.notif-card.success{border-color:#16a34a}
-.notif-card.error{border-color:#dc2626}
-.notif-card.warn{border-color:#d97706}
-.notif-card.info{border-color:#0099CC}
+.notif-card.success{border-top-color:#16a34a}
+.notif-card.error{border-top-color:#dc2626}
+.notif-card.warn{border-top-color:#d97706}
+.notif-card.info{border-top-color:#0099CC}
 .notif-title{font-weight:700;font-size:12px;margin-bottom:3px;display:flex;align-items:center;gap:6px}
 .notif-body{color:#64748b;font-size:11px;line-height:1.4}
 .notif-steps{margin-top:6px;display:flex;flex-direction:column;gap:3px}
@@ -229,7 +229,7 @@ input::placeholder,textarea::placeholder{color:var(--text-muted)}
 /* ===================== COMPLETION DIALOG ===================== */
 #completion-dialog{position:fixed;inset:0;background:rgba(0,0,20,.55);z-index:900;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(3px);opacity:0;transition:opacity .3s;pointer-events:none}
 #completion-dialog.show{opacity:1;pointer-events:all}
-.completion-box{background:white;border-radius:20px;padding:36px 32px;max-width:460px;width:100%;box-shadow:0 24px 60px rgba(0,0,0,.2);text-align:center;transform:translateY(24px);transition:transform .35s cubic-bezier(.34,1.2,.64,1)}
+.completion-box{background:white;border-radius:20px;padding:36px 32px;max-width:460px;width:100%;box-shadow:0 24px 60px rgba(0,0,0,.2);text-align:center;transform:translateY(24px);transition:transform .35s cubic-bezier(.22,1,.36,1)}
 #completion-dialog.show .completion-box{transform:translateY(0)}
 .completion-icon{font-size:52px;margin-bottom:12px;display:block}
 .completion-title{font-size:20px;font-weight:800;color:#003366;margin-bottom:6px}
@@ -270,7 +270,7 @@ input::placeholder,textarea::placeholder{color:var(--text-muted)}
 .ac-item{padding:9px 14px;cursor:pointer;border-bottom:1px solid #f1f5f9;display:flex;gap:10px;align-items:flex-start}
 .ac-item:last-child{border-bottom:none}
 .ac-item:hover{background:#eff6ff}
-.ac-item.ac-new{background:#fffbeb;border-left:3px solid #f59e0b}
+.ac-item.ac-new{background:#fffbeb;border-top:2px solid #f59e0b}
 .ac-item.ac-new:hover{background:#fef3c7}
 .ac-code{font-weight:700;color:#003366;min-width:62px;font-size:12px;padding-top:1px}
 .ac-name{color:#374151;font-size:11px;line-height:1.4}
@@ -296,7 +296,7 @@ input::placeholder,textarea::placeholder{color:var(--text-muted)}
 [data-theme="dark"] .doc-table td{border-color:var(--border-2)}
 [data-theme="dark"] .doc-table .label-cell{background:var(--surface-2);color:var(--text-sec)}
 [data-theme="dark"] .doc-watermark{opacity:.03}
-[data-theme="dark"] .notif-card{background:var(--surface);border-color:var(--border)}
+[data-theme="dark"] .notif-card{background:var(--surface);border-color:var(--border);color:var(--text-pri)}
 [data-theme="dark"] .completion-box{background:var(--surface)}
 [data-theme="dark"] .completion-nro{background:var(--surface-2);color:var(--brand)}
 [data-theme="dark"] .completion-btn.secondary{background:var(--surface);color:var(--brand)}
@@ -376,7 +376,7 @@ input::placeholder,textarea::placeholder{color:var(--text-muted)}
 .admin-table tr:hover td{background:var(--surface-2)}
 .admin-cert-chip{display:flex;align-items:center;gap:6px}
 .admin-cert-avatar{width:22px;height:22px;border-radius:50%;background:var(--brand);color:white;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.admin-action-btn{background:none;border:1px solid var(--border);color:var(--text-sec);border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer;transition:.15s;display:inline-flex;align-items:center;gap:4px}
+.admin-action-btn{background:none;border:1px solid var(--border);color:var(--text-sec);border-radius:6px;padding:7px 11px;font-size:11px;cursor:pointer;transition:.15s;display:inline-flex;align-items:center;gap:4px;min-height:36px}
 .admin-action-btn:hover{background:var(--surface-2);color:var(--text-pri)}
 .admin-action-btn.danger:hover{background:var(--error-bg);color:var(--error);border-color:var(--error)}
 .admin-action-btn.warn{color:#d97706;border-color:#fbbf24}
@@ -407,10 +407,10 @@ input::placeholder,textarea::placeholder{color:var(--text-muted)}
 /* ===================== DASHBOARD ===================== */
 #view-dashboard{padding:28px 20px 240px;max-width:1100px;margin:0 auto}
 .dash-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px;flex-wrap:wrap;gap:12px}
-.dash-header h1{font-size:26px;font-weight:700;color:#003366}
-.dash-header p{font-size:13px;color:#64748b;margin-top:4px}
+.dash-header h1{font-size:26px;font-weight:700;color:var(--brand)}
+.dash-header p{font-size:13px;color:var(--text-sec);margin-top:4px}
 .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:24px}
-.stat-card{background:white;border:1px solid #e2e8f0;border-radius:12px;padding:20px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
 .stat-card.primary{background:linear-gradient(135deg,#003366,#004d99);color:white;border:none}
 .stat-card.primary p{color:rgba(255,255,255,.7)}
 .stat-card .stat-label{font-size:12px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
@@ -420,7 +420,7 @@ input::placeholder,textarea::placeholder{color:var(--text-muted)}
 .stat-card .stat-sub{font-size:12px;color:#22c55e;margin-top:6px;font-weight:600}
 .charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px}
 @media(max-width:700px){.charts-grid{grid-template-columns:1fr}}
-.chart-card{background:white;border:1px solid #e2e8f0;border-radius:12px;padding:20px}
+.chart-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px}
 .chart-card h3{font-size:15px;font-weight:700;color:#003366;margin-bottom:16px}
 .vencer-table{width:100%;border-collapse:collapse;font-size:13px}
 .vencer-table th{background:#f8fafc;font-weight:600;color:#64748b;text-align:left;padding:10px 14px;font-size:11px;text-transform:uppercase;letter-spacing:.5px}
@@ -433,7 +433,7 @@ input::placeholder,textarea::placeholder{color:var(--text-muted)}
 .badge-red{background:#fef2f2;color:#dc2626;border:1px solid #fecaca}
 
 /* ===================== FILTROS ===================== */
-.filtros-card{background:white;border:1px solid #e2e8f0;border-radius:12px;padding:20px;margin-bottom:20px}
+.filtros-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:20px}
 .filtros-card h2{font-size:14px;font-weight:700;color:#003366;margin-bottom:14px;display:flex;align-items:center;gap:8px}
 .filtros-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
 .filtro-input{width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;background:#f8fafc;outline:none;transition:.2s}
@@ -536,7 +536,7 @@ video{width:100%;border-radius:8px;background:black}
 /* Histórico */
 #view-historico{padding:28px 24px}
 .hist-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px;flex-wrap:wrap;gap:12px}
-.hist-header h1{font-size:26px;font-weight:700;color:#003366}
+.hist-header h1{font-size:26px;font-weight:700;color:var(--brand)}
 .hist-table-wrap{background:white;border:1px solid #e2e8f0;border-radius:12px;overflow:visible}
 .hist-search-bar{padding:14px 16px;border-bottom:1px solid #f1f5f9;display:flex;justify-content:space-between;align-items:center;background:#f8fafc;gap:12px;flex-wrap:wrap}
 .hist-search{padding:8px 12px 8px 36px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;background:white url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%2394a3b8' stroke-width='2' viewBox='0 0 24 24'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E") no-repeat 10px center;outline:none;width:280px;transition:.2s}
@@ -601,9 +601,23 @@ video{width:100%;border-radius:8px;background:black}
 .cl-card-icon svg{width:15px;height:15px;display:block}
 .cl-card-title{font-size:12.5px;font-weight:700;color:#0f172a;line-height:1.35}
 .cl-card-desc{font-size:11.5px;color:#64748b;line-height:1.55}
-.cl-toast-foot{padding:14px 20px;border-top:1px solid #f1f5f9;display:flex;justify-content:flex-end}
+.cl-toast-foot{padding:14px 20px;border-top:1px solid #f1f5f9;display:flex;justify-content:space-between;align-items:center;gap:12px}
+.cl-dontshow{display:flex;align-items:center;gap:7px;font-size:12.5px;color:#64748b;cursor:pointer;user-select:none}
+.cl-dontshow input{width:15px;height:15px;cursor:pointer;accent-color:#002855}
 .cl-btn-ok{background:#002855;color:#fff;border:none;border-radius:10px;padding:10px 32px;font-size:13px;font-weight:600;cursor:pointer;transition:background .15s}
 .cl-btn-ok:hover{background:#003f80}
+/* ── Píldora de guardado automático (flotante fija) ── */
+.autosave-pill{position:fixed;left:20px;bottom:20px;z-index:400;display:none;align-items:center;gap:9px;background:#fff;border:1px solid #e2e8f0;border-radius:999px;padding:9px 17px 9px 13px;box-shadow:0 8px 24px rgba(0,0,40,.16);font-size:13px;font-weight:600;color:#0f172a;user-select:none;animation:asIn .25s cubic-bezier(.22,1,.36,1) both}
+.autosave-pill.show{display:inline-flex}
+.autosave-pill .autosave-ico{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;flex-shrink:0}
+.autosave-pill .autosave-ico svg{width:18px;height:18px;display:block}
+.autosave-pill.is-saving{color:#1d4ed8;border-color:#bfdbfe;background:#eff6ff}
+.autosave-pill.is-saved{color:#15803d;border-color:#bbf7d0;background:#f0fdf4}
+.autosave-pill.is-cloud{color:#15803d;border-color:#bbf7d0;background:#f0fdf4}
+.autosave-pill .autosave-sub{color:#94a3b8;font-weight:500;margin-left:2px}
+.autosave-spin{width:15px;height:15px;border:2px solid #bfdbfe;border-top-color:#2563eb;border-radius:50%;animation:spin .7s linear infinite;display:inline-block}
+@keyframes asIn{from{opacity:0;transform:translateY(10px) scale(.96)}to{opacity:1;transform:translateY(0) scale(1)}}
+@media(max-width:600px){.autosave-pill{left:10px;bottom:74px;font-size:12px;padding:8px 14px 8px 11px}}
 .email-preview{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:16px;font-family:monospace;font-size:12px;color:#374151;margin-bottom:16px}
 .email-row{display:grid;grid-template-columns:56px 1fr;gap:8px;align-items:center;margin-bottom:8px}
 .email-label{color:#94a3b8;font-size:12px}
@@ -700,6 +714,33 @@ video{width:100%;border-radius:8px;background:black}
   /* --- Lock banner --- */
   .lock-overlay-banner{flex-direction:column;gap:8px;align-items:flex-start}
   .btn-archive{align-self:flex-end}
+}
+
+/* ===================== FOCUS VISIBLE ===================== */
+.nav-btn:focus-visible,
+.btn-nueva:focus-visible,
+.btn-theme:focus-visible,
+.completion-btn:focus-visible,
+.btn-action:focus-visible,
+.admin-action-btn:focus-visible,
+.check-item:focus-visible,
+.filtro-input:focus-visible,
+.btn-google:focus-visible,
+.btn-camera:focus-visible,
+.btn-danger:focus-visible,
+.btn-success:focus-visible,
+.btn-archive:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ===================== PREFERS REDUCED MOTION ===================== */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 </style>
 <script src="concesiones.js?v=20260522"></script>
@@ -1373,7 +1414,6 @@ video{width:100%;border-radius:8px;background:black}
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6,9 6,2 18,2 18,9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
         Imprimir
       </button>
-      <span id="borrador-cloud-status" title="Borrador guardado en la nube" style="display:none;font-size:11px;color:#15803d;align-self:center;margin-left:4px;cursor:default"></span>
     </div>
     <p class="warn-msg hidden" id="warn-checklist">
       ⚠️ Complete el checklist de bloqueo para habilitar las acciones.
@@ -1674,7 +1714,7 @@ video{width:100%;border-radius:8px;background:black}
     <div class="cl-toast-head">
       <div>
         <div class="cl-toast-title">Novedades del sistema</div>
-        <span class="cl-toast-ver">v2026.04.20c</span>
+        <span class="cl-toast-ver">v2026.06.05</span>
       </div>
       <button class="cl-toast-close" onclick="closeChangelog()" aria-label="Cerrar">
         <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="1" y1="1" x2="13" y2="13"/><line x1="13" y1="1" x2="1" y2="13"/></svg>
@@ -1683,98 +1723,41 @@ video{width:100%;border-radius:8px;background:black}
     <div class="cl-toast-body">
 
       <div class="cl-card">
-        <div class="cl-card-icon fix">
-          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="2,9 6,13 14,3"/></svg>
+        <div class="cl-card-icon new">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="5" r="2.6"/><path d="M2.5 14a5.5 5.5 0 0 1 11 0"/></svg>
         </div>
-        <div class="cl-card-title">N° de registro aparece en el PDF</div>
-        <div class="cl-card-desc">El correlativo (RV-XXXX) ahora se genera <em>antes</em> de capturar el PDF, por lo que siempre queda impreso correctamente en el encabezado del documento.</div>
+        <div class="cl-card-title">Roles de usuario en la nube</div>
+        <div class="cl-card-desc">Los permisos de <strong>administrador</strong> y <strong>certificador</strong> ahora se asignan por usuario desde la base de datos, en vez de estar fijos en el código. Más seguro y fácil de actualizar.</div>
       </div>
 
       <div class="cl-card">
         <div class="cl-card-icon fix">
           <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="2,9 6,13 14,3"/></svg>
         </div>
-        <div class="cl-card-title">Edición admin conserva imágenes</div>
-        <div class="cl-card-desc">Al editar un registro desde el panel de administración ya no se pierden la foto de evidencia, la firma ni el PDF original adjunto al registro.</div>
+        <div class="cl-card-title">Estado ENVIADO confiable</div>
+        <div class="cl-card-desc">Al notificar al cliente por Gmail, el registro queda marcado como <strong>ENVIADO</strong> siempre — con reintento automático si la primera actualización no alcanza a guardarse.</div>
       </div>
 
       <div class="cl-card">
         <div class="cl-card-icon new">
-          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H2v12l3-3h9V2z"/><line x1="5" y1="6" x2="11" y2="6"/><line x1="5" y1="9" x2="8" y2="9"/></svg>
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M12 11h.7a2.8 2.8 0 0 0 0-5.6h-.8A4.4 4.4 0 1 0 4 8.5"/><polyline points="5.5,9 7,10.5 9.5,7.5"/></svg>
         </div>
-        <div class="cl-card-title">Copia a operaciones y eflores</div>
-        <div class="cl-card-desc">Cada notificación enviada al cliente incluye copia automática a <em>operaciones@certimar.cl</em> y <em>eflores@certimar.cl</em>.</div>
-      </div>
-
-      <div class="cl-card">
-        <div class="cl-card-icon fix">
-          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="2,9 6,13 14,3"/></svg>
-        </div>
-        <div class="cl-card-title">Firma del certificador visible</div>
-        <div class="cl-card-desc">La firma del certificador ahora aparece siempre al abrir el formulario, incluso al cargar registros del historial o regenerar el PDF.</div>
-      </div>
-
-      <div class="cl-card">
-        <div class="cl-card-icon fix">
-          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="2,9 6,13 14,3"/></svg>
-        </div>
-        <div class="cl-card-title">Email responsable no se corta</div>
-        <div class="cl-card-desc">El correo del responsable del centro ya no queda cortado en la sección de firmas del formulario ni en el PDF generado.</div>
-      </div>
-
-      <div class="cl-card">
-        <div class="cl-card-icon fix">
-          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="2,9 6,13 14,3"/></svg>
-        </div>
-        <div class="cl-card-title">Envío de correo activado</div>
-        <div class="cl-card-desc">Al presionar <strong>Notificar</strong>, el correo sale desde <em>operaciones@certimar.cl</em> con el PDF adjunto. El certificador recibe copia interna.</div>
-      </div>
-
-      <div class="cl-card">
-        <div class="cl-card-icon new">
-          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="8" y1="2" x2="8" y2="14"/><line x1="2" y1="8" x2="14" y2="8"/></svg>
-        </div>
-        <div class="cl-card-title">N° de Centro va primero</div>
-        <div class="cl-card-desc">El formulario muestra <strong>N° de Centro</strong> antes del nombre. Ambos campos se completan entre sí al seleccionar una concesión.</div>
-      </div>
-
-      <div class="cl-card">
-        <div class="cl-card-icon new">
-          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2 8h12M10 4l4 4-4 4"/></svg>
-        </div>
-        <div class="cl-card-title">Autocompletado bidireccional</div>
-        <div class="cl-card-desc">Escribe el código <em>o</em> el nombre del centro — el sistema sugiere y rellena ambos campos automáticamente.</div>
-      </div>
-
-      <div class="cl-card">
-        <div class="cl-card-icon fix">
-          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="2,9 6,13 14,3"/></svg>
-        </div>
-        <div class="cl-card-title">Firma e imagen en histórico</div>
-        <div class="cl-card-desc">La firma del certificador y la foto adjunta ahora se muestran correctamente al revisar registros desde el historial.</div>
-      </div>
-
-      <div class="cl-card">
-        <div class="cl-card-icon ux">
-          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="14" height="9" rx="2"/><path d="M5 4V3a3 3 0 016 0v1"/><line x1="8" y1="8" x2="8" y2="10"/></svg>
-        </div>
-        <div class="cl-card-title">Checklist ampliado</div>
-        <div class="cl-card-desc">El checklist lateral verifica N° centro, nombre, norma aplicable y orden de completación del formulario.</div>
-      </div>
-
-      <div class="cl-card">
-        <div class="cl-card-icon fix">
-          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="2,9 6,13 14,3"/></svg>
-        </div>
-        <div class="cl-card-title">Eliminación corregida</div>
-        <div class="cl-card-desc">Se resolvió el bloqueo al eliminar registros desde el panel de administración. Responde en menos de 10 segundos.</div>
+        <div class="cl-card-title">Borrador en la nube, con aviso visible</div>
+        <div class="cl-card-desc">Lo que escribes en el formulario se guarda solo —también en la nube— y puedes retomarlo desde cualquier dispositivo. Una <strong>píldora flotante</strong> te muestra en todo momento cuándo se guardó.</div>
       </div>
 
     </div>
     <div class="cl-toast-foot">
+      <label class="cl-dontshow"><input type="checkbox" id="cl-dontshow-chk"> No volver a mostrar</label>
       <button class="cl-btn-ok" onclick="closeChangelog()">Entendido</button>
     </div>
   </div>
+</div>
+
+<!-- ── PÍLDORA DE GUARDADO AUTOMÁTICO ── -->
+<div id="autosave-pill" class="autosave-pill" aria-live="polite" role="status">
+  <span class="autosave-ico" id="autosave-ico"></span>
+  <span class="autosave-txt" id="autosave-txt"></span>
 </div>
 
 <script>
@@ -2362,9 +2345,9 @@ function showApp() {
   var ocean = document.getElementById('dash-ocean');
   if (ocean) ocean.classList.remove('hidden');
 
-  // Mostrar changelog si no fue visto en esta versión
-  var CL_KEY = 'certimar_changelog_v20260420c';
-  if (!localStorage.getItem(CL_KEY)) {
+  // Mostrar changelog si no fue visto en esta versión (ni se pidió ocultarlo para siempre)
+  var CL_KEY = 'certimar_changelog_v20260605';
+  if (!localStorage.getItem(CL_KEY) && !localStorage.getItem('certimar_changelog_never')) {
     setTimeout(function() {
       document.getElementById('modal-changelog').classList.remove('hidden');
     }, 800);
@@ -2373,7 +2356,10 @@ function showApp() {
 
 function closeChangelog() {
   document.getElementById('modal-changelog').classList.add('hidden');
-  localStorage.setItem('certimar_changelog_v20260420', '1');
+  // Clave idéntica a la del chequeo (evita el bug previo que la dejaba sin coincidir)
+  localStorage.setItem('certimar_changelog_v20260605', '1');
+  var chk = document.getElementById('cl-dontshow-chk');
+  if (chk && chk.checked) localStorage.setItem('certimar_changelog_never', '1');
 }
 
 // =====================================================================
@@ -2391,6 +2377,7 @@ function showView(view) {
   });
   var ocean = document.getElementById('dash-ocean');
   if (ocean) ocean.classList.toggle('hidden', view !== 'dashboard');
+  if (view !== 'registro') hideAutosavePill();
   if (view === 'dashboard') { cargarDashboard(); initFishIfNeeded(); }
   if (view === 'historico') cargarHistorico();
   if (view === 'registro')  resetFormulario();
@@ -2432,6 +2419,7 @@ function resetFormulario() {
   var btnMail = document.getElementById('btn-mail');
   if (btnMail) { btnMail.disabled = true; btnMail.style.opacity = ''; btnMail.textContent = ''; btnMail.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg> Notificar Cliente'; btnMail.className = 'btn-action btn-mail'; }
   appState = { saved: false, sent: false, archived: false, pdfB64: null, fotoB64: null, savedData: null };
+  hideAutosavePill();
   checkChecklist();
   setBtnGuardar(false);
   // Mostrar banner de borrador en el próximo tick para que cargarRegistroEnFormulario
@@ -2445,6 +2433,36 @@ function resetFormulario() {
 var BORRADOR_KEY    = 'certimar_borrador_v1';
 var borradorTimer   = null;
 var borradorSuspend = false;
+
+// --- Indicador visible de guardado automático (píldora flotante) ---
+function _horaGuardado() {
+  return new Date().toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
+}
+function setAutosaveStatus(state, hora) {
+  var pill = document.getElementById('autosave-pill');
+  if (!pill) return;
+  var ico = document.getElementById('autosave-ico');
+  var txt = document.getElementById('autosave-txt');
+  pill.classList.remove('is-saving','is-saved','is-cloud');
+  if (state === 'saving') {
+    pill.classList.add('is-saving');
+    ico.innerHTML = '<span class="autosave-spin"></span>';
+    txt.textContent = 'Guardando…';
+  } else if (state === 'cloud') {
+    pill.classList.add('is-cloud');
+    ico.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/><polyline points="9 13 11 15 15 11"/></svg>';
+    txt.innerHTML = 'Guardado en la nube<span class="autosave-sub">· ' + hora + '</span>';
+  } else { // 'saved' (local)
+    pill.classList.add('is-saved');
+    ico.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+    txt.innerHTML = 'Guardado<span class="autosave-sub">· ' + hora + '</span>';
+  }
+  pill.classList.add('show');
+}
+function hideAutosavePill() {
+  var pill = document.getElementById('autosave-pill');
+  if (pill) pill.classList.remove('show');
+}
 
 function captureBorrador() {
   var datos = getDatos();
@@ -2464,13 +2482,16 @@ function captureBorrador() {
 function saveBorrador() {
   if (borradorSuspend || appState.editMode || appState.saved) return;
   var payload = captureBorrador();
-  if (!payload) { try { localStorage.removeItem(BORRADOR_KEY); } catch(e){} return; }
+  if (!payload) { try { localStorage.removeItem(BORRADOR_KEY); } catch(e){} hideAutosavePill(); return; }
   try { localStorage.setItem(BORRADOR_KEY, JSON.stringify(payload)); }
   catch(e) { console.warn('Borrador: no se pudo guardar', e); }
+  setAutosaveStatus('saved', _horaGuardado());
 }
 
 function scheduleBorrador() {
   if (borradorTimer) clearTimeout(borradorTimer);
+  // Feedback visible inmediato mientras se escribe
+  if (!(borradorSuspend || appState.editMode || appState.saved)) setAutosaveStatus('saving');
   borradorTimer = setTimeout(saveBorrador, 1500);
   _scheduleBorradorCloud();
 }
@@ -2635,9 +2656,7 @@ async function fbGuardarBorrador() {
     firmaCliente: payload.firmaCliente || '',
     guardadoEn  : firebase.firestore.FieldValue.serverTimestamp()
   });
-  var hora  = new Date().toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
-  var badge = document.getElementById('borrador-cloud-status');
-  if (badge) { badge.textContent = '☁️ ' + hora; badge.style.display = 'inline'; }
+  setAutosaveStatus('cloud', _horaGuardado());
 }
 
 async function fbCargarBorrador() {
@@ -2660,8 +2679,7 @@ function fbEliminarBorrador() {
   var db = initFirebase();
   if (!db) return;
   db.collection('borradores').doc(key).delete().catch(function(){});
-  var badge = document.getElementById('borrador-cloud-status');
-  if (badge) badge.style.display = 'none';
+  hideAutosavePill();
 }
 
 function _scheduleBorradorCloud() {
