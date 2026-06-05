@@ -1,6 +1,7 @@
 // Certimar RV — Service Worker
-// Estrategia: Stale-While-Revalidate para assets estáticos, pass-through para API/Firebase
-const CACHE_NAME    = 'certimar-rv-v4';
+// Estrategia: Network-First para el HTML (index.html / navegación) para que cada deploy
+// se vea de inmediato; Stale-While-Revalidate para assets estáticos; pass-through API/Firebase
+const CACHE_NAME    = 'certimar-rv-v5';
 const CACHE_ASSETS  = ['/', '/index.html', '/firebaseConfig.js', '/concesiones.js', '/aquachile.js'];
 
 self.addEventListener('install', function(event) {
@@ -39,7 +40,30 @@ self.addEventListener('fetch', function(event) {
     return; // let browser handle normally
   }
 
-  // Stale-While-Revalidate: responde con caché inmediatamente y actualiza en background
+  // Network-First para el HTML (navegación, / e /index.html): siempre la última
+  // versión cuando hay internet; la caché solo es respaldo si la red falla (offline).
+  var isHTML = event.request.mode === 'navigate' ||
+               url.pathname === '/' ||
+               url.pathname === '/index.html';
+
+  if (isHTML) {
+    event.respondWith(
+      fetch(event.request).then(function(response) {
+        if (response && response.status === 200 && url.origin === self.location.origin) {
+          var copy = response.clone();
+          caches.open(CACHE_NAME).then(function(cache) { cache.put(event.request, copy); });
+        }
+        return response;
+      }).catch(function() {
+        return caches.match(event.request).then(function(cached) {
+          return cached || caches.match('/index.html');
+        });
+      })
+    );
+    return;
+  }
+
+  // Stale-While-Revalidate: para assets estáticos responde con caché y actualiza en background
   event.respondWith(
     caches.open(CACHE_NAME).then(function(cache) {
       return cache.match(event.request).then(function(cached) {
@@ -48,11 +72,7 @@ self.addEventListener('fetch', function(event) {
             cache.put(event.request, response.clone());
           }
           return response;
-        }).catch(function() {
-          if (event.request.mode === 'navigate') {
-            return caches.match('/index.html');
-          }
-        });
+        }).catch(function() { return cached; });
         return cached || fetchPromise;
       });
     })
