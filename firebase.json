@@ -8,9 +8,6 @@
     ],
     "rewrites": [
       { "source": "/firma", "destination": "/firma.html" },
-      { "source": "/api/enviarNotificacion",   "function": "enviarNotificacion",   "region": "us-central1" },
-      { "source": "/api/generarLinkFirma",     "function": "generarLinkFirma",     "region": "us-central1" },
-      { "source": "/api/procesarFirmaCliente", "function": "procesarFirmaCliente", "region": "us-central1" },
       {
         "source": "**",
         "destination": "/index.html"
