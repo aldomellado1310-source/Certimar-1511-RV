@@ -263,7 +263,7 @@ exports.procesarFirmaCliente = functions
   .runWith({ timeoutSeconds: 60, memory: '256MB' })
   .https.onCall(async (data, context) => {
 
-  const { nro, firmaB64, token } = data;
+  const { nro, firmaB64, token, nombre, email } = data;
   if (!nro || !firmaB64 || !token) {
     throw new functions.https.HttpsError('invalid-argument', 'nro, firmaB64 y token son requeridos.');
   }
@@ -273,7 +273,7 @@ exports.procesarFirmaCliente = functions
   if (!docSnap.exists) {
     throw new functions.https.HttpsError('not-found', 'Registro no encontrado.');
   }
-  if (docSnap.data().tokenFirma !== token) {
+  if (!tokenCoincide(docSnap.data().tokenFirma, token)) {
     throw new functions.https.HttpsError('permission-denied', 'Token de firma inválido.');
   }
 
@@ -286,11 +286,16 @@ exports.procesarFirmaCliente = functions
   await file.save(buffer, { contentType: 'image/png', public: false });
   const [url] = await file.getSignedUrl({ action: 'read', expires: '2099-01-01' });
 
-  await docRef.update({
+  const update = {
     urlFirmaCliente: url,
     estadoFirma    : 'FIRMADO',
     tokenFirma     : ''
-  });
+  };
+  const nombreOk = normalizarNombre(nombre);
+  if (nombreOk) update.nombreResponsable = nombreOk;
+  if (esEmailValido(email)) update.emailResponsable = normalizarEmail(email);
+
+  await docRef.update(update);
 
   functions.logger.info('procesarFirmaCliente OK:', nro);
   return { ok: true, urlFirmaCliente: url };
