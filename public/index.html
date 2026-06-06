@@ -23,6 +23,7 @@
 <script src="firebaseConfig.js?v=20260605"></script>
 <script src="https://accounts.google.com/gsi/client" async></script>
 <script src="gmailAuth.js?v=20260606"></script>
+<script src="metricsLog.js?v=20260605"></script>
 <style>
 /* ===================== TEMA: VARIABLES CSS ===================== */
 :root {
@@ -1891,6 +1892,9 @@ var firmaExpandHasData   = false;
 var _firmaExpandHandlers = null; // keeps references for removeEventListener
 var cameraStream = null;
 var currentUser  = null;   // { email, name, isAdmin }
+// Métricas: inicializa captura lo antes posible (handlers globales de error incluidos).
+try { Metrics.init(function() { return currentUser; }, initFirebase()); }
+catch (e) { console.warn('[metrics] init falló:', e); }
 var _db = null;            // instancia Firestore
 
 // ─── Mapeo Región → Sectores ─────────────────────────────────────────────────
@@ -2263,6 +2267,7 @@ document.addEventListener('DOMContentLoaded', function() {
           isAdmin     : rol === 'admin',
           isSupervisor: rol === 'supervisor'
         };
+        try { Metrics.setUser(currentUser); Metrics.activity('login', { detail: { rol: rol } }); } catch (e) {}
         // El token de Gmail se obtiene en el primer envío (GIS necesita el gesto del click
         // para abrir su popup; un warm-up sin gesto lo bloquearía el navegador).
         showApp();
@@ -2285,6 +2290,7 @@ document.addEventListener('DOMContentLoaded', function() {
 //  PARTÍCULAS SPLASH
 // =====================================================================
 function cerrarSesion() {
+  try { Metrics.activity('logout'); Metrics.flush(); } catch (e) {}
   firebase.auth().signOut().then(function() {
     currentUser = null;
     // Invalida el token de Gmail para que el siguiente usuario no envíe con la sesión anterior.
@@ -5441,7 +5447,7 @@ function cargarRegistroEnFormulario(r, modoLectura) {
   chk('r-cicE2',        res.includes('CIC E2'));
   chk('r-ca',           res.includes('1821-CA'));
   chk('r-vs',           res.includes('1821-VS'));
-  chk('r-res1511',      res.includes('1511') && !res.includes('CIC'));
+  chk('r-res1511',      res.includes('1511'));
   chk('r-desinfeccion', res.includes('DESINF'));
 
   // Tipo observación
