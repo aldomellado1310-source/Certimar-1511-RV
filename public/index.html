@@ -5869,13 +5869,135 @@ function toast(msg, type) {
   toastTimer = setTimeout(function(){ el.className = ''; }, 3500);
 }
 
-// ===================== MÉTRICAS — STUBS TEMPORALES (reemplazados en Tasks 7-10) =====================
-function abrirMetricas() { document.getElementById('metrics-gate').classList.remove('hidden'); document.getElementById('metrics-panel').classList.add('hidden'); }
-function metricsGateSubmit() {}
-function metricsChangePin() {}
+// ===================== MÉTRICAS — STUBS TEMPORALES (reemplazados en Tasks 8-10) =====================
 function cargarMetricas() {}
 function renderMetricas() {}
 function exportarMetricasCSV() {}
+
+// ===================== MÉTRICAS — REJA PIN (autoservicio) =====================
+var _METRICS_UNLOCK_KEY = 'certimar_metrics_unlocked';
+
+async function _metricsSha256Hex(str) {
+  var buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.prototype.map.call(new Uint8Array(buf), function(b) {
+    return ('0' + b.toString(16)).slice(-2);
+  }).join('');
+}
+
+async function abrirMetricas() {
+  if (sessionStorage.getItem(_METRICS_UNLOCK_KEY) === '1') { _metricsShowPanel(); return; }
+  var hash = null;
+  try {
+    var snap = await initFirebase().collection('config').doc('metrics').get();
+    if (snap.exists) hash = snap.data().pinHash || null;
+  } catch (e) {
+    toast('No se pudo leer la configuración de métricas', 'error');
+    try { Metrics.error('metrics_config_read_fail', e); } catch (x) {}
+    return;
+  }
+  _metricsRenderGate(hash ? 'enter' : 'create');
+}
+
+function _metricsRenderGate(mode) {
+  document.getElementById('metrics-panel').classList.add('hidden');
+  document.getElementById('metrics-gate').classList.remove('hidden');
+  var title = document.getElementById('metrics-gate-title');
+  var sub   = document.getElementById('metrics-gate-sub');
+  var pin2  = document.getElementById('metrics-pin-2');
+  var btn   = document.getElementById('metrics-gate-btn');
+  document.getElementById('metrics-gate-err').textContent = '';
+  document.getElementById('metrics-pin-1').value = '';
+  pin2.value = '';
+  btn.dataset.mode = mode;
+  if (mode === 'create') {
+    title.textContent = 'Crea un PIN';
+    sub.textContent   = 'Aún no hay PIN configurado. Defínelo (mín. 4 dígitos).';
+    pin2.classList.remove('hidden');
+    btn.textContent   = 'Crear PIN';
+  } else {
+    title.textContent = 'Ingresa el PIN';
+    sub.textContent   = 'Panel de métricas (superadmin)';
+    pin2.classList.add('hidden');
+    btn.textContent   = 'Entrar';
+  }
+  document.getElementById('metrics-pin-1').focus();
+}
+
+function metricsGateSubmit() {
+  var mode = document.getElementById('metrics-gate-btn').dataset.mode || 'enter';
+  if (mode === 'create') _metricsCreatePin();
+  else _metricsSubmitPin();
+}
+
+async function _metricsCreatePin() {
+  var p1  = document.getElementById('metrics-pin-1').value.trim();
+  var p2  = document.getElementById('metrics-pin-2').value.trim();
+  var err = document.getElementById('metrics-gate-err');
+  if (p1.length < 4) { err.textContent = 'El PIN debe tener al menos 4 dígitos.'; return; }
+  if (p1 !== p2)     { err.textContent = 'Los PIN no coinciden.'; return; }
+  try {
+    var hash = await _metricsSha256Hex(p1);
+    await initFirebase().collection('config').doc('metrics').set({
+      pinHash  : hash,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      updatedBy: currentUser ? currentUser.email : ''
+    });
+    _metricsUnlock();
+  } catch (e) {
+    err.textContent = 'No se pudo guardar el PIN.';
+    try { Metrics.error('metrics_pin_create_fail', e); } catch (x) {}
+  }
+}
+
+async function _metricsSubmitPin() {
+  var p1  = document.getElementById('metrics-pin-1').value.trim();
+  var err = document.getElementById('metrics-gate-err');
+  try {
+    var snap   = await initFirebase().collection('config').doc('metrics').get();
+    var stored = snap.exists ? (snap.data().pinHash || '') : '';
+    var hash   = await _metricsSha256Hex(p1);
+    if (hash && hash === stored) { _metricsUnlock(); }
+    else { err.textContent = 'PIN incorrecto.'; }
+  } catch (e) {
+    err.textContent = 'No se pudo verificar el PIN.';
+    try { Metrics.error('metrics_pin_verify_fail', e); } catch (x) {}
+  }
+}
+
+function _metricsUnlock() {
+  sessionStorage.setItem(_METRICS_UNLOCK_KEY, '1');
+  _metricsShowPanel();
+}
+
+function _metricsShowPanel() {
+  document.getElementById('metrics-gate').classList.add('hidden');
+  document.getElementById('metrics-panel').classList.remove('hidden');
+  cargarMetricas();
+}
+
+async function metricsChangePin() {
+  var actual = prompt('PIN actual:');                if (actual === null) return;
+  var nuevo  = prompt('Nuevo PIN (mín. 4 dígitos):'); if (nuevo  === null) return;
+  var conf   = prompt('Confirmar nuevo PIN:');       if (conf   === null) return;
+  if (nuevo.trim().length < 4)     { toast('El PIN debe tener al menos 4 dígitos', 'error'); return; }
+  if (nuevo.trim() !== conf.trim()){ toast('Los PIN no coinciden', 'error'); return; }
+  try {
+    var snap    = await initFirebase().collection('config').doc('metrics').get();
+    var stored  = snap.exists ? (snap.data().pinHash || '') : '';
+    var hActual = await _metricsSha256Hex(actual.trim());
+    if (hActual !== stored) { toast('PIN actual incorrecto', 'error'); return; }
+    var hNuevo = await _metricsSha256Hex(nuevo.trim());
+    await initFirebase().collection('config').doc('metrics').set({
+      pinHash  : hNuevo,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      updatedBy: currentUser ? currentUser.email : ''
+    });
+    toast('PIN actualizado ✓', 'success');
+  } catch (e) {
+    toast('No se pudo cambiar el PIN', 'error');
+    try { Metrics.error('metrics_pin_change_fail', e); } catch (x) {}
+  }
+}
 </script>
 
 <!-- Dropdown autocomplete global (fuera de doc-paper para evitar overflow:hidden) -->
