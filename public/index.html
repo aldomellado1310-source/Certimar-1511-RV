@@ -5942,15 +5942,68 @@ function _metricsRenderKpis(rows) {
   document.getElementById('m-kpi-perf').textContent     = perfN ? Math.round(perfSum / perfN) : '—';
 }
 
-// Stubs temporales — implementados en Task 9
-function _metricsRenderCharts(rows) {}
+var _mChartDay = null, _mChartUser = null, _mChartMail = null;
+
+function _metricsDayKey(r) {
+  var d = (r.ts && r.ts.toDate) ? r.ts.toDate() : new Date(r.clientTs || Date.now());
+  return d.toISOString().split('T')[0];
+}
+
+function _metricsRenderCharts(rows) {
+  var byDay = {}, byDayErr = {}, byUser = {}, mok = 0, mfail = 0;
+  rows.forEach(function(r) {
+    var k = _metricsDayKey(r);
+    byDay[k] = (byDay[k] || 0) + 1;
+    if (r.type === 'error') byDayErr[k] = (byDayErr[k] || 0) + 1;
+    if (r.user) byUser[r.user] = (byUser[r.user] || 0) + 1;
+    if (r.event === 'mail_send') { if (r.ok) mok++; else mfail++; }
+  });
+  var days = Object.keys(byDay).sort();
+  var us   = Object.keys(byUser).sort(function(a, b) { return byUser[b] - byUser[a]; }).slice(0, 8);
+
+  if (_mChartDay) _mChartDay.destroy();
+  _mChartDay = new Chart(document.getElementById('m-chart-day'), {
+    type: 'line',
+    data: { labels: days, datasets: [
+      { label: 'Eventos', data: days.map(function(d) { return byDay[d]; }),       borderColor: '#0099cc', tension: .3 },
+      { label: 'Errores', data: days.map(function(d) { return byDayErr[d] || 0; }), borderColor: '#d97706', tension: .3 }
+    ] },
+    options: { responsive: true, plugins: { title: { display: true, text: 'Eventos por día' } } }
+  });
+
+  if (_mChartUser) _mChartUser.destroy();
+  _mChartUser = new Chart(document.getElementById('m-chart-user'), {
+    type: 'bar',
+    data: { labels: us, datasets: [{ label: 'Eventos', data: us.map(function(u) { return byUser[u]; }), backgroundColor: '#0099cc' }] },
+    options: { responsive: true, plugins: { title: { display: true, text: 'Actividad por usuario (top 8)' } } }
+  });
+
+  if (_mChartMail) _mChartMail.destroy();
+  _mChartMail = new Chart(document.getElementById('m-chart-mail'), {
+    type: 'doughnut',
+    data: { labels: ['OK', 'Fallidos'], datasets: [{ data: [mok, mfail], backgroundColor: ['#059669', '#dc2626'] }] },
+    options: { responsive: true, plugins: { title: { display: true, text: 'Correos enviados' } } }
+  });
+}
+
 function _metricsRenderTable(rows) {
   var tbody = document.getElementById('m-tbody');
-  tbody.innerHTML = rows.length
-    ? rows.slice(0, 50).map(function(r) {
-        return '<tr><td colspan="7">' + esc(r.type) + ' · ' + esc(r.event) + ' · ' + esc(r.user) + '</td></tr>';
-      }).join('')
-    : '<tr><td colspan="7" class="admin-empty">Sin datos</td></tr>';
+  if (!rows.length) { tbody.innerHTML = '<tr><td colspan="7" class="admin-empty">Sin datos</td></tr>'; return; }
+  tbody.innerHTML = rows.slice(0, 500).map(function(r) {
+    var d    = (r.ts && r.ts.toDate) ? r.ts.toDate() : new Date(r.clientTs || Date.now());
+    var when = d.toLocaleString('es-CL');
+    var ok   = (r.ok === true) ? '✓' : (r.ok === false ? '✗' : '');
+    var msg  = esc(r.msg || (r.detail ? JSON.stringify(r.detail) : ''));
+    return '<tr title="' + esc(r.stack || '') + '">' +
+      '<td>' + esc(when) + '</td>' +
+      '<td>' + esc(r.type) + '</td>' +
+      '<td>' + esc(r.event) + '</td>' +
+      '<td>' + esc(r.user) + '</td>' +
+      '<td>' + esc(r.view || '') + '</td>' +
+      '<td>' + ok + '</td>' +
+      '<td style="max-width:340px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + msg + '</td>' +
+    '</tr>';
+  }).join('');
 }
 
 // ===================== MÉTRICAS — REJA PIN (autoservicio) =====================
