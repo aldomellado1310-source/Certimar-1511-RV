@@ -1,5 +1,8 @@
 // ============================================================
 //  CERTIMAR — Firebase Functions  v2
+//  100% Firebase: identidad (Auth), datos (Firestore), archivos (Storage),
+//  correo (Gmail API en el frontend). Estas Functions solo cubren la
+//  firma de cliente por link. Sin dependencia de Google Apps Script.
 // ============================================================
 'use strict';
 
@@ -11,185 +14,8 @@ const { tokenCoincide, normalizarNombre, esEmailValido, normalizarEmail } = requ
 admin.initializeApp();
 const db = admin.firestore();
 
-// ─── Envío de correo vía Apps Script ─────────────────────────────────────────
-async function callAppsScript(datos, urlCertificado, internalCopy) {
-  const url = process.env.APPS_SCRIPT_URL;
-  if (!url) throw new Error('APPS_SCRIPT_URL no configurada en functions/.env');
-
-  functions.logger.info('[callAppsScript] URL:', url.slice(0, 80) + '...');
-  functions.logger.info('[callAppsScript] dest:', datos.emailDestinatario, '| internalCopy:', internalCopy || 'none', '| urlCert:', urlCertificado ? urlCertificado.slice(0, 60) + '...' : '(vacía)');
-
-  const payload = {
-    secret        : 'CERTIMAR_FB_2026',
-    accion        : 'enviarCorreo',
-    datos,
-    urlCertificado: urlCertificado || '',
-    internalCopy  : internalCopy   || null
-  };
-
-  const res  = await fetch(url, {
-    method  : 'POST',
-    headers : { 'Content-Type': 'application/json' },
-    body    : JSON.stringify(payload),
-    redirect: 'follow'
-  });
-
-  functions.logger.info('[callAppsScript] HTTP status:', res.status, res.statusText);
-  functions.logger.info('[callAppsScript] URL final (tras redirects):', res.url);
-  functions.logger.info('[callAppsScript] Content-Type respuesta:', res.headers.get('content-type'));
-  const text = await res.text();
-  functions.logger.info('[callAppsScript] Respuesta (primeros 1500 chars):', text.slice(0, 1500));
-
-  let json;
-  try { json = JSON.parse(text); } catch(_) {
-    functions.logger.error('[callAppsScript] Respuesta no es JSON. Status:', res.status, '| URL final:', res.url, '| Body:', text.slice(0, 800));
-    json = { ok: false, error: 'Apps Script retornó HTML en vez de JSON. Verifica el deployment del script.' };
-  }
-  if (!json.ok) throw new Error(json.error || 'Apps Script error');
-  functions.logger.info('[callAppsScript] OK:', json);
-  return json;
-}
-
-// ─── Plantilla HTML del correo ────────────────────────────────────────────────
-function escHtml(s) {
-  return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-}
-
-function plantillaEmail(datos, urlCert) {
-  const resoluciones = escHtml(buildResExt(datos.resoluciones) || '—');
-  const safeUrlCert  = encodeURI(urlCert || '').replace(/"/g, '%22');
-  const linkBtn = safeUrlCert
-    ? `<a href="${safeUrlCert}" style="display:inline-block;background:#003366;color:#fff;padding:13px 32px;text-decoration:none;border-radius:6px;font-size:14px;font-weight:700;font-family:Arial,sans-serif">Ver Certificado →</a>`
-    : '';
-
-  const e = escHtml;
-  const filas = [
-    ['N° Registro',          `<strong style="color:#003366">${e(datos.nroRegistro) || '—'}</strong>`],
-    ['Fecha',                 e(datos.fecha)                     || '—'],
-    ['Centro de Cultivo',     e(datos.centroCultivo)             || '—'],
-    ['N° Centro',             e(datos.nroCentro)                 || '—'],
-    ['ACS',                   e(datos.acs)                       || '—'],
-    ['Titular',               e(datos.titular)                   || '—'],
-    ['Ubicación',             e(datos.ubicacion)                 || '—'],
-    ['Región',                e(datos.region)                    || '—'],
-    ['Sector',                e(datos.sector)                    || '—'],
-    ['Fecha última siembra',  e(datos.fechaSiembra)              || '—'],
-    ['Tamaño peces',          e(datos.tamanoPeces)               || '—'],
-    ['Largo jaula (m)',       e(datos.jaulasLargo)               || '—'],
-    ['Ancho jaula (m)',       e(datos.jaulasAncho)               || '—'],
-    ['Cantidad jaulas',       e(datos.cantidadJaulas)            || '—'],
-    ['Jaulas sembradas',      e(datos.cantidadJaulasSembradas)   || '—'],
-    ['A/N Ensilaje',          e(datos.artefactoNaval)            || '—'],
-    ['Norma aplicable',       resoluciones],
-    ['Latitud S',             e(datos.latitud)                   || '—'],
-    ['Longitud W',            e(datos.longitud)                  || '—'],
-    ['Norte',                 e(datos.norte)                     || '—'],
-    ['Este',                  e(datos.este)                      || '—'],
-    ['Responsable',           e(datos.nombreResponsable)         || '—'],
-    ['Tipo Observación',      e(datos.tipoObservacion)           || '—'],
-    ['Observaciones',         e(datos.observaciones || 'S/O').replace(/\n/g, '<br>')],
-    ['Certificador',          e(datos.nombreCertificador)        || '—'],
-    ['N° Registro Cert.',     e(datos.rutCertificador)           || '—']
-  ].map((r, i) => {
-    const bg = i % 2 === 0 ? '#ffffff' : '#f1f5f9';
-    return `<tr style="background:${bg}">
-      <td style="padding:9px 14px;font-weight:600;color:#64748b;font-size:13px;width:38%;border-bottom:1px solid #e2e8f0;font-family:Arial,sans-serif">${r[0]}</td>
-      <td style="padding:9px 14px;color:#1e293b;font-size:13px;border-bottom:1px solid #e2e8f0;font-family:Arial,sans-serif">${r[1]}</td>
-    </tr>`;
-  }).join('');
-
-  return `<!DOCTYPE html>
-<html lang="es">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-<body style="margin:0;padding:0;background:#f1f5f9">
-<table width="100%" cellpadding="0" cellspacing="0" style="background:#f1f5f9;padding:24px 0">
-  <tr><td align="center">
-  <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:10px;overflow:hidden;border:1px solid #e2e8f0">
-    <tr>
-      <td style="background:linear-gradient(135deg,#003366 0%,#005599 50%,#003366 100%);padding:28px 32px;border-bottom:4px solid #0099CC">
-        <div style="color:#ffffff;font-size:22px;font-weight:900;letter-spacing:3px;font-family:Arial,sans-serif">CERTIMAR</div>
-        <div style="color:rgba(180,220,255,.85);font-size:12px;font-family:Arial,sans-serif;margin-top:3px">Sistema de Certificación — Registro de Visita</div>
-      </td>
-    </tr>
-    <tr>
-      <td style="padding:28px 32px 16px">
-        <p style="margin:0 0 12px;color:#1e293b;font-size:15px;font-family:Arial,sans-serif">
-          Estimado(a) <strong>${escHtml(datos.nombreResponsable || 'Responsable')}</strong>,
-        </p>
-        <p style="margin:0;color:#475569;font-size:14px;line-height:1.65;font-family:Arial,sans-serif">
-          Adjunto encontrará el Registro de Visita oficial del centro
-          <strong style="color:#003366">${escHtml(datos.centroCultivo)}</strong>
-          con fecha <strong>${escHtml(datos.fecha)}</strong>, emitido por Certimar SpA.
-        </p>
-      </td>
-    </tr>
-    <tr>
-      <td style="padding:8px 32px 24px">
-        <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e2e8f0;border-radius:8px;overflow:hidden">
-          ${filas}
-        </table>
-      </td>
-    </tr>
-    ${urlCert ? `<tr><td style="padding:4px 32px 28px;text-align:center">${linkBtn}</td></tr>` : ''}
-    <tr><td style="background:#1e293b;padding:18px 32px;text-align:center">
-      <p style="margin:0;color:#94a3b8;font-size:11px;font-family:Arial,sans-serif">
-        Certimar SpA · operaciones@certimar.cl · +56 9 6115 6322
-      </p>
-    </td></tr>
-  </table>
-  </td></tr>
-</table>
-</body></html>`;
-}
-
 // ════════════════════════════════════════════════════════════════════════════
-//  FUNCIÓN 1 — enviarNotificacion
-//  Envía correo + adjunto PDF + copia interna + actualiza Firestore
-// ════════════════════════════════════════════════════════════════════════════
-exports.enviarNotificacion = functions
-  .runWith({ timeoutSeconds: 120, memory: '512MB' })
-  .https.onCall(async (data, context) => {
-
-  if (!context.auth) {
-    throw new functions.https.HttpsError('unauthenticated', 'Debes iniciar sesión.');
-  }
-
-  const { datos, urlCertificado, pdfStoragePath } = data;
-  const destEmail   = datos && datos.emailDestinatario;
-  const nroRegistro = datos && datos.nroRegistro;
-
-  if (!destEmail) {
-    throw new functions.https.HttpsError('invalid-argument', 'Email destinatario vacío.');
-  }
-  if (!nroRegistro || /asignar/i.test(nroRegistro)) {
-    throw new functions.https.HttpsError('failed-precondition',
-      'El registro debe guardarse antes de enviar la notificación.');
-  }
-  // Verificar que el documento existe en Firestore antes de enviar el correo.
-  const snap = await db.collection('registros_visita').doc(nroRegistro).get();
-  if (!snap.exists) {
-    throw new functions.https.HttpsError('not-found',
-      `Registro ${nroRegistro} no encontrado en Firestore.`);
-  }
-
-  await callAppsScript(datos, urlCertificado || '', context.auth.token.email);
-  functions.logger.info('Correo enviado a:', destEmail, '| Registro:', datos.nroRegistro);
-
-  // Actualizar estado en Firestore
-  try {
-    await db.collection('registros_visita').doc(datos.nroRegistro).update({
-      estado          : 'ENVIADO',
-      emailResponsable: destEmail
-    });
-  } catch (eFs) {
-    functions.logger.warn('Firestore update error (no fatal):', eFs.message);
-  }
-
-  return { ok: true };
-});
-
-// ════════════════════════════════════════════════════════════════════════════
-//  FUNCIÓN 2 — generarLinkFirma
+//  generarLinkFirma
 //  Genera token UUID y retorna URL de firma para el cliente
 // ════════════════════════════════════════════════════════════════════════════
 exports.generarLinkFirma = functions
@@ -256,7 +82,7 @@ exports.getRegistroParaFirma = functions
   });
 
 // ════════════════════════════════════════════════════════════════════════════
-//  FUNCIÓN 3 — procesarFirmaCliente
+//  procesarFirmaCliente
 //  Verifica token, sube firma a Storage y actualiza Firestore
 // ════════════════════════════════════════════════════════════════════════════
 exports.procesarFirmaCliente = functions
@@ -299,89 +125,4 @@ exports.procesarFirmaCliente = functions
 
   functions.logger.info('procesarFirmaCliente OK:', nro);
   return { ok: true, urlFirmaCliente: url };
-});
-
-// ════════════════════════════════════════════════════════════════════════════
-//  FUNCIÓN 4 — procesarMailQueue
-//  Escucha mail_queue/{docId} y envía el correo sin HTTP/CORS
-// ════════════════════════════════════════════════════════════════════════════
-exports.procesarMailQueue = functions
-  .runWith({ timeoutSeconds: 120, memory: '512MB' })
-  .firestore.document('mail_queue/{docId}')
-  .onCreate(async (snap) => {
-
-  const safeUpdate = (ref, data) => ref.update(data).catch(e => functions.logger.warn('Firestore update (no fatal):', e.message));
-
-  await safeUpdate(snap.ref, { estado: 'PROCESANDO' });
-
-  try {
-    const { datos, urlCertificado } = snap.data();
-
-    if (!datos || !datos.emailDestinatario) {
-      await safeUpdate(snap.ref, { estado: 'ERROR', error: 'emailDestinatario vacío' });
-      return;
-    }
-
-    await callAppsScript(datos, urlCertificado || '', datos.emailCertificador || null);
-    functions.logger.info('procesarMailQueue enviado a:', datos.emailDestinatario);
-
-    await safeUpdate(db.collection('registros_visita').doc(datos.nroRegistro), {
-      estado          : 'ENVIADO',
-      emailResponsable: datos.emailDestinatario
-    });
-
-    await safeUpdate(snap.ref, {
-      estado    : 'ENVIADO',
-      enviadoEn : admin.firestore.FieldValue.serverTimestamp()
-    });
-
-  } catch (e) {
-    functions.logger.error('procesarMailQueue ERROR:', e.message);
-    await safeUpdate(snap.ref, { estado: 'ERROR', error: e.message });
-  }
-});
-
-// ════════════════════════════════════════════════════════════════════════════
-//  FUNCIÓN 5 — migrarPDFsDrive  (TEMPORAL — eliminar post-migración)
-//  Descarga PDFs de URL pública y los sube a Firebase Storage
-// ════════════════════════════════════════════════════════════════════════════
-exports.migrarPDFsDrive = functions
-  .runWith({ timeoutSeconds: 540, memory: '512MB' })
-  .https.onCall(async (data, context) => {
-
-  if (!context.auth) {
-    throw new functions.https.HttpsError('unauthenticated', 'Debes iniciar sesión.');
-  }
-
-  const { registros } = data;
-  if (!Array.isArray(registros) || !registros.length) {
-    throw new functions.https.HttpsError('invalid-argument', 'registros debe ser un arreglo no vacío.');
-  }
-
-  const bucket  = admin.storage().bucket();
-  const results = [];
-
-  for (const r of registros) {
-    const { nro, urlCertificado } = r;
-    if (!nro || !urlCertificado) {
-      results.push({ nro, ok: false, error: 'nro o urlCertificado faltante' });
-      continue;
-    }
-    try {
-      const resp = await fetch(urlCertificado);
-      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-      const buffer   = Buffer.from(await resp.arrayBuffer());
-      const filePath = `certificados/CertimarRV_${nro}.pdf`;
-      const file     = bucket.file(filePath);
-      await file.save(buffer, { contentType: 'application/pdf', public: false });
-      const [downloadURL] = await file.getSignedUrl({ action: 'read', expires: '2099-01-01' });
-      await db.collection('registros_visita').doc(nro).update({ urlPdfStorage: downloadURL });
-      results.push({ nro, ok: true, urlPdfStorage: downloadURL });
-    } catch (e) {
-      functions.logger.warn('migrarPDFsDrive ERROR:', nro, e.message);
-      results.push({ nro, ok: false, error: e.message });
-    }
-  }
-
-  return { ok: true, results };
 });
