@@ -249,6 +249,7 @@ function guardarYEnviar(datos, pdfB64, fotoB64, emailDestinatario, firmaB64) {
     // — 3. Sheets (batch: una sola operación appendRow) —
     const resArray = [];
     if (datos.resoluciones) {
+      if (datos.resoluciones.cicE1)        resArray.push('1821-CIC E1');
       if (datos.resoluciones.cicE2)        resArray.push('1821-CIC E2');
       if (datos.resoluciones.ca)           resArray.push('1821-CA');
       if (datos.resoluciones.vs)           resArray.push('1821-VS');
@@ -578,6 +579,7 @@ function registrarEnSheets(datos, urlCertificado) {
     // Construir resoluciones
     const resArray = [];
     if (datos.resoluciones) {
+      if (datos.resoluciones.cicE1)        resArray.push('1821-CIC E1');
       if (datos.resoluciones.cicE2)        resArray.push('1821-CIC E2');
       if (datos.resoluciones.ca)           resArray.push('1821-CA');
       if (datos.resoluciones.vs)           resArray.push('1821-VS');
@@ -762,6 +764,7 @@ function _plantillaEmail(datos, urlCert) {
   } else {
     const resoluciones = [];
     if (datos.resoluciones) {
+      if (datos.resoluciones.cicE1)        resoluciones.push('1821&#8209;CIC E1');
       if (datos.resoluciones.cicE2)        resoluciones.push('1821&#8209;CIC E2');
       if (datos.resoluciones.ca)           resoluciones.push('1821&#8209;CA');
       if (datos.resoluciones.vs)           resoluciones.push('1821&#8209;VS');
