@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>Firma de Conformidad – Certimar</title>
+<style>
+:root{color-scheme:light}*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:#f1f5f9;color:#1e293b}
+body{font-family:Arial,sans-serif;min-height:100vh;padding:20px}
+.card{background:#fff;border-radius:12px;max-width:520px;margin:0 auto;box-shadow:0 2px 16px rgba(0,0,0,.1);overflow:hidden}
+.hdr{background:#003366;padding:22px 28px}.hdr h1{color:#fff;font-size:19px;letter-spacing:1px}.hdr p{color:#93c5fd;font-size:12px;margin-top:3px}
+.body{padding:28px}.field{margin-bottom:14px}
+.label{font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;margin-bottom:3px}
+.value{font-size:14px;color:#1e293b;font-weight:500}
+.divider{border:none;border-top:1px solid #e2e8f0;margin:20px 0}
+.firma-wrap{border:2px dashed #93c5fd;border-radius:8px;overflow:hidden;background:#f8fafc;touch-action:none}
+canvas{display:block;width:100%;height:120px;cursor:crosshair;background:#fff}
+input{width:100%;border:1.5px solid #cbd5e1;border-radius:6px;padding:10px 12px;font-size:14px;font-family:Arial,sans-serif;outline:none}
+.btn-clear{background:none;border:none;color:#ef4444;font-size:12px;cursor:pointer;padding:4px 0;display:block;text-align:right;width:100%;margin-top:6px}
+.btn-submit{width:100%;background:#003366;color:#fff;border:none;padding:16px;border-radius:8px;font-size:16px;font-weight:700;cursor:pointer;margin-top:24px}
+.btn-submit:disabled{background:#94a3b8;cursor:not-allowed}
+.msg{padding:12px 16px;border-radius:8px;font-size:14px;margin-top:16px;display:none}
+.msg.ok{background:#dcfce7;color:#166534}.msg.err{background:#fee2e2;color:#991b1b}
+.spinner{display:inline-block;width:18px;height:18px;border:3px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:6px}
+@keyframes spin{to{transform:rotate(360deg)}}
+#loading{text-align:center;padding:60px 28px;color:#64748b}#content{display:none}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="hdr"><h1>CERTIMAR SpA</h1><p>Firma de Conformidad — Registro de Visita</p></div>
+  <div id="loading"><div class="spinner" style="border-color:rgba(0,51,102,.2);border-top-color:#003366"></div><p style="margin-top:12px">Cargando registro…</p></div>
+  <div id="content" class="body">
+    <div class="field"><div class="label">N° Registro</div><div class="value" id="f-nro">—</div></div>
+    <div class="field"><div class="label">Fecha</div><div class="value" id="f-fecha">—</div></div>
+    <div class="field"><div class="label">Centro de Cultivo</div><div class="value" id="f-centro">—</div></div>
+    <div class="field"><div class="label">N° Centro</div><div class="value" id="f-nroCentro">—</div></div>
+    <div class="field"><div class="label">Titular</div><div class="value" id="f-titular">—</div></div>
+    <div class="field"><div class="label">ACS</div><div class="value" id="f-acs">—</div></div>
+    <div class="field"><div class="label">Observaciones</div><div class="value" id="f-obs" style="font-size:13px;color:#374151">—</div></div>
+    <hr class="divider">
+    <p style="font-size:12px;color:#64748b;margin-bottom:16px">Verifique y complete sus datos antes de firmar.</p>
+    <div class="field"><label for="f-nombre" class="label" style="display:block;margin-bottom:5px">Nombre del Responsable *</label>
+      <input type="text" id="f-nombre" placeholder="Nombre completo" oninput="checkFirmaForm()"></div>
+    <div class="field" style="margin-bottom:20px"><label for="f-email" class="label" style="display:block;margin-bottom:5px">Correo del Responsable *</label>
+      <input type="email" id="f-email" placeholder="correo@empresa.cl" oninput="checkFirmaForm()"></div>
+    <div class="label" style="margin-bottom:8px">Firma del Responsable del Centro</div>
+    <div class="firma-wrap"><canvas id="firma-canvas" width="480" height="120" aria-label="Área de firma del responsable"></canvas></div>
+    <button class="btn-clear" onclick="clearFirma()">✕ Borrar firma</button>
+    <button class="btn-submit" id="btn-submit" onclick="enviarFirma()" disabled>Firmar y Confirmar Conformidad</button>
+    <div class="msg ok" id="msg-ok">✅ Firma registrada correctamente.</div>
+    <div class="msg err" id="msg-err"></div>
+  </div>
+</div>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-functions-compat.js"></script>
+<script src="firebaseConfig.js?v=20260606"></script>
+<script>firebase.initializeApp(FIREBASE_CONFIG);</script>
+<script src="firmaPage.js?v=20260606"></script>
+<script>window.addEventListener('DOMContentLoaded', function(){ initFirmaPage(); });</script>
+</body>
+</html>
