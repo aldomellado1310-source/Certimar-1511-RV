@@ -1,6 +1,25 @@
 # Certimar — Sistema de Registro de Visita (RV)
 
-Sistema web de registro de inspecciones técnicas en terreno para centros de cultivo acuícola, desarrollado sobre Google Apps Script. Permite crear, firmar, guardar y notificar registros de visita como documentos PDF, con trazabilidad completa en Google Sheets.
+Sistema web de registro de inspecciones técnicas en terreno para centros de cultivo acuícola. Permite crear, firmar, guardar y notificar registros de visita como documentos PDF, con trazabilidad completa en Firebase Firestore. Corre **100% sobre Firebase** (sin Google Apps Script).
+
+App en producción: **https://certimar-rv.web.app**
+
+---
+
+## Arquitectura
+
+| Capa | Tecnología |
+|---|---|
+| **Frontend (SPA)** | `public/index.html` servido por Firebase Hosting (vanilla JS, sin framework) |
+| **Identidad** | Firebase Auth (login con Google), restringido a cuentas `@certimar.cl`; roles en Firestore |
+| **Datos** | Firebase Firestore (colecciones `registros_visita`, `metrics_logs`, `config`) |
+| **Almacenamiento** | Cloud Storage (`certificados/`, `fotos/`, `firmas/`) |
+| **PDF** | Generado en el cliente con `html2canvas` + `jsPDF` 2.5.1; normalizado en `public/pdfMail.js` |
+| **Correo** | Gmail API vía Google Identity Services (`public/gmailAuth.js`); se envía con la sesión del certificador |
+| **Funciones serverless** | Firebase Functions (Node 20): firma de cliente por link |
+| **Gráficos** | Chart.js 4 |
+
+No se usa Google Apps Script, Google Sheets ni Drive.
 
 ---
 
@@ -8,22 +27,18 @@ Sistema web de registro de inspecciones técnicas en terreno para centros de cul
 
 | Archivo | Descripción |
 |---|---|
-| `Code.gs` | Backend: Sheets, Drive, Gmail, firma remota |
-| `Index.html` | Frontend SPA completo (vistas, estilos, lógica) |
-| `FirebaseConfig.html` | Configuración del SDK de Firebase (incluido en Index) |
-| `ConcesionesData` | Catálogo de concesiones para autocomplete |
-| `appsscript.json` | Manifiesto de permisos y scopes OAuth |
-
----
-
-## Stack tecnológico
-
-- **Frontend/Backend:** Google Apps Script (web app, un solo despliegue)
-- **Base de datos:** Google Sheets (hoja `RV`) + Firebase Firestore (tiempo real)
-- **Almacenamiento:** Firebase Storage (PDFs, fotos, firmas PNG)
-- **Funciones serverless:** Firebase Functions (Node.js 20) — envío de correo, firma remota, procesamiento de cola
-- **Librerías cliente:** jsPDF + html2canvas, Chart.js, Firebase SDK v10 compat
-- **Autenticación:** Google OAuth (login con cuenta Google)
+| `public/index.html` | SPA completa: vistas (Dashboard, Histórico, Admin, Registro, Métricas), estilos y lógica |
+| `public/firebaseConfig.js` | Config del SDK web de Firebase (`FIREBASE_CONFIG`) + `GOOGLE_OAUTH_CLIENT_ID` |
+| `public/gmailAuth.js` | Token de Gmail (`gmail.send`) vía GIS, con refresco silencioso |
+| `public/metricsLog.js` | Logger de métricas (buffer + flush por lotes a Firestore) |
+| `public/pdfMail.js` | Normalización del PDF (base64) para adjunto de correo y guardado |
+| `public/firma.html` + `public/firmaPage.js` | Página pública de firma de cliente por link |
+| `public/concesiones.js` | Catálogo de concesiones para autocomplete |
+| `public/sw.js` | Service worker (Network-First para HTML, precache de assets) |
+| `functions/index.js` | Functions: `generarLinkFirma`, `getRegistroParaFirma`, `procesarFirmaCliente` |
+| `functions/firmaHelpers.js` | Helpers puros (validación de token/nombre/email) |
+| `firebase.json` | Hosting (rewrites `/firma` + SPA), Functions, reglas Firestore/Storage |
+| `test/*.test.js` | Tests de lógica pura (node + `assert`) |
 
 ---
 
@@ -31,23 +46,22 @@ Sistema web de registro de inspecciones técnicas en terreno para centros de cul
 
 | Herramienta | Versión | Uso |
 |---|---|---|
-| [clasp](https://github.com/google/clasp) | 3.x | CLI para push/deploy de Apps Script sin abrir el editor web |
-| [Firebase CLI](https://firebase.google.com/docs/cli) | Latest | Deploy de Functions, Hosting y reglas de Firestore/Storage |
-| Node.js | 20 | Runtime de Firebase Functions |
-| npm | — | Gestión de dependencias en `functions/` |
+| [Firebase CLI](https://firebase.google.com/docs/cli) | Latest | Deploy de Hosting, Functions y reglas Firestore/Storage |
+| Node.js | 20 | Runtime de Firebase Functions y de los tests |
+| npm | — | Dependencias en `functions/` |
 
 ### Comandos frecuentes
 
 ```bash
-# Apps Script — subir código y redesplegar
-clasp push
-clasp deploy --deploymentId <ID> --description "v3.x - descripción"
+# Tests de lógica pura
+for t in test/*.test.js; do node "$t"; done
 
-# Firebase — desplegar solo funciones
-firebase deploy --only functions
-
-# Firebase — desplegar todo
+# Desplegar todo
 firebase deploy
+
+# Solo hosting / solo functions
+firebase deploy --only hosting
+firebase deploy --only functions
 ```
 
 ---
@@ -61,10 +75,11 @@ firebase deploy
 | Logo / marca | Navega al Dashboard |
 | **Dashboard** | Métricas, gráficos y filtros |
 | **Histórico** | Listado completo de registros con búsqueda |
-| **Admin** *(rol restringido)* | Gestión avanzada, archivado, re-envío |
+| **Admin** *(rol restringido)* | Gestión avanzada, archivado, re-envío, firma por link |
+| **Métricas** *(superadmin)* | Panel de logs y KPIs (protegido por PIN) |
 | **Nueva Visita** | Abre el formulario en blanco |
 | **Toggle tema** | Cambia entre modo claro y oscuro |
-| **User chip** | Muestra avatar y nombre del usuario logueado |
+| **User chip** | Avatar y nombre del usuario logueado |
 
 ---
 
@@ -74,235 +89,142 @@ firebase deploy
 - **KPIs:** última inspección, inspecciones del mes, centros únicos en el año
 - **Gráficos:** inspecciones por mes (barras), distribución por resolución (dona)
 - **Tabla:** certificaciones próximas a vencer
-- **Elemento decorativo:** olas SVG animadas + peces nadando en el fondo inferior
+- **Decorativo:** olas SVG animadas + peces en el fondo inferior
 
 ---
 
 ## Vista: Formulario de Registro (RV)
 
-### Documento principal
+Simula un documento oficial en papel (`doc-paper`). Header con logo Certimar, título "REGISTRO DE VISITA", fecha autogenerada y N° correlativo (`RV-YYYY-NNNN`).
 
-Simula un documento oficial en papel (`doc-paper`) con watermark de olas animadas.
+**Tabla de datos del centro:** Centro de Cultivo, N° de Centro (autocomplete desde catálogo de concesiones), A.C.S., Titular, Ubicación, Fecha última siembra, Tamaño de peces, jaulas, A/N Ensilaje.
 
-**Header del documento**
-- Logo Certimar + título "REGISTRO DE VISITA" + subtítulo "Auditoría Técnica en Terreno"
-- Fecha autogenerada y N° correlativo (`RV-YYYY-NNNN`) en rojo
+**Norma aplicable** (checkboxes): 1821 – CIC E2 / 1821 – CA / 1821 – VS / 1511 / DESINFECCIÓN.
 
-**Tabla de datos del centro**
+**Coordenadas:** Latitud S, Longitud W, Norte, Este.
 
-| Campo | Notas |
-|---|---|
-| Centro de Cultivo | Texto libre |
-| N° de Centro | Con autocomplete desde catálogo de concesiones |
-| A.C.S. | Agente Certificador Sernapesca |
-| Titular del Centro | Texto libre |
-| Ubicación | Texto libre |
-| Fecha última siembra | Texto libre, dispara validación del checklist |
-| Tamaño de peces | Texto libre, dispara validación del checklist |
+**Observaciones:** radio SI/NO + textarea + tipo de observación.
 
-**Norma aplicable** — checkboxes múltiples:
-- 1821 – CIC E2 / 1821 – CA / 1821 – VS / 1511 / DESINFECCIÓN
-
-**Coordenadas geográficas:** Latitud S, Longitud W, Norte, Este
-
-**Observaciones:**
-- Radio SI/NO
-- Textarea de texto libre
-- Tipo de observación (checkboxes): EXTRACCION, DESNATURALIZACION, ALMACENAMIENTO, ESTRUCTURA, FONDEO, OTRO
-
-**Firmas (dos columnas):**
-- Certificador: canvas dibujable, nombre y RUT preconfigurados, botón "Guardar firma"
-- Responsable del centro: canvas dibujable, nombre y email (valida formato)
-
-**Disclaimer legal** al pie, con nombre del certificador dinámico
+**Firmas (dos columnas):** Certificador (canvas, nombre y RUT) y Responsable del centro (canvas, nombre y email).
 
 ### Checklist de completitud
-
-Tarjeta lateral que valida en tiempo real si el formulario está listo para guardar/enviar. Items: fecha siembra, tamaño peces, observaciones, email, firma. Muestra badge bloqueado/desbloqueado.
+Tarjeta lateral que valida en tiempo real si el formulario está listo para guardar/enviar.
 
 ### Cámara / Adjunto
-
-Captura foto desde cámara del dispositivo o permite adjuntar imagen/PDF existente. Vista previa inline.
+Captura foto desde la cámara o adjunta imagen/PDF, con vista previa inline.
 
 ### Barra de acciones
 
 | Botón | Función |
 |---|---|
-| Guardar | Guarda en Drive + Sheets (sin correo) |
-| Generar PDF | Genera PDF en cliente con jsPDF/html2canvas |
-| Sincronizar | Fuerza re-subida a Drive/Sheets |
-| Enviar correo | Modal con previsualización de email, campos CC/CCO, envío con PDF adjunto |
+| Guardar | Crea el registro en Firestore y sube PDF/foto/firma a Storage |
+| Generar PDF | Genera el PDF en el cliente (jsPDF/html2canvas) |
+| Enviar correo | Envía el PDF adjunto vía Gmail API (con CC/CCO) |
+
+> El PDF generado, enviado y guardado es **uno solo**: el adjunto del correo se deriva de los mismos bytes subidos a Storage.
 
 ---
 
 ## Vista: Histórico
 
-- Barra de búsqueda de texto libre (busca en centro, titular, N° registro)
-- Filtros de fecha desde/hasta
-- Tabla con columnas: N° registro, fecha, centro, titular, resolución, estado (GUARDADO / ENVIADO), link al PDF
-- Acciones por fila: editar campos, reenviar correo, ver log de auditoría, generar link de firma remota
+- Búsqueda de texto libre y filtros de fecha
+- Selector de columnas visibles
+- Tabla con N° registro, fecha, centro, estado y link al PDF
+- Acciones por fila: ver, editar, regenerar PDF
 
 ---
 
 ## Vista: Admin *(rol restringido)*
 
-- Estadísticas numéricas en tarjetas
-- Tabla ampliada con filtros adicionales
-- Acciones: archivar registro (con motivo), regenerar PDF, gestionar tokens de firma
-- Badge visual púrpura que distingue el acceso de administrador
+- Estadísticas en tarjetas y tabla ampliada con filtros
+- Acciones: ver PDF, reenviar correo, editar, regenerar PDF, **solicitar firma por link**, eliminar
+- Badge púrpura que distingue el acceso de administrador
 
 ---
 
 ## Sistema de notificaciones
 
-- **Sidebar de notificaciones** (derecha, slide-in): muestra progreso paso a paso con indicadores por color (PDF → Drive → Sheets → Email)
-- **Toast** (esquina inferior derecha): mensajes rápidos de éxito/error
-- **Completion dialog**: modal post-guardado con N° de registro, envío de correo inline (CC/CCO) y acciones para ir al Dashboard, ver Histórico o continuar editando
+- **Sidebar** (derecha): progreso paso a paso por color (PDF → Storage → Firestore → Email)
+- **Toast** (inferior derecha): mensajes rápidos de éxito/error
+- **Completion dialog**: modal post-guardado con envío de correo inline
 
 ---
 
-## Flujo de firma remota
+## Flujo de firma de cliente por link
 
-1. Desde el panel Admin, se genera un link único con token UUID para el registro
-2. El token incluye fecha de expiración embebida (72 h): formato `UUID::EPOCH_EXPIRY`
-3. El responsable abre la página de firma (sin login requerido), revisa los datos del RV y firma con canvas táctil
-4. Si no se registró nombre previamente, la página solicita el nombre del jefe de centro (mínimo 3 caracteres)
-5. La firma PNG se sube a Drive (no-fatal), el token se invalida y el estado se actualiza en Sheets (`FIRMADO`) y Firestore
-6. Se envían dos emails:
-   - **Al responsable del centro:** confirmación de conformidad registrada con datos del RV y link al certificado
-   - **A `operaciones@certimar.cl` (Certimar interno):** notificación con detalle completo (nombre del firmante, email, link a PNG de firma, link al certificado)
-7. El panel Admin muestra un badge `✅ FIRMADO` / `⏳ PENDIENTE` / `— S/F` en la columna Firma; el botón 🔗 se deshabilita automáticamente cuando ya fue firmado
+1. Desde Admin, el botón **🔗 Firma por link** llama a la Function `generarLinkFirma`, que crea un token UUID, lo guarda en el registro (`tokenFirma`, `estadoFirma: PENDIENTE`) y devuelve la URL `https://certimar-rv.web.app/firma?nro=...&token=...`.
+2. El responsable abre esa URL (sin login). `public/firma.html` llama a `getRegistroParaFirma` (valida el token) y muestra los datos del RV.
+3. El responsable revisa/corrige nombre y correo, firma en el canvas y envía: `procesarFirmaCliente` valida el token, sube la firma PNG a Storage (`firmas/Firma_<nro>.png`), actualiza Firestore (`estadoFirma: FIRMADO`, `urlFirmaCliente`) e invalida el token.
+4. Reabrir el mismo link tras firmar lo rechaza (token vacío).
+
+Las tres Functions son `onCall` (SDK callable). `generarLinkFirma` exige sesión autenticada; `getRegistroParaFirma` y `procesarFirmaCliente` son públicas y se protegen por token.
 
 ---
 
-## Backend — Funciones principales (`Code.gs`)
+## Firebase Functions (`functions/index.js`)
 
-| Función | Descripción |
-|---|---|
-| `guardarYEnviar()` | Sube PDF, foto y firma a Drive, escribe en Sheets, envía correo — en un solo viaje |
-| `obtenerRegistros()` | Lee Sheets con filtros, devuelve JSON |
-| `obtenerEstadisticas()` | Agrega datos para el Dashboard (por mes, por resolución) |
-| `actualizarRegistro()` | Edita una fila existente desde el Histórico |
-| `enviarNotificacion()` | Reenvía correo con PDF adjunto desde historial |
-| `generarLinkFirma()` | Genera token UUID con expiración 72h (`UUID::EPOCH`) + URL temporal para firma remota |
-| `getRegistroParaFirma()` | Valida token (formato + expiración + estado FIRMADO), devuelve datos del RV |
-| `submitFirma()` | Recibe firma del responsable, sube PNG a Drive, invalida token, notifica al responsable y a Certimar por separado |
-| `_enviarCorreoRV()` | Construye HTML email y despacha vía GmailApp (CC, CCO, copia interna) |
-| `doPost()` | Webhook receptor de Firebase que escribe en Sheets sin service account |
-| `_generarNroRegistro()` | Correlativo `RV-YYYY-NNNN` buscando el máximo existente en la hoja |
-| `testEnvioCorreo()` | Función de test manual que verifica Drive, Sheets, Gmail y plantilla |
+| Función | Tipo | Descripción |
+|---|---|---|
+| `generarLinkFirma` | onCall (auth) | Genera token UUID + URL de firma para el registro |
+| `getRegistroParaFirma` | onCall (pública, por token) | Devuelve los datos del RV a mostrar en la página de firma |
+| `procesarFirmaCliente` | onCall (pública, por token) | Sube la firma a Storage y marca el registro como FIRMADO |
 
 ---
 
-## Estructura de la hoja Google Sheets (hoja `RV`)
+## Datos en Firestore
 
-| Col | Encabezado |
-|---|---|
-| A | Fecha |
-| B | N° Registro |
-| C | Centro |
-| D | N° Centro |
-| E | ACS |
-| F | Titular |
-| G | Área |
-| H | Fecha última siembra |
-| I | Tamaño peces |
-| J | Ubicación |
-| K | Lat Long |
-| L | Res ext |
-| M | Observaciones |
-| N | Tipo de observación |
-| O | Nombre responsable |
-| P | Correo responsable |
-| Q | Hipervínculo al certificado |
-| R | Estado (GUARDADO / ENVIADO) |
-| S | URL Firma Cliente |
-| T | Token Firma |
-| U | Estado Firma (PENDIENTE / FIRMADO) |
+Colección `registros_visita`, doc id = `RV-YYYY-NNNN`. Campos relevantes: `fecha`, `centroCultivo`, `nroCentro`, `acs`, `titular`, `ubicacion`, `resoluciones`, coordenadas, `observaciones`, `tipoObservacion`, `nombreResponsable`, `emailResponsable`, `urlCertificado`, `pdfStoragePath`, `urlFoto`, `urlFirmaCliente`, `estado` (GUARDADO/ENVIADO/ARCHIVADO), `tokenFirma`, `estadoFirma` (PENDIENTE/FIRMADO).
+
+Otras colecciones: `metrics_logs` (logs de uso, con TTL), `config` (p.ej. PIN del panel de métricas).
 
 ---
 
 ## Estética general
 
 - **Paleta:** azul marino `#003366` / azul medio `#0055a4` / cyan `#0099CC` sobre blancos y grises slate
-- **Dark mode completo** vía atributo `data-theme="dark"` con variables CSS
-- **Fuente:** Segoe UI / Arial, sin-serif
-- **Bordes:** radius generoso (10–14px), sombras suaves en capas
-- **Motivo decorativo recurrente:** olas SVG animadas en multicapa (splash, dashboard, watermark del documento, formulario)
-- **Logo:** SVG inline — grilla de peces + olas + checkmark — en todas las vistas
-- **Responsive:** navbar colapsado en móvil, modales como bottom-sheet en pantallas pequeñas, grillas adaptables
+- **Dark mode** vía `data-theme="dark"` con variables CSS
+- **Fuente:** Segoe UI / Arial
+- **Motivo decorativo:** olas SVG animadas en multicapa
+- **Responsive:** navbar colapsado en móvil, modales como bottom-sheet, grillas adaptables
 
 ---
 
 ## Guía de despliegue
 
-### 1. Crear el proyecto en Apps Script
+### 1. Pre-requisitos
+- Node.js 20 y Firebase CLI (`npm i -g firebase-tools`), autenticado (`firebase login`).
+- Proyecto Firebase `certimar-rv` con Auth (Google), Firestore, Storage y Functions habilitados.
 
-1. Ve a [script.google.com](https://script.google.com)
-2. Clic en **Nuevo proyecto** y nómbralo `Certimar - Registro de Visita`
+### 2. Configurar credenciales web
+Editar `public/firebaseConfig.js` con `FIREBASE_CONFIG` (config web del proyecto) y `GOOGLE_OAUTH_CLIENT_ID` (cliente OAuth para GIS / scope `gmail.send`).
 
-### 2. Copiar los archivos
-
-- **`Code.gs`:** borra el contenido por defecto y pega el contenido del archivo
-- **`Index.html`:** clic en **+** → **HTML**, nómbralo `Index` (sin extensión), pega el contenido
-- **`FirebaseConfig.html`:** crear como HTML con nombre `FirebaseConfig`
-- **`ConcesionesData`:** crear como HTML con nombre `ConcesionesData`
-- **`appsscript.json`:** en **Ver → Mostrar archivo de manifiesto**, reemplazar contenido
-
-### 3. Configurar constantes en `Code.gs`
-
-```javascript
-const SPREADSHEET_ID    = 'ID_DE_TU_SPREADSHEET';
-const SHEET_NAME        = 'RV';
-const DRIVE_FOLDER_ID   = 'ID_DE_TU_CARPETA_DRIVE';
-const EMAIL_REMITENTE   = 'tu@empresa.cl';
-const TIMEZONE          = 'America/Santiago';
-const FIREBASE_PROJECT_ID = 'tu-proyecto-firebase';
-const WEBHOOK_SECRET    = 'TU_SECRET_COMPARTIDO';
+### 3. Dependencias de Functions
+```bash
+cd functions && npm install
 ```
 
-### 4. Inicializar la hoja (una sola vez)
+### 4. Desplegar
+```bash
+firebase deploy
+```
 
-1. Seleccionar función `inicializarHoja` en el editor
-2. Clic en **Ejecutar** y aceptar los permisos
-3. Esto crea la hoja `RV` con encabezados y formato
-
-### 5. Publicar como Web App
-
-1. **Implementar → Nueva implementación**
-2. Tipo: **Aplicación web**
-3. Ejecutar como: **Usuario que accede a la aplicación**
-4. Quién puede acceder: **Cualquier usuario de Google**
-5. Copiar la URL generada (`https://script.google.com/macros/s/.../exec`)
-
-### 6. Configurar Firebase (opcional, para tiempo real)
-
-Actualizar `FirebaseConfig.html` con las credenciales del proyecto Firebase. El sistema funciona sin Firebase, pero sin actualizaciones en tiempo real.
-
----
-
-## Permisos OAuth requeridos
-
-Al ejecutar por primera vez, Google solicitará autorizar:
-- Google Sheets (lectura/escritura)
-- Gmail (enviar correos)
-- Google Drive (subir archivos)
-- Información del usuario (email)
+### 5. Verificación
+- Generar un RV y enviar el correo: el PDF adjunto debe abrir bien.
+- Ver el PDF en móvil desde Histórico/Admin: proporción correcta.
+- Solicitar firma por link, abrir la URL en otro dispositivo, firmar y confirmar `estadoFirma: FIRMADO`.
 
 ---
 
 ## Qué cambiar al replicar para otro tipo de certificación
 
-Lo **específico de acuicultura/Sernapesca** que debe adaptarse:
-
 | Elemento | Ubicación | Descripción |
 |---|---|---|
-| Resoluciones | `Index.html` + `Code.gs` | Reemplazar 1821-CIC E2, CA, VS, 1511, DESINFECCIÓN por las normas aplicables |
-| Campos del formulario | `Index.html` (sección `doc-table`) | Centro de Cultivo, ACS, siembra, peces → campos del nuevo dominio |
-| Autocomplete | `ConcesionesData` | Catálogo de entidades del nuevo dominio |
-| Prefijo del correlativo | `Code.gs` `_generarNroRegistro()` | `RV-` → el prefijo que corresponda |
-| Disclaimer legal | `Index.html` (sección firma) | Texto de la norma y organismo regulador |
-| Texto del email | `Code.gs` `_plantillaEmail()` | Saludo, descripción y referencia normativa |
-| Nombre del sistema | `Index.html` título, splash, nav | "Registro de Visita" → nombre del nuevo documento |
+| Resoluciones | `public/index.html` | Reemplazar 1821-CIC E2, CA, VS, 1511, DESINFECCIÓN por las normas aplicables |
+| Campos del formulario | `public/index.html` (sección `doc-table`) | Adaptar al nuevo dominio |
+| Autocomplete | `public/concesiones.js` | Catálogo de entidades del nuevo dominio |
+| Prefijo del correlativo | `public/index.html` (creación del registro) | `RV-` → el prefijo que corresponda |
+| Disclaimer legal | `public/index.html` (sección firma) | Norma y organismo regulador |
+| Texto del email | `public/index.html` (`plantillaEmailFrontend`) | Saludo, descripción y referencia normativa |
+| Nombre del sistema | `public/index.html` (título, splash, nav) | "Registro de Visita" → nombre del nuevo documento |
 
-Lo **reutilizable sin cambios:** autenticación, Drive, Sheets, Firebase, generación de PDF, firma canvas, notificaciones sidebar, dark mode, dashboard con Charts, Histórico, Admin, responsive.
+Lo **reutilizable sin cambios:** autenticación, Storage, Firestore, generación de PDF, firma canvas, notificaciones, dark mode, dashboard con Charts, Histórico, Admin, firma por link, responsive.
