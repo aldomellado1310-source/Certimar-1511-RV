@@ -2082,7 +2082,16 @@ async function fbGuardarRegistro(datos, urlCertificado, urlFoto) {
   var db = initFirebase();
   if (!db) throw new Error('Firebase no disponible');
   var docData = buildDocData(datos, datos.nroRegistro, urlCertificado, urlFoto);
-  await db.collection('registros_visita').doc(datos.nroRegistro).set(docData);
+  var _stop = Metrics.time();
+  try {
+    await db.collection('registros_visita').doc(datos.nroRegistro).set(docData);
+  } catch (e) {
+    try { Metrics.action('rv_create', false, { detail: { nro: datos.nroRegistro } });
+          Metrics.error('rv_create_fail', e, { detail: { nro: datos.nroRegistro } }); } catch (x) {}
+    throw e;
+  }
+  try { Metrics.action('rv_create', true, { detail: { nro: datos.nroRegistro } });
+        Metrics.perf('rv_create', _stop(), { detail: { nro: datos.nroRegistro } }); } catch (x) {}
   return docData;
 }
 
@@ -2377,6 +2386,7 @@ function closeChangelog() {
 //  NAVEGACIÓN
 // =====================================================================
 function showView(view) {
+  try { Metrics.activity('view_change', { view: view }); } catch (e) {}
   var views = ['dashboard','registro','historico','admin'];
   views.forEach(function(v) {
     var el = document.getElementById('view-'+v);
@@ -3594,6 +3604,7 @@ function handleEnviarMail() {
       });
       await sendViaGmailAPI(raw);
       updateNotifStep('mail-send','m2','done');
+      try { Metrics.action('mail_send', true, { detail: { nro: datos.nroRegistro, dest: emailDest } }); } catch (e) {}
       updateNotifStep('mail-send','m3','done');
       setBtnLoading('btn-enviar-mail', false);
       setTimeout(function() {
@@ -3612,6 +3623,8 @@ function handleEnviarMail() {
       setBtnLoading('btn-enviar-mail', false);
       var errMsg = e && e.message ? e.message : String(e || 'Error desconocido');
       updateNotifCard('mail-send', 'error', '❌ Error al enviar', errMsg);
+      try { Metrics.action('mail_send', false, { detail: { dest: emailDest } });
+            Metrics.error('mail_send_fail', e, { detail: { dest: emailDest } }); } catch (x) {}
     }
   })();
 }
