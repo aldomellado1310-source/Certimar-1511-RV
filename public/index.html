@@ -3253,7 +3253,8 @@ async function generarPDF() {
     useCORS: true,
     imageTimeout: 0,
     logging: false,
-    windowHeight: el.scrollHeight
+    windowHeight: el.scrollHeight,
+    windowWidth: Math.max(el.scrollWidth, 780)
   });
   var { jsPDF } = window.jspdf;
   var pdf    = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4', compress:true });
