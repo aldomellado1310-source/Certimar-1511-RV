@@ -5869,10 +5869,89 @@ function toast(msg, type) {
   toastTimer = setTimeout(function(){ el.className = ''; }, 3500);
 }
 
-// ===================== MÉTRICAS — STUBS TEMPORALES (reemplazados en Tasks 8-10) =====================
-function cargarMetricas() {}
-function renderMetricas() {}
+// ===================== MÉTRICAS — STUB TEMPORAL (reemplazado en Task 10) =====================
 function exportarMetricasCSV() {}
+
+// ===================== MÉTRICAS — DATOS, FILTROS Y KPIs =====================
+var _mAll = [];   // logs cargados para el rango actual
+
+async function cargarMetricas() {
+  var dias  = parseInt(document.getElementById('m-rango').value, 10) || 7;
+  var desde = new Date(Date.now() - dias * 24 * 60 * 60 * 1000);
+  var tbody = document.getElementById('m-tbody');
+  tbody.innerHTML = '<tr><td colspan="7" class="admin-empty"><div class="spinner dark" style="margin:0 auto 8px"></div>Cargando…</td></tr>';
+  try {
+    var snap = await initFirebase().collection('metrics_logs')
+      .where('ts', '>=', firebase.firestore.Timestamp.fromDate(desde))
+      .orderBy('ts', 'desc').limit(5000).get();
+    _mAll = snap.docs.map(function(d) { var x = d.data(); x._id = d.id; return x; });
+    _metricsFillUserFilter();
+    renderMetricas();
+  } catch (e) {
+    tbody.innerHTML = '<tr><td colspan="7" class="admin-empty">Error al cargar: ' + esc(e.message || String(e)) + '</td></tr>';
+    try { Metrics.error('metrics_load_fail', e); } catch (x) {}
+  }
+}
+
+function _metricsFillUserFilter() {
+  var sel = document.getElementById('m-user');
+  var cur = sel.value, users = {};
+  _mAll.forEach(function(r) { if (r.user) users[r.user] = 1; });
+  var opts = ['<option value="">Todos los usuarios</option>'];
+  Object.keys(users).sort().forEach(function(u) { opts.push('<option value="' + esc(u) + '">' + esc(u) + '</option>'); });
+  sel.innerHTML = opts.join('');
+  sel.value = cur;
+}
+
+function _metricsFiltered() {
+  var tipo = document.getElementById('m-tipo').value;
+  var user = document.getElementById('m-user').value;
+  var q    = (document.getElementById('m-search').value || '').toLowerCase();
+  return _mAll.filter(function(r) {
+    if (tipo && r.type !== tipo) return false;
+    if (user && r.user !== user) return false;
+    if (q) {
+      var hay = (r.event || '') + ' ' + (r.msg || '') + ' ' + (r.user || '') + ' ' + (r.view || '');
+      if (hay.toLowerCase().indexOf(q) === -1) return false;
+    }
+    return true;
+  });
+}
+
+function renderMetricas() {
+  var rows = _metricsFiltered();
+  _metricsRenderKpis(rows);
+  _metricsRenderCharts(rows);
+  _metricsRenderTable(rows);
+}
+
+function _metricsRenderKpis(rows) {
+  var err = 0, users = {}, rv = 0, mail = 0, mailfail = 0, perfSum = 0, perfN = 0;
+  rows.forEach(function(r) {
+    if (r.type === 'error') err++;
+    if (r.user) users[r.user] = 1;
+    if (r.event === 'rv_create' && r.ok) rv++;
+    if (r.event === 'mail_send') { if (r.ok) mail++; else mailfail++; }
+    if (r.type === 'perf' && typeof r.durationMs === 'number') { perfSum += r.durationMs; perfN++; }
+  });
+  document.getElementById('m-kpi-err').textContent      = err;
+  document.getElementById('m-kpi-users').textContent    = Object.keys(users).length;
+  document.getElementById('m-kpi-rv').textContent       = rv;
+  document.getElementById('m-kpi-mail').textContent     = mail;
+  document.getElementById('m-kpi-mailfail').textContent = mailfail;
+  document.getElementById('m-kpi-perf').textContent     = perfN ? Math.round(perfSum / perfN) : '—';
+}
+
+// Stubs temporales — implementados en Task 9
+function _metricsRenderCharts(rows) {}
+function _metricsRenderTable(rows) {
+  var tbody = document.getElementById('m-tbody');
+  tbody.innerHTML = rows.length
+    ? rows.slice(0, 50).map(function(r) {
+        return '<tr><td colspan="7">' + esc(r.type) + ' · ' + esc(r.event) + ' · ' + esc(r.user) + '</td></tr>';
+      }).join('')
+    : '<tr><td colspan="7" class="admin-empty">Sin datos</td></tr>';
+}
 
 // ===================== MÉTRICAS — REJA PIN (autoservicio) =====================
 var _METRICS_UNLOCK_KEY = 'certimar_metrics_unlocked';
