@@ -3305,6 +3305,7 @@ async function handleDescargarPDF() {
 }
 
 async function generarPDF() {
+  var _stopPdf = Metrics.time();
   var el = document.getElementById('registro-documento');
   // Forzar modo claro para que el PDF siempre sea fondo blanco
   var root = document.documentElement;
@@ -3410,6 +3411,7 @@ async function generarPDF() {
       r.ta.value = r.saved;
       if (r.div.parentNode) r.div.parentNode.removeChild(r.div);
     });
+    try { Metrics.perf('pdf_generate', _stopPdf()); } catch (e) {}
   }
 }
 
@@ -4964,6 +4966,7 @@ function handleCompletionEnviar() {
         pdfFilename: pdfNombre
       });
       await sendViaGmailAPI(raw);
+      try { Metrics.action('mail_send', true, { detail: { nro: datos.nroRegistro, dest: email } }); } catch (mx) {}
 
       updateNotifCard('mail', 'success', '✉️ Correo enviado', 'Notificación enviada a ' + email);
       document.getElementById('cd-send-btn').textContent = '✓ Enviado';
@@ -4988,6 +4991,8 @@ function handleCompletionEnviar() {
     } catch(e) {
       var errMsg = e && e.message ? e.message : String(e || 'Error desconocido');
       updateNotifCard('mail', 'error', '❌ Error al enviar', errMsg);
+      try { Metrics.action('mail_send', false, { detail: { dest: email } });
+            Metrics.error('mail_send_fail', e, { detail: { dest: email } }); } catch (mx) {}
       document.getElementById('cd-send-btn').disabled = false;
       document.getElementById('cd-send-btn').textContent = '✉️ Reintentar';
       var resultBox = document.getElementById('cd-mail-result');
@@ -5348,6 +5353,7 @@ function admReenviarMail(nro, email) {
         pdfFilename: pdfNombre
       });
       await sendViaGmailAPI(raw);
+      try { Metrics.action('mail_resend', true, { detail: { nro: nro, dest: dest } }); } catch (mx) {}
 
       updateNotifCard('adm-mail','success','✉️ Reenviado correctamente','Para: '+dest);
       _fbActualizarEnviado(nro, dest);
@@ -5357,6 +5363,8 @@ function admReenviarMail(nro, email) {
     } catch(e) {
       var errMsg = e && e.message ? e.message : String(e || 'Error desconocido');
       updateNotifCard('adm-mail','error','❌ Error al reenviar', errMsg);
+      try { Metrics.action('mail_resend', false, { detail: { nro: nro, dest: dest } });
+            Metrics.error('mail_resend_fail', e, { detail: { nro: nro } }); } catch (mx) {}
     }
   })();
 }
@@ -5513,6 +5521,7 @@ function exportarCSV() {
   a.href = url; a.download = 'certimar_registros_'+new Date().toISOString().split('T')[0]+'.csv';
   a.click(); URL.revokeObjectURL(url);
   toast('CSV exportado ✓','success');
+  try { Metrics.action('export_csv', true, { detail: { count: data.length, scope: 'admin' } }); } catch (e) {}
   pushNotif('export','success','⬇️ CSV Exportado', data.length+' registros · '+a.download, 4000);
 }
 
@@ -5781,6 +5790,7 @@ async function handleConfirmarEliminar() {
       db.collection('registros_visita').doc(_eliminarNro).delete(),
       new Promise(function(_, rej) { setTimeout(function(){ rej(new Error('Tiempo de espera agotado')); }, 10000); })
     ]);
+    try { Metrics.action('rv_delete', true, { detail: { nro: _eliminarNro } }); } catch (x) {}
     _adminAll      = _adminAll.filter(function(x){ return x.nroRegistro !== _eliminarNro; });
     _adminFiltered = _adminFiltered.filter(function(x){ return x.nroRegistro !== _eliminarNro; });
     renderAdminTabla();
@@ -5788,6 +5798,8 @@ async function handleConfirmarEliminar() {
     toast('Registro eliminado','success');
   } catch(e) {
     toast('Error: '+String(e),'error');
+    try { Metrics.action('rv_delete', false, { detail: { nro: _eliminarNro } });
+          Metrics.error('rv_delete_fail', e, { detail: { nro: _eliminarNro } }); } catch (x) {}
     btn.disabled = false;
     btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3,6 5,6 21,6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg> Eliminar';
   }
@@ -5950,7 +5962,7 @@ function _metricsRenderKpis(rows) {
     if (r.type === 'error') err++;
     if (r.user) users[r.user] = 1;
     if (r.event === 'rv_create' && r.ok) rv++;
-    if (r.event === 'mail_send') { if (r.ok) mail++; else mailfail++; }
+    if (r.event === 'mail_send' || r.event === 'mail_resend') { if (r.ok) mail++; else mailfail++; }
     if (r.type === 'perf' && typeof r.durationMs === 'number') { perfSum += r.durationMs; perfN++; }
   });
   document.getElementById('m-kpi-err').textContent      = err;
@@ -5975,7 +5987,7 @@ function _metricsRenderCharts(rows) {
     byDay[k] = (byDay[k] || 0) + 1;
     if (r.type === 'error') byDayErr[k] = (byDayErr[k] || 0) + 1;
     if (r.user) byUser[r.user] = (byUser[r.user] || 0) + 1;
-    if (r.event === 'mail_send') { if (r.ok) mok++; else mfail++; }
+    if (r.event === 'mail_send' || r.event === 'mail_resend') { if (r.ok) mok++; else mfail++; }
   });
   var days = Object.keys(byDay).sort();
   var us   = Object.keys(byUser).sort(function(a, b) { return byUser[b] - byUser[a]; }).slice(0, 8);
