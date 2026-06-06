@@ -4120,7 +4120,7 @@ function cargarHistorico() {
       document.getElementById('hist-tbody').innerHTML =
         '<tr><td colspan="'+(getVisibleHistColumns().length+6)+'" class="hist-empty" style="color:var(--error)">⚠️ Sin conexión a Firestore<br>' +
         '<span style="font-size:11px">'+esc(String(e))+'</span><br>' +
-        '<span style="font-size:11px;color:var(--text-muted)">Verifica la configuración en FirebaseConfig.html</span></td></tr>';
+        '<span style="font-size:11px;color:var(--text-muted)">Verifica la configuración en firebaseConfig.js</span></td></tr>';
     }
   });
 }
