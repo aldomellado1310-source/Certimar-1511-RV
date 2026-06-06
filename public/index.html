@@ -2083,43 +2083,6 @@ async function callFn(name, payload) {
   return { data: json.result };
 }
 
-// Escribe en mail_queue y resuelve de inmediato (fire-and-forget).
-// Monitorea en background para mostrar toast si hay error.
-function enviarMailQueue(payload) {
-  return new Promise(function(resolve, reject) {
-    var queueRef = firebase.firestore().collection('mail_queue').doc();
-    var docId = queueRef.id;
-    console.log('[mail_queue] Escribiendo doc:', docId, '| dest:', payload.datos && payload.datos.emailDestinatario, '| url:', payload.urlCertificado || '(sin url)');
-    queueRef.set({
-      datos          : payload.datos,
-      pdfStoragePath : payload.pdfStoragePath || '',
-      urlCertificado : payload.urlCertificado || '',
-      estado         : 'PENDIENTE',
-      creadoEn       : firebase.firestore.FieldValue.serverTimestamp()
-    }).then(function() {
-      console.log('[mail_queue] Doc creado OK:', docId, '— esperando procesamiento...');
-      resolve({ data: { ok: true } });
-      var unsub = queueRef.onSnapshot(function(snap) {
-        var d = snap.data();
-        if (!d) return;
-        console.log('[mail_queue] Estado ->', d.estado, d.error ? '| error completo: ' + d.error : '');
-        if (d.error) console.groupCollapsed('[mail_queue] Detalle error'); if (d.error) { console.log('estado Firestore:', d.estado); console.log('error:', d.error); console.groupEnd(); }
-        if (d.estado === 'ENVIADO' || d.estado === 'ERROR') {
-          unsub();
-          if (d.estado === 'ERROR') {
-            console.error('[mail_queue] ERROR FINAL:', d.error);
-            toast('Error al enviar correo: ' + (d.error || 'desconocido'), 'error');
-          } else {
-            console.log('[mail_queue] Correo ENVIADO correctamente');
-          }
-        }
-      });
-    }).catch(function(e) {
-      console.error('[mail_queue] Error al escribir doc:', e);
-      reject(e);
-    });
-  });
-}
 
 // =====================================================================
 //  FIREBASE — GUARDAR REGISTRO
