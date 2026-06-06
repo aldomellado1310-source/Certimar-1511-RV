@@ -24,6 +24,7 @@
 <script src="https://accounts.google.com/gsi/client" async></script>
 <script src="gmailAuth.js?v=20260606"></script>
 <script src="metricsLog.js?v=20260605"></script>
+<script src="pdfMail.js?v=20260606"></script>
 <style>
 /* ===================== TEMA: VARIABLES CSS ===================== */
 :root {
@@ -3365,7 +3366,11 @@ async function generarPDF() {
     useCORS: true,
     imageTimeout: 0,
     logging: false,
-    windowHeight: el.scrollHeight
+    windowHeight: el.scrollHeight,
+    // Forzar >=780px para que NUNCA se dispare @media(max-width:600px) durante la
+    // captura. Sin esto, en móvil .firma-section colapsa a columna y el PDF sale
+    // achatado/alargado. El PDF debe verse igual sin importar el dispositivo.
+    windowWidth: Math.max(el.scrollWidth, 780)
   });
   var { jsPDF } = window.jspdf;
   var pdf    = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4', compress:true });
@@ -3461,9 +3466,13 @@ async function handleSyncGoogle() {
     updateNotifStep('sync','pdf-render','active');
     await cargarLibsPDF();
     var pdf = await generarPDF();
-    pdfB64 = pdf.output('datauristring');
-    appState.pdfB64 = pdfB64;
+    // El PDF guardado, enviado y descargado debe ser UNO SOLO: derivamos el
+    // base64 desde los MISMOS bytes que subimos a Storage, con el prefijo
+    // canónico. Así evitamos el ";filename=generated.pdf" que mete
+    // output('datauristring') y que dañaba el adjunto del primer envío.
     appState.pdfArrayBuffer = pdf.output('arraybuffer');
+    pdfB64 = pdfBase64ToDataUri(arrayBufferToBase64(appState.pdfArrayBuffer));
+    appState.pdfB64 = pdfB64;
     updateNotifStep('sync','pdf-render','done');
   } catch(e) {
     updateNotifCard('sync','error','❌ Error al generar PDF', String(e));
@@ -4852,7 +4861,9 @@ function buildRawEmail(params) {
   var parts = [headerLines, '', htmlPart];
 
   if (pdfB64) {
-    var rawPdf = pdfB64.replace(/^data:application\/pdf;base64,/, '');
+    // Recorta cualquier prefijo data-URI (con o sin ";filename="). Esto evita
+    // el PDF dañado del primer envío. Ver public/pdfMail.js.
+    var rawPdf = pdfDataUriToBase64(pdfB64);
     var pdfPart = [
       '--' + boundary,
       'Content-Type: application/pdf; name="' + pdfFilename + '"',
@@ -4906,7 +4917,7 @@ async function _getPdfB64ParaEnvio() {
     var url  = await firebase.storage().ref(appState.pdfStoragePath).getDownloadURL();
     var resp = await fetch(url);
     var buf  = await resp.arrayBuffer();
-    return 'data:application/pdf;base64,' + arrayBufferToBase64(buf);
+    return pdfBase64ToDataUri(arrayBufferToBase64(buf));
   }
   return null;
 }
@@ -5325,13 +5336,13 @@ function admReenviarMail(nro, email) {
         var pdfUrl  = await firebase.storage().ref(r.pdfStoragePath).getDownloadURL();
         var pdfResp = await fetch(pdfUrl);
         var pdfBuf  = await pdfResp.arrayBuffer();
-        pdfB64 = 'data:application/pdf;base64,' + arrayBufferToBase64(pdfBuf);
+        pdfB64 = pdfBase64ToDataUri(arrayBufferToBase64(pdfBuf));
       } else if (r.urlCertificado) {
         try {
           var pdfResp2 = await fetch(r.urlCertificado);
           if (pdfResp2.ok) {
             var pdfBuf2 = await pdfResp2.arrayBuffer();
-            pdfB64 = 'data:application/pdf;base64,' + arrayBufferToBase64(pdfBuf2);
+            pdfB64 = pdfBase64ToDataUri(arrayBufferToBase64(pdfBuf2));
           }
         } catch(_) {}
       }
@@ -5708,10 +5719,11 @@ function regenerarPDFAdmin(nro) {
 async function subirPDFAlStorage(pdfData, nroRegistro, centroCultivo) {
   var nombre = 'CertimarRV_' + nroRegistro + '_' + (centroCultivo||'').replace(/\s+/g,'_') + '.pdf';
   var ref    = firebase.storage().ref('certificados/' + nombre);
-  // Acepta ArrayBuffer (jsPDF) o data URI base64 (legacy)
+  // Acepta ArrayBuffer (jsPDF) o data URI base64 (legacy). pdfDataUriToBase64
+  // recorta cualquier prefijo (con o sin ";filename=").
   var buffer = (pdfData instanceof ArrayBuffer)
     ? pdfData
-    : Uint8Array.from(atob(pdfData.replace(/^data:application\/pdf;base64,/, '').replace(/[\s\r\n]/g,'')), function(c){ return c.charCodeAt(0); }).buffer;
+    : Uint8Array.from(atob(pdfDataUriToBase64(pdfData)), function(c){ return c.charCodeAt(0); }).buffer;
   await ref.put(buffer, { contentType: 'application/pdf' });
   return await ref.getDownloadURL();
 }
