@@ -5869,8 +5869,27 @@ function toast(msg, type) {
   toastTimer = setTimeout(function(){ el.className = ''; }, 3500);
 }
 
-// ===================== MÉTRICAS — STUB TEMPORAL (reemplazado en Task 10) =====================
-function exportarMetricasCSV() {}
+// ===================== MÉTRICAS — EXPORTAR CSV =====================
+function exportarMetricasCSV() {
+  var rows = _metricsFiltered();
+  if (!rows.length) { toast('No hay datos para exportar', 'error'); return; }
+  var headers = ['Fecha/Hora','Tipo','Evento','Usuario','Vista','OK','DuracionMs','Mensaje'];
+  var lines = rows.map(function(r) {
+    var d = (r.ts && r.ts.toDate) ? r.ts.toDate() : new Date(r.clientTs || Date.now());
+    return [
+      d.toISOString(), r.type, r.event, r.user, r.view || '',
+      (r.ok === true ? '1' : r.ok === false ? '0' : ''),
+      (r.durationMs || ''), (r.msg || '')
+    ].map(function(v) { return '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"'; }).join(',');
+  });
+  var csv  = [headers.map(function(h) { return '"' + h + '"'; }).join(',')].concat(lines).join('\n');
+  var blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' });
+  var url  = URL.createObjectURL(blob);
+  var a    = document.createElement('a');
+  a.href = url; a.download = 'certimar_metricas_' + new Date().toISOString().split('T')[0] + '.csv';
+  a.click(); URL.revokeObjectURL(url);
+  toast('CSV exportado ✓', 'success');
+}
 
 // ===================== MÉTRICAS — DATOS, FILTROS Y KPIs =====================
 var _mAll = [];   // logs cargados para el rango actual
