@@ -1,8 +1,8 @@
 // Certimar RV — Service Worker
 // Estrategia: Network-First para el HTML (index.html / navegación) para que cada deploy
 // se vea de inmediato; Stale-While-Revalidate para assets estáticos; pass-through API/Firebase
-const CACHE_NAME    = 'certimar-rv-v8';
-const CACHE_ASSETS  = ['/', '/index.html', '/firebaseConfig.js', '/gmailAuth.js', '/metricsLog.js', '/pdfMail.js', '/concesiones.js', '/aquachile.js'];
+const CACHE_NAME    = 'certimar-rv-v9';
+const CACHE_ASSETS  = ['/', '/index.html', '/firebaseConfig.js', '/gmailAuth.js', '/metricsLog.js', '/pdfMail.js', '/firma.html', '/firmaPage.js', '/concesiones.js', '/aquachile.js'];
 
 self.addEventListener('install', function(event) {
   event.waitUntil(
