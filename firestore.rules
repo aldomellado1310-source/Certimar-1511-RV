@@ -29,5 +29,20 @@ service cloud.firestore {
     match /borradores/{docId} {
       allow read, write: if request.auth != null;
     }
+
+    // Logs de métricas — cualquier @certimar.cl crea; solo admin lee; sin update/delete (TTL borra)
+    match /metrics_logs/{id} {
+      allow create: if request.auth != null &&
+        request.auth.token.email.matches('.*@certimar[.]cl');
+      allow read: if request.auth != null &&
+        get(/databases/$(database)/documents/usuarios/$(request.auth.token.email)).data.rol == 'admin';
+      allow update, delete: if false;
+    }
+
+    // Config del panel de métricas (pinHash) — solo admin
+    match /config/{docId} {
+      allow read, write: if request.auth != null &&
+        get(/databases/$(database)/documents/usuarios/$(request.auth.token.email)).data.rol == 'admin';
+    }
   }
 }
