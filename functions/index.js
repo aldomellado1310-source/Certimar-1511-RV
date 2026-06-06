@@ -6,6 +6,7 @@
 const functions  = require('firebase-functions');
 const admin      = require('firebase-admin');
 const crypto     = require('crypto');
+const { tokenCoincide, normalizarNombre, esEmailValido, normalizarEmail } = require('./firmaHelpers');
 
 admin.initializeApp();
 const db = admin.firestore();
@@ -217,6 +218,42 @@ exports.generarLinkFirma = functions
   functions.logger.info('generarLinkFirma OK:', nro);
   return { ok: true, url };
 });
+
+// ════════════════════════════════════════════════════════════════════════════
+//  getRegistroParaFirma — pública (sin auth), validada por token.
+//  Devuelve solo los campos a mostrar en la página de firma.
+// ════════════════════════════════════════════════════════════════════════════
+exports.getRegistroParaFirma = functions
+  .runWith({ timeoutSeconds: 30, memory: '128MB' })
+  .https.onCall(async (data) => {
+    const nro   = data && data.nro;
+    const token = data && data.token;
+    if (!nro || !token) {
+      throw new functions.https.HttpsError('invalid-argument', 'nro y token son requeridos.');
+    }
+    const snap = await db.collection('registros_visita').doc(nro).get();
+    if (!snap.exists) {
+      throw new functions.https.HttpsError('not-found', 'Registro no encontrado.');
+    }
+    const r = snap.data();
+    if (!tokenCoincide(r.tokenFirma, token)) {
+      throw new functions.https.HttpsError('permission-denied', 'Link de firma inválido o ya utilizado.');
+    }
+    if (r.estadoFirma === 'FIRMADO') {
+      throw new functions.https.HttpsError('failed-precondition', 'Este registro ya fue firmado.');
+    }
+    return { ok: true, data: {
+      nroRegistro     : r.nroRegistro || nro,
+      fecha           : r.fecha || '',
+      centroCultivo   : r.centroCultivo || '',
+      nroCentro       : r.nroCentro || '',
+      titular         : r.titular || '',
+      acs             : r.acs || '',
+      observaciones   : r.observaciones || '',
+      nombreResponsable: r.nombreResponsable || '',
+      emailResponsable : r.emailResponsable || ''
+    }};
+  });
 
 // ════════════════════════════════════════════════════════════════════════════
 //  FUNCIÓN 3 — procesarFirmaCliente
