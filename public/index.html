@@ -388,6 +388,17 @@ input::placeholder,textarea::placeholder{color:var(--text-muted)}
 .admin-action-btn.ok:hover{background:#ecfdf5;color:#047857;border-color:#059669}
 .admin-empty{text-align:center;padding:48px;color:var(--text-muted);font-size:14px}
 .admin-footer{padding:12px 16px;background:var(--surface-2);border-top:1px solid var(--border);font-size:12px;color:var(--text-muted);display:flex;justify-content:space-between;align-items:center}
+/* Panel de métricas (superadmin) */
+.metrics-gate{max-width:420px;margin:80px auto;padding:0 16px}
+.metrics-gate-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:32px 28px;box-shadow:var(--shadow-sm);text-align:center}
+.metrics-gate-card h2{font-size:20px;font-weight:800;color:var(--text-pri);margin-bottom:6px}
+.metrics-gate-sub{font-size:13px;color:var(--text-sec);margin-bottom:18px}
+.metrics-pin-input{width:100%;padding:12px 14px;font-size:18px;letter-spacing:4px;text-align:center;border:1px solid var(--border);border-radius:10px;margin-bottom:10px;background:var(--surface-2);color:var(--text-pri)}
+.metrics-gate-err{color:var(--error);font-size:12px;margin-top:8px;min-height:16px}
+.metrics-charts{max-width:1440px;margin:18px auto 0;padding:0 32px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+.metrics-chart-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;box-shadow:var(--shadow-sm)}
+.metrics-header-actions{display:flex;gap:8px;flex-wrap:wrap}
+@media(max-width:900px){ .metrics-charts{grid-template-columns:1fr} }
 
 /* ===================== DASHBOARD OCEAN ===================== */
 #dash-ocean{position:fixed;bottom:0;left:0;width:100%;height:220px;pointer-events:none;z-index:0;overflow:hidden}
@@ -939,6 +950,7 @@ video{width:100%;border-radius:8px;background:black}
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>
           Histórico
         </button>
+        <button class="nav-btn admin-btn hidden" id="nav-metricas" onclick="showView('metricas')">Métricas</button>
         <button class="nav-btn admin-btn hidden" id="nav-admin" onclick="showView('admin')">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
           Admin
@@ -976,6 +988,7 @@ video{width:100%;border-radius:8px;background:black}
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
       Nueva
     </button>
+    <button class="mtab admin-tab hidden" id="mtab-metricas" onclick="showView('metricas')">Métricas</button>
     <button class="mtab hidden" id="mtab-admin" onclick="showView('admin')">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
       Admin
@@ -1606,6 +1619,81 @@ video{width:100%;border-radius:8px;background:black}
       </div>
     </div>
   </div><!-- /view-admin -->
+
+  <!-- ===================== VISTA MÉTRICAS (SUPERADMIN) ===================== -->
+  <div id="view-metricas" class="hidden">
+
+    <!-- Reja PIN -->
+    <div id="metrics-gate" class="metrics-gate">
+      <div class="metrics-gate-card">
+        <h2 id="metrics-gate-title">Ingresa el PIN</h2>
+        <p id="metrics-gate-sub" class="metrics-gate-sub">Panel de métricas (superadmin)</p>
+        <input id="metrics-pin-1" type="password" inputmode="numeric" class="metrics-pin-input" placeholder="PIN" autocomplete="off"
+               onkeydown="if(event.key==='Enter')metricsGateSubmit()">
+        <input id="metrics-pin-2" type="password" inputmode="numeric" class="metrics-pin-input hidden" placeholder="Confirmar PIN" autocomplete="off"
+               onkeydown="if(event.key==='Enter')metricsGateSubmit()">
+        <button class="btn-primary" id="metrics-gate-btn" data-mode="enter" onclick="metricsGateSubmit()">Entrar</button>
+        <div id="metrics-gate-err" class="metrics-gate-err"></div>
+      </div>
+    </div>
+
+    <!-- Panel -->
+    <div id="metrics-panel" class="hidden">
+      <div class="admin-header">
+        <div>
+          <h1>Panel de Métricas <span class="admin-badge">SUPERADMIN</span></h1>
+          <p>Errores, actividad, acciones y rendimiento — solo análisis</p>
+        </div>
+        <div class="metrics-header-actions">
+          <button class="admin-action-btn" onclick="metricsChangePin()">Cambiar PIN</button>
+          <button class="admin-action-btn" onclick="cargarMetricas()">↻ Refrescar</button>
+          <button class="admin-action-btn ok" onclick="exportarMetricasCSV()">⬇ CSV</button>
+        </div>
+      </div>
+
+      <div class="admin-filters"><div class="admin-filters-inner">
+        <select id="m-rango" onchange="cargarMetricas()">
+          <option value="1">Hoy</option>
+          <option value="7" selected>7 días</option>
+          <option value="30">30 días</option>
+          <option value="90">90 días</option>
+        </select>
+        <select id="m-tipo" onchange="renderMetricas()">
+          <option value="">Todos los tipos</option>
+          <option value="error">Errores</option>
+          <option value="action">Acciones</option>
+          <option value="activity">Actividad</option>
+          <option value="perf">Rendimiento</option>
+        </select>
+        <select id="m-user" onchange="renderMetricas()"><option value="">Todos los usuarios</option></select>
+        <input id="m-search" type="search" placeholder="Buscar evento/mensaje…" oninput="renderMetricas()">
+      </div></div>
+
+      <div class="admin-stats" id="m-kpis">
+        <div class="admin-stat warning"><div class="admin-stat-val" id="m-kpi-err">—</div><div class="admin-stat-lbl">Errores</div></div>
+        <div class="admin-stat"><div class="admin-stat-val" id="m-kpi-users">—</div><div class="admin-stat-lbl">Usuarios activos</div></div>
+        <div class="admin-stat"><div class="admin-stat-val" id="m-kpi-rv">—</div><div class="admin-stat-lbl">RV creadas</div></div>
+        <div class="admin-stat success"><div class="admin-stat-val" id="m-kpi-mail">—</div><div class="admin-stat-lbl">Correos ok</div></div>
+        <div class="admin-stat warning"><div class="admin-stat-val" id="m-kpi-mailfail">—</div><div class="admin-stat-lbl">Correos fallidos</div></div>
+        <div class="admin-stat"><div class="admin-stat-val" id="m-kpi-perf">—</div><div class="admin-stat-lbl">Tiempo prom (ms)</div></div>
+      </div>
+
+      <div class="metrics-charts">
+        <div class="metrics-chart-card"><canvas id="m-chart-day"></canvas></div>
+        <div class="metrics-chart-card"><canvas id="m-chart-user"></canvas></div>
+        <div class="metrics-chart-card"><canvas id="m-chart-mail"></canvas></div>
+      </div>
+
+      <div class="admin-table-wrap"><div class="admin-table-card">
+        <table class="admin-table"><thead><tr>
+          <th>Fecha/Hora</th><th>Tipo</th><th>Evento</th><th>Usuario</th><th>Vista</th><th>OK</th><th>Mensaje</th>
+        </tr></thead><tbody id="m-tbody">
+          <tr><td colspan="7" class="admin-empty">Sin datos</td></tr>
+        </tbody></table>
+      </div></div>
+
+    </div><!-- /metrics-panel -->
+  </div><!-- /view-metricas -->
 
 </div><!-- /app -->
 
@@ -2357,6 +2445,9 @@ function showApp() {
       document.getElementById('nav-admin').classList.remove('hidden');
       var mtabAdmin = document.getElementById('mtab-admin');
       if (mtabAdmin) mtabAdmin.classList.remove('hidden');
+      document.getElementById('nav-metricas').classList.remove('hidden');
+      var mtabMet = document.getElementById('mtab-metricas');
+      if (mtabMet) mtabMet.classList.remove('hidden');
     }
   }
 
@@ -2387,7 +2478,7 @@ function closeChangelog() {
 // =====================================================================
 function showView(view) {
   try { Metrics.activity('view_change', { view: view }); } catch (e) {}
-  var views = ['dashboard','registro','historico','admin'];
+  var views = ['dashboard','registro','historico','admin','metricas'];
   views.forEach(function(v) {
     var el = document.getElementById('view-'+v);
     if (el) el.classList.toggle('hidden', v !== view);
@@ -2403,6 +2494,7 @@ function showView(view) {
   if (view === 'historico') cargarHistorico();
   if (view === 'registro')  resetFormulario();
   if (view === 'admin')     cargarAdmin();
+  if (view === 'metricas')  abrirMetricas();
 }
 
 // =====================================================================
@@ -5776,6 +5868,14 @@ function toast(msg, type) {
   clearTimeout(toastTimer);
   toastTimer = setTimeout(function(){ el.className = ''; }, 3500);
 }
+
+// ===================== MÉTRICAS — STUBS TEMPORALES (reemplazados en Tasks 7-10) =====================
+function abrirMetricas() { document.getElementById('metrics-gate').classList.remove('hidden'); document.getElementById('metrics-panel').classList.add('hidden'); }
+function metricsGateSubmit() {}
+function metricsChangePin() {}
+function cargarMetricas() {}
+function renderMetricas() {}
+function exportarMetricasCSV() {}
 </script>
 
 <!-- Dropdown autocomplete global (fuera de doc-paper para evitar overflow:hidden) -->
