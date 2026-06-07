@@ -109,8 +109,15 @@ exports.procesarFirmaCliente = functions
   const filePath = `firmas/Firma_${nro}.png`;
   const file     = bucket.file(filePath);
 
-  await file.save(buffer, { contentType: 'image/png', public: false });
-  const [url] = await file.getSignedUrl({ action: 'read', expires: '2099-01-01' });
+  // URL de descarga estilo Firebase (con token), igual que getDownloadURL() del
+  // frontend. Evita getSignedUrl, que requiere firmar con un service account
+  // (rol "Token Creator") y falla en el emulador y a menudo en producción.
+  const dlToken = crypto.randomUUID();
+  await file.save(buffer, {
+    contentType: 'image/png',
+    metadata: { metadata: { firebaseStorageDownloadTokens: dlToken } }
+  });
+  const url = `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encodeURIComponent(filePath)}?alt=media&token=${dlToken}`;
 
   const update = {
     urlFirmaCliente: url,
