@@ -189,7 +189,7 @@ input::placeholder,textarea::placeholder{color:var(--text-muted)}
 
 /* ===================== CAMERA BTNS ===================== */
 .camera-btns-row{display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;margin-top:4px}
-.btn-divider{font-size:12px;color:#94a3b8;font-weight:600;padding:0 4px}
+.btn-divider{font-size:12px;color:var(--text-muted);font-weight:600;padding:0 4px}
 .btn-adjuntar{background:#475569;color:white;border:none;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;display:inline-flex;align-items:center;gap:8px;cursor:pointer;transition:.2s;font-family:inherit}
 .btn-adjuntar:hover{background:#334155}
 
@@ -201,7 +201,7 @@ input::placeholder,textarea::placeholder{color:var(--text-muted)}
 .login-card p{color:#64748b;font-size:14px;margin-bottom:32px}
 .btn-google{width:100%;display:flex;align-items:center;justify-content:center;gap:12px;background:white;border:1px solid #d1d5db;color:#374151;padding:12px 24px;border-radius:9999px;font-size:15px;font-weight:500;transition:.2s;cursor:pointer}
 .btn-google:hover{background:#f9fafb;box-shadow:0 2px 8px rgba(0,0,0,.1)}
-.login-footer{position:absolute;bottom:24px;font-size:12px;color:#94a3b8}
+.login-footer{position:absolute;bottom:24px;font-size:12px;color:#566374}
 @keyframes lbFloat{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-28px) scale(1.03)}}
 @keyframes lbDrift{0%{transform:translate(0,0) scale(1)}33%{transform:translate(22px,-18px) scale(1.02)}66%{transform:translate(-14px,12px) scale(.98)}100%{transform:translate(0,0) scale(1)}}
 .lb-orb{position:absolute;border-radius:50%;pointer-events:none;will-change:transform}
@@ -236,7 +236,7 @@ input::placeholder,textarea::placeholder{color:var(--text-muted)}
 .completion-box{background:white;border-radius:20px;padding:36px 32px;max-width:460px;width:100%;box-shadow:0 24px 60px rgba(0,0,0,.2);text-align:center;transform:translateY(24px);transition:transform .35s cubic-bezier(.22,1,.36,1)}
 #completion-dialog.show .completion-box{transform:translateY(0)}
 .completion-icon{font-size:52px;margin-bottom:12px;display:block}
-.completion-title{font-size:20px;font-weight:800;color:#003366;margin-bottom:6px}
+.completion-title{font-size:20px;font-weight:800;color:var(--brand);margin-bottom:6px}
 .completion-sub{font-size:13px;color:#64748b;margin-bottom:24px;line-height:1.5}
 .completion-nro{display:inline-block;background:#eff6ff;color:#003366;font-size:13px;font-weight:700;padding:5px 14px;border-radius:8px;margin-bottom:20px;border:1px solid #bfdbfe}
 .completion-actions{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
@@ -276,9 +276,9 @@ input::placeholder,textarea::placeholder{color:var(--text-muted)}
 .ac-item:hover{background:#eff6ff}
 .ac-item.ac-new{background:#fffbeb;border-top:2px solid #f59e0b}
 .ac-item.ac-new:hover{background:#fef3c7}
-.ac-code{font-weight:700;color:#003366;min-width:62px;font-size:12px;padding-top:1px}
-.ac-name{color:#374151;font-size:11px;line-height:1.4}
-.ac-titular{color:#64748b;font-size:10px;margin-top:1px}
+.ac-code{font-weight:700;color:var(--brand);min-width:62px;font-size:12px;padding-top:1px}
+.ac-name{color:var(--text-sec);font-size:11px;line-height:1.4}
+.ac-titular{color:var(--text-muted);font-size:10px;margin-top:1px}
 .ac-filled{background:#f0fdf4;border-radius:4px;transition:background .4s}
 .ac-badge{display:inline-flex;align-items:center;gap:4px;background:#dcfce7;color:#15803d;font-size:10px;font-weight:700;padding:2px 7px;border-radius:9999px;margin-left:6px;vertical-align:middle}
 .ac-badge.custom{background:#fef3c7;color:#92400e}
@@ -336,6 +336,14 @@ input::placeholder,textarea::placeholder{color:var(--text-muted)}
 [data-theme="dark"] .ac-item{border-color:var(--border)}
 [data-theme="dark"] .ac-item:hover{background:var(--surface-2)}
 [data-theme="dark"] .view-container{background:var(--bg)}
+/* ---- Tarjetas del formulario que quedaban claras en dark ---- */
+[data-theme="dark"] .checklist-card{background:rgba(251,191,36,.07);border-color:rgba(251,191,36,.32)}
+[data-theme="dark"] .check-item{background:var(--surface-2);border-color:var(--border)}
+[data-theme="dark"] .check-item.done{background:rgba(16,185,129,.13);border-color:rgba(16,185,129,.35)}
+[data-theme="dark"] .check-text{color:var(--text-pri)}
+[data-theme="dark"] .check-text.done{color:#6ee7b7}
+[data-theme="dark"] .camera-card{background:var(--surface);border-color:var(--border)}
+[data-theme="dark"] .camera-placeholder{background:var(--surface-2);border-color:var(--border-2)}
 
 /* ===================== ADMIN VIEW ===================== */
 #view-admin{background:var(--bg);min-height:calc(100vh - 64px)}
@@ -428,15 +436,15 @@ input::placeholder,textarea::placeholder{color:var(--text-muted)}
 .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
 .stat-card.primary{background:linear-gradient(135deg,#003366,#004d99);color:white;border:none}
 .stat-card.primary p{color:rgba(255,255,255,.7)}
-.stat-card .stat-label{font-size:12px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+.stat-card .stat-label{font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
 .stat-card.primary .stat-label{color:rgba(255,255,255,.7)}
-.stat-card .stat-value{font-size:32px;font-weight:700;color:#003366}
+.stat-card .stat-value{font-size:32px;font-weight:700;color:var(--brand)}
 .stat-card.primary .stat-value{color:white}
 .stat-card .stat-sub{font-size:12px;color:#22c55e;margin-top:6px;font-weight:600}
 .charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px}
 @media(max-width:700px){.charts-grid{grid-template-columns:1fr}}
 .chart-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px}
-.chart-card h3{font-size:15px;font-weight:700;color:#003366;margin-bottom:16px}
+.chart-card h3{font-size:15px;font-weight:700;color:var(--brand);margin-bottom:16px}
 .vencer-table{width:100%;border-collapse:collapse;font-size:13px}
 .vencer-table th{background:#f8fafc;font-weight:600;color:#64748b;text-align:left;padding:10px 14px;font-size:11px;text-transform:uppercase;letter-spacing:.5px}
 .vencer-table td{padding:10px 14px;border-bottom:1px solid #f1f5f9}
@@ -449,7 +457,7 @@ input::placeholder,textarea::placeholder{color:var(--text-muted)}
 
 /* ===================== FILTROS ===================== */
 .filtros-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:20px}
-.filtros-card h2{font-size:14px;font-weight:700;color:#003366;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.filtros-card h2{font-size:14px;font-weight:700;color:var(--brand);margin-bottom:14px;display:flex;align-items:center;gap:8px}
 .filtros-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
 .filtro-input{width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;background:#f8fafc;outline:none;transition:.2s}
 .filtro-input:focus{border-color:#0099CC;background:white;box-shadow:0 0 0 3px rgba(0,153,204,.12)}
@@ -508,7 +516,7 @@ label.filtro-label{font-size:11px;font-weight:600;color:#64748b;text-transform:u
 /* Checklist */
 .checklist-card{background:#fffbeb;border:2px solid #fbbf24;border-radius:14px;padding:24px;margin-top:24px}
 .checklist-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
-.checklist-header h2{font-size:16px;font-weight:700;color:#1e3a5f}
+.checklist-header h2{font-size:16px;font-weight:700;color:var(--brand)}
 .lock-badge{padding:6px 14px;border-radius:9999px;font-size:11px;font-weight:700;display:flex;align-items:center;gap:6px}
 .lock-badge.locked{background:#fef3c7;color:#d97706}
 .lock-badge.unlocked{background:#dcfce7;color:#15803d}
@@ -537,9 +545,9 @@ button:disabled{opacity:.45;cursor:not-allowed!important}
 .warn-msg{display:flex;align-items:center;gap:8px;color:#d97706;font-size:13px;font-weight:600;justify-content:center;margin-top:12px}
 /* Cámara */
 .camera-card{background:white;border:2px solid #e2e8f0;border-radius:14px;padding:24px;margin-top:24px}
-.camera-card h2{font-size:15px;font-weight:700;color:#1e3a5f;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.camera-card h2{font-size:15px;font-weight:700;color:var(--brand);margin-bottom:16px;display:flex;align-items:center;gap:8px}
 .camera-placeholder{border:2px dashed #d1d5db;border-radius:8px;padding:40px;text-align:center;background:#f8fafc}
-.camera-placeholder p{color:#94a3b8;font-size:13px;margin-bottom:16px}
+.camera-placeholder p{color:var(--text-muted);font-size:13px;margin-bottom:16px}
 .btn-camera{background:#1e3a5f;color:white;border:none;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;display:inline-flex;align-items:center;gap:8px}
 .btn-camera:hover{background:#162d4a}
 video{width:100%;border-radius:8px;background:black}
@@ -573,7 +581,7 @@ video{width:100%;border-radius:8px;background:black}
 .hist-table tr:hover td{background:#f8fafc}
 .hist-table .link-cert{color:#0099CC;text-decoration:none;font-weight:600;font-size:12px}
 .hist-table .link-cert:hover{text-decoration:underline}
-.hist-empty{text-align:center;padding:48px;color:#94a3b8;font-size:14px}
+.hist-empty{text-align:center;padding:48px;color:var(--text-muted);font-size:14px}
 .hist-footer{padding:12px 16px;border-top:1px solid #f1f5f9;background:#f8fafc;font-size:12px;color:#64748b}
 .hist-col-btn{height:32px;background:#0099CC;color:white;border:none;border-radius:8px;padding:0 12px;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:5px;white-space:nowrap;transition:.2s}
 .hist-col-btn:hover{background:#007aaa}
@@ -637,7 +645,7 @@ video{width:100%;border-radius:8px;background:black}
 @media(max-width:600px){.autosave-pill{bottom:82px;font-size:13.5px;padding:12px 20px}}
 .email-preview{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:16px;font-family:monospace;font-size:12px;color:#374151;margin-bottom:16px}
 .email-row{display:grid;grid-template-columns:56px 1fr;gap:8px;align-items:center;margin-bottom:8px}
-.email-label{color:#94a3b8;font-size:12px}
+.email-label{color:var(--text-muted);font-size:12px}
 .email-to-input{border:1px solid #e2e8f0;border-radius:4px;padding:5px 8px;font-size:12px;font-family:monospace;width:100%;outline:none;background:white}
 .email-to-input:focus{border-color:#3b82f6}
 .email-body{white-space:pre-wrap;border-top:1px solid #e2e8f0;padding-top:12px;margin-top:4px;color:#4b5563;font-size:12px;font-family:monospace}
@@ -733,7 +741,23 @@ video{width:100%;border-radius:8px;background:black}
   .btn-archive{align-self:flex-end}
 }
 
+/* ===================== TOUCH TARGETS (coarse pointer) ===================== */
+@media (pointer: coarse) {
+  .nav-btn,.btn-nueva,.btn-theme{min-height:44px}
+  .admin-action-btn{min-height:44px;padding:10px 13px}
+  .hist-col-btn{height:44px}
+  .hist-col-order-btn{min-width:30px;min-height:30px;font-size:12px;padding:4px 7px}
+  .modal-close{min-width:44px;min-height:44px;display:inline-flex;align-items:center;justify-content:center}
+  .firma-expand-btn{min-width:40px;min-height:40px;display:inline-flex;align-items:center;justify-content:center}
+  .completion-btn.ghost{min-height:44px}
+  .ac-item{min-height:44px}
+  .check-item{min-height:48px}
+}
+
 /* ===================== FOCUS VISIBLE ===================== */
+.doc-input:focus-visible,
+.firma-input-name:focus-visible,
+.obs-textarea:focus-visible,
 .nav-btn:focus-visible,
 .btn-nueva:focus-visible,
 .btn-theme:focus-visible,
@@ -766,13 +790,13 @@ video{width:100%;border-radius:8px;background:black}
 <body>
 
 <!-- TOAST -->
-<div id="toast"></div>
+<div id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
 
 <!-- SIDEBAR NOTIFICATIONS -->
-<div id="notif-sidebar"></div>
+<div id="notif-sidebar" role="status" aria-live="polite" aria-label="Progreso de la operación"></div>
 
 <!-- COMPLETION DIALOG -->
-<div id="completion-dialog">
+<div id="completion-dialog" role="dialog" aria-modal="true" aria-label="Registro guardado">
   <div class="completion-box">
     <span class="completion-icon" id="cd-icon">✅</span>
     <div class="completion-title" id="cd-title">Registro Guardado</div>
@@ -781,12 +805,12 @@ video{width:100%;border-radius:8px;background:black}
     <div id="cd-email-section" style="margin-bottom:16px">
       <div style="font-size:12px;font-weight:700;color:#374151;text-align:left;margin-bottom:6px">Notificar responsable del centro:</div>
       <div class="completion-email-row">
-        <input type="email" id="cd-email-input" class="completion-email-input" placeholder="responsable@empresa.cl">
+        <input type="email" id="cd-email-input" class="completion-email-input" placeholder="responsable@empresa.cl" aria-label="Correo del destinatario">
         <button class="completion-send-btn" id="cd-send-btn" onclick="handleCompletionEnviar()">✉️ Enviar</button>
       </div>
       <div style="display:flex;gap:8px;margin-top:6px">
-        <input type="text" id="cd-cc-input" class="completion-email-input" placeholder="CC (opcional)" style="font-size:11px;padding:6px 10px">
-        <input type="text" id="cd-cco-input" class="completion-email-input" placeholder="CCO (oculto)" style="font-size:11px;padding:6px 10px">
+        <input type="text" id="cd-cc-input" class="completion-email-input" placeholder="CC (opcional)" style="font-size:11px;padding:6px 10px" aria-label="Con copia (CC)">
+        <input type="text" id="cd-cco-input" class="completion-email-input" placeholder="CCO (oculto)" style="font-size:11px;padding:6px 10px" aria-label="Con copia oculta (CCO)">
       </div>
       <div style="margin-top:10px;padding:8px 12px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;text-align:left">
         <div style="font-size:11px;font-weight:700;color:#1d4ed8;margin-bottom:3px">📋 Copias internas automáticas</div>
@@ -943,7 +967,7 @@ video{width:100%;border-radius:8px;background:black}
         </svg>
       </div>
       <div class="nav-links">
-        <button class="nav-btn active" id="nav-dashboard" onclick="showView('dashboard')">
+        <button class="nav-btn active" id="nav-dashboard" aria-current="page" onclick="showView('dashboard')">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
           Dashboard
         </button>
@@ -997,7 +1021,7 @@ video{width:100%;border-radius:8px;background:black}
   </div>
 
   <!-- ============== DASHBOARD VIEW ============== -->
-  <div id="view-dashboard">
+  <div id="view-dashboard" role="main">
     <div class="dash-header">
       <div>
         <h1>Dashboard de Inspecciones</h1>
@@ -1016,10 +1040,10 @@ video{width:100%;border-radius:8px;background:black}
         Filtros de Búsqueda
       </h2>
       <div class="filtros-grid">
-        <div><label class="filtro-label">Fecha desde</label><input type="date" id="f-desde" class="filtro-input" onchange="filtrarDashboard()"></div>
-        <div><label class="filtro-label">Fecha hasta</label><input type="date" id="f-hasta" class="filtro-input" onchange="filtrarDashboard()"></div>
-        <div><label class="filtro-label">Centro</label><input type="text" id="f-centro" placeholder="Nombre del centro" class="filtro-input" oninput="filtrarDashboard()"></div>
-        <div><label class="filtro-label">N° Registro</label><input type="text" id="f-nreg" placeholder="Ej: RV-0001" class="filtro-input" oninput="filtrarDashboard()"></div>
+        <div><label class="filtro-label">Fecha desde</label><input type="date" id="f-desde" class="filtro-input" onchange="filtrarDashboard()" aria-label="Filtrar desde fecha"></div>
+        <div><label class="filtro-label">Fecha hasta</label><input type="date" id="f-hasta" class="filtro-input" onchange="filtrarDashboard()" aria-label="Filtrar hasta fecha"></div>
+        <div><label class="filtro-label">Centro</label><input type="text" id="f-centro" placeholder="Nombre del centro" class="filtro-input" oninput="filtrarDashboard()" aria-label="Filtrar por centro"></div>
+        <div><label class="filtro-label">N° Registro</label><input type="text" id="f-nreg" placeholder="Ej: RV-0001" class="filtro-input" oninput="filtrarDashboard()" aria-label="Filtrar por número de registro"></div>
       </div>
     </div>
 
@@ -1170,11 +1194,11 @@ video{width:100%;border-radius:8px;background:black}
           <div class="doc-meta">
             <div class="doc-meta-row">
               <span class="doc-meta-label">FECHA:</span>
-              <input type="text" id="r-fecha" class="doc-input" style="width:90px;text-align:right;font-weight:700">
+              <input type="text" id="r-fecha" class="doc-input" style="width:90px;text-align:right;font-weight:700" aria-label="Fecha del registro">
             </div>
             <div class="doc-meta-row">
               <span class="doc-meta-label">N° REGISTRO:</span>
-              <input type="text" id="r-nroRegistro" class="doc-input" style="width:110px;text-align:right;font-weight:700;color:#B91C1C;font-size:16px">
+              <input type="text" id="r-nroRegistro" class="doc-input" style="width:110px;text-align:right;font-weight:700;color:#B91C1C;font-size:16px" aria-label="Número de registro">
             </div>
           </div>
         </div>
@@ -1187,29 +1211,29 @@ video{width:100%;border-radius:8px;background:black}
             <tr>
               <td class="label-cell">N° de Centro</td>
               <td colspan="3" style="position:relative">
-                <input type="text" id="r-nroCentro" class="doc-input" placeholder="—" oninput="onNroCentroInput(this.value)" onblur="setTimeout(closeAcDropdown,200)">
+                <input type="text" id="r-nroCentro" class="doc-input" placeholder="—" oninput="onNroCentroInput(this.value)" onblur="setTimeout(closeAcDropdown,200)" aria-label="Número de centro">
               </td>
             </tr>
             <tr>
               <td class="label-cell">Centro de Cultivo</td>
-              <td colspan="3" style="position:relative"><input type="text" id="r-centroCultivo" class="doc-input" placeholder="—" oninput="onCentroCultivoInput(this.value)" onblur="setTimeout(closeAcDropdown,200)"></td>
+              <td colspan="3" style="position:relative"><input type="text" id="r-centroCultivo" class="doc-input" placeholder="—" oninput="onCentroCultivoInput(this.value)" onblur="setTimeout(closeAcDropdown,200)" aria-label="Centro de cultivo"></td>
             </tr>
             <tr>
               <td class="label-cell">A.C.S.</td>
-              <td colspan="3"><input type="text" id="r-acs" class="doc-input" placeholder="—"></td>
+              <td colspan="3"><input type="text" id="r-acs" class="doc-input" placeholder="—" aria-label="A.C.S."></td>
             </tr>
             <tr>
               <td class="label-cell">Titular Centro de<br>Cultivo</td>
-              <td colspan="3"><input type="text" id="r-titular" class="doc-input" placeholder="—"></td>
+              <td colspan="3"><input type="text" id="r-titular" class="doc-input" placeholder="—" aria-label="Titular del centro de cultivo"></td>
             </tr>
             <tr>
               <td class="label-cell">Ubicación</td>
-              <td colspan="3"><input type="text" id="r-ubicacion" class="doc-input" placeholder="—"></td>
+              <td colspan="3"><input type="text" id="r-ubicacion" class="doc-input" placeholder="—" aria-label="Ubicación"></td>
             </tr>
             <tr>
               <td class="label-cell">Región</td>
               <td>
-                <select id="r-region" class="doc-input" onchange="onRegionChange(); checkChecklist()">
+                <select id="r-region" class="doc-input" onchange="onRegionChange(); checkChecklist()" aria-label="Región">
                   <option value="">—</option>
                   <option value="X">X</option>
                   <option value="XI">XI</option>
@@ -1218,37 +1242,37 @@ video{width:100%;border-radius:8px;background:black}
               </td>
               <td class="label-cell">Sector</td>
               <td>
-                <select id="r-sector" class="doc-input" onchange="onSectorChange(); checkChecklist()">
+                <select id="r-sector" class="doc-input" onchange="onSectorChange(); checkChecklist()" aria-label="Sector">
                   <option value="">—</option>
                 </select>
                 <input type="text" id="r-sectorOtro" class="doc-input"
                        placeholder="Especificar sector" style="display:none;margin-top:6px"
-                       oninput="checkChecklist()">
+                       oninput="checkChecklist()" aria-label="Especificar sector">
               </td>
             </tr>
             <tr>
               <td class="label-cell">Fecha última siembra</td>
-              <td colspan="3"><input type="text" id="r-fechaSiembra" class="doc-input" placeholder="—" oninput="checkChecklist()"></td>
+              <td colspan="3"><input type="text" id="r-fechaSiembra" class="doc-input" placeholder="—" oninput="checkChecklist()" aria-label="Fecha de última siembra"></td>
             </tr>
             <tr>
               <td class="label-cell">Tamaño peces</td>
-              <td colspan="3"><input type="text" id="r-tamanoPeces" class="doc-input" placeholder="—" oninput="checkChecklist()"></td>
+              <td colspan="3"><input type="text" id="r-tamanoPeces" class="doc-input" placeholder="—" oninput="checkChecklist()" aria-label="Tamaño de peces"></td>
             </tr>
             <tr>
               <td class="label-cell">Largo jaula (m)</td>
-              <td><input type="text" id="r-jaulasLargo" class="doc-input" placeholder="—" oninput="checkChecklist()"></td>
+              <td><input type="text" id="r-jaulasLargo" class="doc-input" placeholder="—" oninput="checkChecklist()" aria-label="Largo de jaula en metros"></td>
               <td class="label-cell">Ancho jaula (m)</td>
-              <td><input type="text" id="r-jaulasAncho" class="doc-input" placeholder="—" oninput="checkChecklist()"></td>
+              <td><input type="text" id="r-jaulasAncho" class="doc-input" placeholder="—" oninput="checkChecklist()" aria-label="Ancho de jaula en metros"></td>
             </tr>
             <tr>
               <td class="label-cell">Cantidad jaulas</td>
-              <td><input type="text" id="r-cantidadJaulas" class="doc-input" placeholder="Total" oninput="checkChecklist()"></td>
+              <td><input type="text" id="r-cantidadJaulas" class="doc-input" placeholder="Total" oninput="checkChecklist()" aria-label="Cantidad de jaulas"></td>
               <td class="label-cell">Jaulas sembradas</td>
-              <td><input type="text" id="r-cantidadJaulasSembradas" class="doc-input" placeholder="N°" oninput="checkChecklist()"></td>
+              <td><input type="text" id="r-cantidadJaulasSembradas" class="doc-input" placeholder="N°" oninput="checkChecklist()" aria-label="Jaulas sembradas"></td>
             </tr>
             <tr>
               <td class="label-cell">A/N Ensilaje</td>
-              <td colspan="3"><input type="text" id="r-artefactoNaval" class="doc-input" placeholder="—"></td>
+              <td colspan="3"><input type="text" id="r-artefactoNaval" class="doc-input" placeholder="—" aria-label="A/N Ensilaje"></td>
             </tr>
           </tbody>
         </table>
@@ -1276,10 +1300,10 @@ video{width:100%;border-radius:8px;background:black}
           </thead>
           <tbody>
             <tr>
-              <td><input type="text" id="r-latitud" class="doc-input" style="text-align:center;color:#1d4ed8" placeholder="—"></td>
-              <td><input type="text" id="r-longitud" class="doc-input" style="text-align:center;color:#1d4ed8" placeholder="—"></td>
-              <td><input type="text" id="r-norte" class="doc-input" style="text-align:center;color:#1d4ed8" placeholder="—"></td>
-              <td><input type="text" id="r-este" class="doc-input" style="text-align:center;color:#1d4ed8" placeholder="—"></td>
+              <td><input type="text" id="r-latitud" class="doc-input" style="text-align:center;color:#1d4ed8" placeholder="—" aria-label="Latitud Sur"></td>
+              <td><input type="text" id="r-longitud" class="doc-input" style="text-align:center;color:#1d4ed8" placeholder="—" aria-label="Longitud Oeste"></td>
+              <td><input type="text" id="r-norte" class="doc-input" style="text-align:center;color:#1d4ed8" placeholder="—" aria-label="Coordenada Norte"></td>
+              <td><input type="text" id="r-este" class="doc-input" style="text-align:center;color:#1d4ed8" placeholder="—" aria-label="Coordenada Este"></td>
             </tr>
           </tbody>
         </table>
@@ -1298,7 +1322,7 @@ video{width:100%;border-radius:8px;background:black}
             </tr>
             <tr>
               <td colspan="2" style="padding:0;border:1px solid #94a3b8;overflow:visible">
-                <textarea id="r-observaciones" class="obs-textarea" placeholder="• Ingrese observaciones técnicas..." oninput="checkChecklist()"></textarea>
+                <textarea id="r-observaciones" class="obs-textarea" placeholder="• Ingrese observaciones técnicas..." oninput="checkChecklist()" aria-label="Observaciones técnicas"></textarea>
               </td>
             </tr>
             <tr id="r-tipo-row">
@@ -1322,9 +1346,9 @@ video{width:100%;border-radius:8px;background:black}
           <div class="firma-col">
             <canvas id="firma-certificador" width="280" height="90" class="firma-canvas" style="cursor:default"></canvas>
             <div class="firma-line"></div>
-            <input type="text" id="r-nombreCertificador" class="firma-input-name" value="Engelbert Flores Carrio">
+            <input type="text" id="r-nombreCertificador" class="firma-input-name" value="Engelbert Flores Carrio" aria-label="Nombre del certificador">
             <div class="firma-role">CERTIFICADOR</div>
-            <input type="text" id="r-rutCertificador" class="doc-input" style="text-align:center;font-size:11px" value="13.968.696-9">
+            <input type="text" id="r-rutCertificador" class="doc-input" style="text-align:center;font-size:11px" value="13.968.696-9" aria-label="RUT del certificador">
           </div>
           <!-- Cliente -->
           <div class="firma-col" style="position:relative">
@@ -1340,9 +1364,9 @@ video{width:100%;border-radius:8px;background:black}
               <button onclick="clearFirmaCliente()" class="pdf-hide" style="position:absolute;top:4px;right:4px;z-index:10;background:rgba(255,255,255,.85);border:1px solid #fecaca;color:#ef4444;padding:3px 7px;border-radius:5px;cursor:pointer;font-size:13px;font-weight:700;line-height:1" title="Borrar firma">✕</button>
             </div>
             <div class="firma-line"></div>
-            <input type="text" id="r-nombreResponsable" class="firma-input-name" placeholder="Nombre Responsable" oninput="checkChecklist()">
+            <input type="text" id="r-nombreResponsable" class="firma-input-name" placeholder="Nombre Responsable" oninput="checkChecklist()" aria-label="Nombre del responsable del centro">
             <div class="firma-role">Firma Responsable Centro de Cultivo</div>
-            <input type="email" id="r-emailResponsable" class="doc-input" style="text-align:center;font-size:11px;margin-top:4px;border-bottom:1px dashed #93c5fd" placeholder="correo@empresa.cl">
+            <input type="email" id="r-emailResponsable" class="doc-input" style="text-align:center;font-size:11px;margin-top:4px;border-bottom:1px dashed #93c5fd" placeholder="correo@empresa.cl" aria-label="Correo del responsable">
           </div>
         </div>
       </div><!-- /doc-content -->
@@ -1455,11 +1479,11 @@ video{width:100%;border-radius:8px;background:black}
     </div>
     <div class="hist-table-wrap">
       <div class="hist-search-bar">
-        <input type="text" id="hist-search" class="hist-search" placeholder="Buscar por centro, titular o ID..." oninput="filtrarHistorico()">
+        <input type="text" id="hist-search" class="hist-search" placeholder="Buscar por centro, titular o ID..." oninput="filtrarHistorico()" aria-label="Buscar registros">
         <div style="display:flex;gap:8px;align-items:center">
-          <input type="date" id="hist-desde" class="filtro-input" style="width:140px" onchange="filtrarHistorico()">
-          <input type="date" id="hist-hasta" class="filtro-input" style="width:140px" onchange="filtrarHistorico()">
-          <select id="hist-estado" class="filtro-input" style="width:130px" onchange="filtrarHistorico()">
+          <input type="date" id="hist-desde" class="filtro-input" style="width:140px" onchange="filtrarHistorico()" aria-label="Desde fecha">
+          <input type="date" id="hist-hasta" class="filtro-input" style="width:140px" onchange="filtrarHistorico()" aria-label="Hasta fecha">
+          <select id="hist-estado" class="filtro-input" style="width:130px" onchange="filtrarHistorico()" aria-label="Filtrar por estado">
             <option value="">Todos los estados</option>
             <option value="GUARDADO">Guardado</option>
             <option value="ENVIADO">Enviado</option>
@@ -1553,31 +1577,31 @@ video{width:100%;border-radius:8px;background:black}
         <div class="adm-filters-row">
           <div class="adm-search-wrap">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-            <input type="text" id="adm-search" class="filtro-input" placeholder="Buscar por centro, titular, N° registro, certificador..." style="width:100%" oninput="filtrarAdmin()">
+            <input type="text" id="adm-search" class="filtro-input" placeholder="Buscar por centro, titular, N° registro, certificador..." style="width:100%" oninput="filtrarAdmin()" aria-label="Buscar registros">
           </div>
           <div class="adm-date-group">
-            <input type="date" id="adm-desde" class="filtro-input" style="width:148px" onchange="filtrarAdmin()">
+            <input type="date" id="adm-desde" class="filtro-input" style="width:148px" onchange="filtrarAdmin()" aria-label="Desde fecha">
             <span class="adm-date-sep">—</span>
-            <input type="date" id="adm-hasta" class="filtro-input" style="width:148px" onchange="filtrarAdmin()">
+            <input type="date" id="adm-hasta" class="filtro-input" style="width:148px" onchange="filtrarAdmin()" aria-label="Hasta fecha">
           </div>
         </div>
         <div class="adm-filters-row">
-          <select id="adm-estado" class="filtro-input" style="flex:1" onchange="filtrarAdmin()">
+          <select id="adm-estado" class="filtro-input" style="flex:1" onchange="filtrarAdmin()" aria-label="Filtrar por estado">
             <option value="">Todos los estados</option>
             <option value="GUARDADO">Guardado</option>
             <option value="ENVIADO">Enviado</option>
             <option value="ARCHIVADO">Archivado</option>
           </select>
-          <select id="adm-region" class="filtro-input" style="flex:1" onchange="onAdmRegionChange(); filtrarAdmin()">
+          <select id="adm-region" class="filtro-input" style="flex:1" onchange="onAdmRegionChange(); filtrarAdmin()" aria-label="Filtrar por región">
             <option value="">Todas las regiones</option>
             <option value="X">X</option>
             <option value="XI">XI</option>
             <option value="XII">XII</option>
           </select>
-          <select id="adm-sector" class="filtro-input" style="flex:1" onchange="filtrarAdmin()">
+          <select id="adm-sector" class="filtro-input" style="flex:1" onchange="filtrarAdmin()" aria-label="Filtrar por sector">
             <option value="">Todos los sectores</option>
           </select>
-          <select id="adm-cert-filter" class="filtro-input" style="flex:1" onchange="filtrarAdmin()">
+          <select id="adm-cert-filter" class="filtro-input" style="flex:1" onchange="filtrarAdmin()" aria-label="Filtrar por certificador">
             <option value="">Todos los certificadores</option>
           </select>
           <button class="btn-action" style="border-color:#3b82f6;color:#1d4ed8;font-size:12px;padding:8px 14px;white-space:nowrap;flex-shrink:0;font-weight:600" onclick="limpiarFiltrosAdmin()">
@@ -1630,9 +1654,9 @@ video{width:100%;border-radius:8px;background:black}
         <h2 id="metrics-gate-title">Ingresa el PIN</h2>
         <p id="metrics-gate-sub" class="metrics-gate-sub">Panel de métricas (superadmin)</p>
         <input id="metrics-pin-1" type="password" inputmode="numeric" class="metrics-pin-input" placeholder="PIN" autocomplete="off"
-               onkeydown="if(event.key==='Enter')metricsGateSubmit()">
+               onkeydown="if(event.key==='Enter')metricsGateSubmit()" aria-label="PIN de acceso">
         <input id="metrics-pin-2" type="password" inputmode="numeric" class="metrics-pin-input hidden" placeholder="Confirmar PIN" autocomplete="off"
-               onkeydown="if(event.key==='Enter')metricsGateSubmit()">
+               onkeydown="if(event.key==='Enter')metricsGateSubmit()" aria-label="Confirmar PIN de acceso">
         <button class="btn-primary" id="metrics-gate-btn" data-mode="enter" onclick="metricsGateSubmit()">Entrar</button>
         <div id="metrics-gate-err" class="metrics-gate-err"></div>
       </div>
@@ -1653,21 +1677,21 @@ video{width:100%;border-radius:8px;background:black}
       </div>
 
       <div class="admin-filters"><div class="admin-filters-inner">
-        <select id="m-rango" onchange="cargarMetricas()">
+        <select id="m-rango" onchange="cargarMetricas()" aria-label="Rango de fechas">
           <option value="1">Hoy</option>
           <option value="7" selected>7 días</option>
           <option value="30">30 días</option>
           <option value="90">90 días</option>
         </select>
-        <select id="m-tipo" onchange="renderMetricas()">
+        <select id="m-tipo" onchange="renderMetricas()" aria-label="Tipo de evento">
           <option value="">Todos los tipos</option>
           <option value="error">Errores</option>
           <option value="action">Acciones</option>
           <option value="activity">Actividad</option>
           <option value="perf">Rendimiento</option>
         </select>
-        <select id="m-user" onchange="renderMetricas()"><option value="">Todos los usuarios</option></select>
-        <input id="m-search" type="search" placeholder="Buscar evento/mensaje…" oninput="renderMetricas()">
+        <select id="m-user" onchange="renderMetricas()" aria-label="Filtrar por usuario"><option value="">Todos los usuarios</option></select>
+        <input id="m-search" type="search" placeholder="Buscar evento/mensaje…" oninput="renderMetricas()" aria-label="Buscar en métricas">
       </div></div>
 
       <div class="admin-stats" id="m-kpis">
@@ -1699,7 +1723,7 @@ video{width:100%;border-radius:8px;background:black}
 </div><!-- /app -->
 
 <!-- ===================== MODAL ARCHIVAR SIN ENVIAR ===================== -->
-<div class="modal-overlay hidden" id="modal-archive">
+<div class="modal-overlay hidden" id="modal-archive" role="dialog" aria-modal="true" aria-label="Archivar registro sin notificar">
   <div class="modal-box" style="max-width:440px">
     <div class="modal-header">
       <h2>📁 Archivar sin notificar</h2>
@@ -1711,7 +1735,7 @@ video{width:100%;border-radius:8px;background:black}
         Por razones legales, el N° de registro se mantiene y el registro queda visible en el histórico con estado <span style="color:#d97706;font-weight:700">ARCHIVADO</span>.
       </p>
       <label style="font-size:12px;font-weight:700;color:#374151;text-transform:uppercase;letter-spacing:.5px">Motivo de archivo <span style="color:#dc2626">*</span></label>
-      <textarea id="archive-motivo" class="archive-reason-input" rows="3" placeholder="Ej: Visita interna sin notificación requerida, cliente solicitó no ser notificado, etc."></textarea>
+      <textarea id="archive-motivo" class="archive-reason-input" rows="3" placeholder="Ej: Visita interna sin notificación requerida, cliente solicitó no ser notificado, etc." aria-label="Motivo de archivado"></textarea>
       <p id="archive-motivo-error" style="color:#dc2626;font-size:11px;margin-top:4px;display:none">Por favor ingrese el motivo de archivo.</p>
     </div>
     <div class="modal-footer">
@@ -1724,7 +1748,7 @@ video{width:100%;border-radius:8px;background:black}
 </div>
 
 <!-- ===================== MODAL ELIMINAR ===================== -->
-<div class="modal-overlay hidden" id="modal-eliminar">
+<div class="modal-overlay hidden" id="modal-eliminar" role="dialog" aria-modal="true" aria-label="Eliminar registro">
   <div class="modal-box" style="max-width:420px">
     <div class="modal-header">
       <h2>Eliminar registro</h2>
@@ -1747,7 +1771,7 @@ video{width:100%;border-radius:8px;background:black}
 </div>
 
 <!-- ===================== MODAL EMAIL ===================== -->
-<div class="modal-overlay hidden" id="modal-mail">
+<div class="modal-overlay hidden" id="modal-mail" role="dialog" aria-modal="true" aria-label="Notificar al responsable del centro">
   <div class="modal-box" style="max-width:580px">
     <div class="modal-header">
       <h2>✉️ Notificar Responsable del Centro</h2>
@@ -1762,21 +1786,21 @@ video{width:100%;border-radius:8px;background:black}
         <div class="email-row" style="align-items:flex-start">
           <span class="email-label">Para: <span style="color:#dc2626">*</span></span>
           <div style="flex:1">
-            <input type="email" id="modal-email" class="email-to-input" placeholder="responsable@empresa.cl" style="width:100%">
+            <input type="email" id="modal-email" class="email-to-input" placeholder="responsable@empresa.cl" style="width:100%" aria-label="Correo del destinatario">
           </div>
         </div>
         <div class="email-row" style="align-items:flex-start">
-          <span class="email-label" style="color:#94a3b8">CC:</span>
+          <span class="email-label">CC:</span>
           <div style="flex:1">
-            <input type="text" id="modal-cc" class="email-to-input" placeholder="opcional@empresa.cl, otro@empresa.cl" style="width:100%;border-color:#e2e8f0;color:#64748b">
-            <div style="font-size:10px;color:#94a3b8;margin-top:3px">Copia visible — puede ser más de uno separado por comas</div>
+            <input type="text" id="modal-cc" class="email-to-input" placeholder="opcional@empresa.cl, otro@empresa.cl" style="width:100%;border-color:#e2e8f0;color:#64748b" aria-label="Con copia (CC)">
+            <div style="font-size:10px;color:var(--text-muted);margin-top:3px">Copia visible — puede ser más de uno separado por comas</div>
           </div>
         </div>
         <div class="email-row" style="align-items:flex-start">
-          <span class="email-label" style="color:#94a3b8">CCO:</span>
+          <span class="email-label">CCO:</span>
           <div style="flex:1">
-            <input type="text" id="modal-cco" class="email-to-input" placeholder="auditor@empresa.cl" style="width:100%;border-color:#e2e8f0;color:#64748b">
-            <div style="font-size:10px;color:#94a3b8;margin-top:3px">Copia oculta — los otros destinatarios no la verán</div>
+            <input type="text" id="modal-cco" class="email-to-input" placeholder="auditor@empresa.cl" style="width:100%;border-color:#e2e8f0;color:#64748b" aria-label="Con copia oculta (CCO)">
+            <div style="font-size:10px;color:var(--text-muted);margin-top:3px">Copia oculta — los otros destinatarios no la verán</div>
           </div>
         </div>
         <div class="email-row">
@@ -1787,11 +1811,11 @@ video{width:100%;border-radius:8px;background:black}
       </div>
       <div style="margin-top:12px">
         <label class="filtro-label">Nota adicional (opcional):</label>
-        <textarea id="modal-nota" rows="2" class="filtro-input" style="resize:none;margin-top:4px;width:100%" placeholder="Comentarios adicionales para incluir en el correo..."></textarea>
+        <textarea id="modal-nota" rows="2" class="filtro-input" style="resize:none;margin-top:4px;width:100%" placeholder="Comentarios adicionales para incluir en el correo..." aria-label="Nota adicional para el correo"></textarea>
       </div>
     </div>
     <div class="modal-footer" style="justify-content:space-between;align-items:center">
-      <div style="font-size:11px;color:#94a3b8">📎 PDF adjunto automáticamente</div>
+      <div style="font-size:11px;color:var(--text-muted)">📎 PDF adjunto automáticamente</div>
       <div style="display:flex;gap:10px">
         <button class="btn-action btn-save" onclick="closeModalMail()" style="border-color:#d1d5db;color:#374151">Cancelar</button>
         <button class="btn-action btn-mail" id="btn-enviar-mail" onclick="handleEnviarMail()">
@@ -2444,12 +2468,22 @@ function showView(view) {
   try { Metrics.activity('view_change', { view: view }); } catch (e) {}
   var views = ['dashboard','registro','historico','admin','metricas'];
   views.forEach(function(v) {
+    var active = (v === view);
     var el = document.getElementById('view-'+v);
-    if (el) el.classList.toggle('hidden', v !== view);
+    if (el) {
+      el.classList.toggle('hidden', !active);
+      if (active) el.setAttribute('role', 'main'); else el.removeAttribute('role');
+    }
     var btn = document.getElementById('nav-'+v);
-    if (btn) btn.classList.toggle('active', v === view);
+    if (btn) {
+      btn.classList.toggle('active', active);
+      if (active) btn.setAttribute('aria-current', 'page'); else btn.removeAttribute('aria-current');
+    }
     var mtab = document.getElementById('mtab-'+v);
-    if (mtab) mtab.classList.toggle('active', v === view);
+    if (mtab) {
+      mtab.classList.toggle('active', active);
+      if (active) mtab.setAttribute('aria-current', 'page'); else mtab.removeAttribute('aria-current');
+    }
   });
   var ocean = document.getElementById('dash-ocean');
   if (ocean) ocean.classList.toggle('hidden', view !== 'dashboard');
@@ -3882,7 +3916,7 @@ function renderChartRes(data) {
 function renderVencer(stats) {
   // Tabla estática de ejemplo (basada en últimos registros reales sería más complejo)
   var tbody = document.getElementById('vencer-tbody');
-  tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:20px;color:#94a3b8;font-size:13px">'+
+  tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--text-muted);font-size:13px">'+
     'Conecte sus datos reales para ver vencimientos automáticos.</td></tr>';
 }
 
@@ -5445,6 +5479,9 @@ function revisarObservaciones() {
   var div = document.createElement('div');
   div.id = 'modal-revisar-obs';
   div.className = 'modal-overlay';
+  div.setAttribute('role', 'dialog');
+  div.setAttribute('aria-modal', 'true');
+  div.setAttribute('aria-label', 'Revisar observaciones por categoría');
   div.style.zIndex = '300';
   div.innerHTML = '<div class="modal-box" style="max-width:800px;width:100%">'
     + '<div class="modal-header">'
@@ -6157,7 +6194,7 @@ async function metricsChangePin() {
 <div id="ac-dropdown" class="autocomplete-dropdown" style="display:none;position:fixed"></div>
 
 <!-- ===================== MODAL FIRMA EXPAND ===================== -->
-<div id="modal-firma-expand" class="hidden">
+<div id="modal-firma-expand" class="hidden" role="dialog" aria-modal="true" aria-label="Firmar">
   <div class="modal-firma-card">
     <div style="font-weight:700;font-size:15px;color:#1e293b">Firma del Responsable</div>
     <div style="position:relative">
