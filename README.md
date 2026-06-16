@@ -1,6 +1,6 @@
 # Certimar — Sistema de Registro de Visita (RV)
 
-Sistema web de registro de inspecciones técnicas en terreno para centros de cultivo acuícola, desarrollado sobre Google Apps Script. Permite crear, firmar, guardar y notificar registros de visita como documentos PDF, con trazabilidad completa en Google Sheets.
+Sistema web de registro de inspecciones técnicas en terreno para centros de cultivo acuícola, desarrollado sobre Google Apps Script. Permite crear, firmar, guardar y notificar registros de visita como documentos PDF, con trazabilidad completa en Google Sheets y Firebase Firestore.
 
 ---
 
@@ -13,6 +13,7 @@ Sistema web de registro de inspecciones técnicas en terreno para centros de cul
 | `FirebaseConfig.html` | Configuración del SDK de Firebase (incluido en Index) |
 | `ConcesionesData` | Catálogo de concesiones para autocomplete |
 | `appsscript.json` | Manifiesto de permisos y scopes OAuth |
+| `functions/index.js` | Firebase Functions (Node.js 20): correo, firma, mail queue |
 
 ---
 
@@ -23,7 +24,8 @@ Sistema web de registro de inspecciones técnicas en terreno para centros de cul
 - **Almacenamiento:** Firebase Storage (PDFs, fotos, firmas PNG)
 - **Funciones serverless:** Firebase Functions (Node.js 20) — envío de correo, firma remota, procesamiento de cola
 - **Librerías cliente:** jsPDF + html2canvas, Chart.js, Firebase SDK v10 compat
-- **Autenticación:** Google OAuth (login con cuenta Google)
+- **Autenticación:** Google OAuth (login con cuenta Google) — **acceso restringido a cuentas `@certimar.cl`**
+- **Envío de correo:** Gmail API directa (desde la cuenta del certificador logueado) + GmailApp como respaldo en Apps Script
 
 ---
 
@@ -49,6 +51,12 @@ firebase deploy --only functions
 # Firebase — desplegar todo
 firebase deploy
 ```
+
+---
+
+## Seguridad y acceso
+
+El sistema restringe el inicio de sesión exclusivamente a cuentas del dominio `@certimar.cl`. Cualquier usuario que intente autenticarse con una cuenta de otro dominio recibe un error y queda deslogueado automáticamente.
 
 ---
 
@@ -97,8 +105,15 @@ Simula un documento oficial en papel (`doc-paper`) con watermark de olas animada
 | A.C.S. | Agente Certificador Sernapesca |
 | Titular del Centro | Texto libre |
 | Ubicación | Texto libre |
+| Región | Texto libre |
+| Sector | Texto libre |
 | Fecha última siembra | Texto libre, dispara validación del checklist |
 | Tamaño de peces | Texto libre, dispara validación del checklist |
+| Largo jaula (m) | Numérico |
+| Ancho jaula (m) | Numérico |
+| Cantidad de jaulas | Numérico |
+| Jaulas sembradas | Numérico |
+| A/N Ensilaje | Artefacto naval de ensilaje, texto libre |
 
 **Norma aplicable** — checkboxes múltiples:
 - 1821 – CIC E2 / 1821 – CA / 1821 – VS / 1511 / DESINFECCIÓN
@@ -111,10 +126,14 @@ Simula un documento oficial en papel (`doc-paper`) con watermark de olas animada
 - Tipo de observación (checkboxes): EXTRACCION, DESNATURALIZACION, ALMACENAMIENTO, ESTRUCTURA, FONDEO, OTRO
 
 **Firmas (dos columnas):**
-- Certificador: canvas dibujable, nombre y RUT preconfigurados, botón "Guardar firma"
-- Responsable del centro: canvas dibujable, nombre y email (valida formato)
+- Certificador: canvas dibujable, nombre y N° registro preconfigurados, botón "Guardar firma"
+- Responsable del centro: canvas dibujable con botón de expansión a modal de pantalla completa, nombre y email (valida formato)
 
 **Disclaimer legal** al pie, con nombre del certificador dinámico
+
+### Modal de firma expandida
+
+El canvas de firma del responsable incluye un botón ⛶ que abre un modal de pantalla completa (`modal-firma-expand`), ideal para dispositivos táctiles. El modal permite dibujar con mayor precisión y al cerrarse copia la firma de vuelta al canvas principal del formulario.
 
 ### Checklist de completitud
 
@@ -131,7 +150,7 @@ Captura foto desde cámara del dispositivo o permite adjuntar imagen/PDF existen
 | Guardar | Guarda en Drive + Sheets (sin correo) |
 | Generar PDF | Genera PDF en cliente con jsPDF/html2canvas |
 | Sincronizar | Fuerza re-subida a Drive/Sheets |
-| Enviar correo | Modal con previsualización de email, campos CC/CCO, envío con PDF adjunto |
+| Enviar correo | Modal con previsualización de email, campos CC/CCO, envío vía Gmail API |
 
 ---
 
@@ -148,8 +167,20 @@ Captura foto desde cámara del dispositivo o permite adjuntar imagen/PDF existen
 
 - Estadísticas numéricas en tarjetas
 - Tabla ampliada con filtros adicionales
-- Acciones: archivar registro (con motivo), regenerar PDF, gestionar tokens de firma
+- Acciones: archivar registro (con motivo), regenerar PDF, gestionar tokens de firma, reenviar correo directamente vía Gmail API desde la cuenta del certificador
 - Badge visual púrpura que distingue el acceso de administrador
+
+---
+
+## Envío de correo — Gmail API directa
+
+El sistema utiliza la **Gmail API** directamente desde el navegador para enviar correos como el usuario logueado (no como cuenta de servicio). Esto requiere que el token OAuth incluya el scope `https://www.googleapis.com/auth/gmail.send`, capturado al momento del login con `getAccessToken()` de Firebase Auth.
+
+**Flujo:**
+1. Al iniciar sesión se captura el OAuth token de Google y se almacena en memoria
+2. Al guardar + enviar, el frontend construye el correo (MIME/RFC 2822) usando `plantillaEmailFrontend()`
+3. El mensaje se codifica en base64url y se despacha a `https://gmail.googleapis.com/gmail/v1/users/me/messages/send`
+4. Si el envío vía Gmail API falla, el sistema cae en respaldo hacia Apps Script (GmailApp)
 
 ---
 
@@ -164,10 +195,10 @@ Captura foto desde cámara del dispositivo o permite adjuntar imagen/PDF existen
 ## Flujo de firma remota
 
 1. Desde el panel Admin, se genera un link único con token UUID para el registro
-2. El token incluye fecha de expiración embebida (72 h): formato `UUID::EPOCH_EXPIRY`
+2. El token se almacena en Firestore con estado `PENDIENTE`; la URL apunta a `https://certimar-rv.web.app/firma?nro=...&token=...`
 3. El responsable abre la página de firma (sin login requerido), revisa los datos del RV y firma con canvas táctil
 4. Si no se registró nombre previamente, la página solicita el nombre del jefe de centro (mínimo 3 caracteres)
-5. La firma PNG se sube a Drive (no-fatal), el token se invalida y el estado se actualiza en Sheets (`FIRMADO`) y Firestore
+5. La firma PNG se sube a Firebase Storage (`firmas/Firma_RV-YYYY-NNNN.png`), el token se invalida y el estado se actualiza en Sheets (`FIRMADO`) y Firestore
 6. Se envían dos emails:
    - **Al responsable del centro:** confirmación de conformidad registrada con datos del RV y link al certificado
    - **A `operaciones@certimar.cl` (Certimar interno):** notificación con detalle completo (nombre del firmante, email, link a PNG de firma, link al certificado)
@@ -184,13 +215,32 @@ Captura foto desde cámara del dispositivo o permite adjuntar imagen/PDF existen
 | `obtenerEstadisticas()` | Agrega datos para el Dashboard (por mes, por resolución) |
 | `actualizarRegistro()` | Edita una fila existente desde el Histórico |
 | `enviarNotificacion()` | Reenvía correo con PDF adjunto desde historial |
-| `generarLinkFirma()` | Genera token UUID con expiración 72h (`UUID::EPOCH`) + URL temporal para firma remota |
-| `getRegistroParaFirma()` | Valida token (formato + expiración + estado FIRMADO), devuelve datos del RV |
-| `submitFirma()` | Recibe firma del responsable, sube PNG a Drive, invalida token, notifica al responsable y a Certimar por separado |
+| `generarLinkFirma()` | Genera token UUID en Firestore + URL temporal para firma remota |
+| `getRegistroParaFirma()` | Valida token (formato + estado FIRMADO), devuelve datos del RV |
+| `submitFirma()` | Recibe firma del responsable, sube PNG a Drive, invalida token, notifica al responsable y a Certimar |
+| `borrarFirma()` | Borra token, URL y estado de firma — permite re-solicitar firma desde Admin |
 | `_enviarCorreoRV()` | Construye HTML email y despacha vía GmailApp (CC, CCO, copia interna) |
-| `doPost()` | Webhook receptor de Firebase que escribe en Sheets sin service account |
+| `doPost()` | Webhook receptor de Firebase que escribe en Sheets y envía correo sin service account |
 | `_generarNroRegistro()` | Correlativo `RV-YYYY-NNNN` buscando el máximo existente en la hoja |
 | `testEnvioCorreo()` | Función de test manual que verifica Drive, Sheets, Gmail y plantilla |
+
+---
+
+## Firebase Functions (`functions/index.js`)
+
+| Función | Trigger | Descripción |
+|---|---|---|
+| `enviarNotificacion` | HTTPS Callable (auth) | Envía correo con PDF adjunto y actualiza estado en Firestore; requiere que el registro exista en Firestore antes de enviar |
+| `generarLinkFirma` | HTTPS Callable (auth) | Genera token UUID, lo escribe en Firestore (`tokenFirma`, `estadoFirma: PENDIENTE`) y retorna URL de firma |
+| `procesarFirmaCliente` | HTTPS Callable (público) | Verifica token, sube firma PNG a Storage (`firmas/`), actualiza Firestore (`FIRMADO`) |
+| `procesarMailQueue` | Firestore trigger `mail_queue/{docId}` | Escucha nuevos documentos en la cola de correo y los despacha vía Apps Script webhook |
+| `migrarPDFsDrive` | HTTPS Callable (auth) | Utilidad de migración: descarga PDFs desde URL pública y los sube a Firebase Storage |
+
+### Variables de entorno (`functions/.env`)
+
+```bash
+APPS_SCRIPT_URL=https://script.google.com/macros/s/.../exec
+```
 
 ---
 
@@ -256,6 +306,7 @@ const SPREADSHEET_ID    = 'ID_DE_TU_SPREADSHEET';
 const SHEET_NAME        = 'RV';
 const DRIVE_FOLDER_ID   = 'ID_DE_TU_CARPETA_DRIVE';
 const EMAIL_REMITENTE   = 'tu@empresa.cl';
+const EMAIL_COPIA_FIRMA = 'otro@empresa.cl';
 const TIMEZONE          = 'America/Santiago';
 const FIREBASE_PROJECT_ID = 'tu-proyecto-firebase';
 const WEBHOOK_SECRET    = 'TU_SECRET_COMPARTIDO';
@@ -275,9 +326,23 @@ const WEBHOOK_SECRET    = 'TU_SECRET_COMPARTIDO';
 4. Quién puede acceder: **Cualquier usuario de Google**
 5. Copiar la URL generada (`https://script.google.com/macros/s/.../exec`)
 
-### 6. Configurar Firebase (opcional, para tiempo real)
+### 6. Configurar Firebase Functions
 
-Actualizar `FirebaseConfig.html` con las credenciales del proyecto Firebase. El sistema funciona sin Firebase, pero sin actualizaciones en tiempo real.
+```bash
+cd functions
+cp .env.example .env      # si existe, o crear manualmente
+# Agregar APPS_SCRIPT_URL=<URL del paso 5>
+firebase deploy --only functions
+```
+
+### 7. Configurar Firebase (Hosting y Firestore)
+
+Actualizar `FirebaseConfig.html` con las credenciales del proyecto Firebase y desplegar reglas:
+
+```bash
+firebase deploy --only firestore:rules,storage
+firebase deploy --only hosting
+```
 
 ---
 
@@ -285,7 +350,7 @@ Actualizar `FirebaseConfig.html` con las credenciales del proyecto Firebase. El 
 
 Al ejecutar por primera vez, Google solicitará autorizar:
 - Google Sheets (lectura/escritura)
-- Gmail (enviar correos)
+- Gmail (enviar correos) — incluye scope `gmail.send` para Gmail API directa
 - Google Drive (subir archivos)
 - Información del usuario (email)
 
@@ -302,7 +367,8 @@ Lo **específico de acuicultura/Sernapesca** que debe adaptarse:
 | Autocomplete | `ConcesionesData` | Catálogo de entidades del nuevo dominio |
 | Prefijo del correlativo | `Code.gs` `_generarNroRegistro()` | `RV-` → el prefijo que corresponda |
 | Disclaimer legal | `Index.html` (sección firma) | Texto de la norma y organismo regulador |
-| Texto del email | `Code.gs` `_plantillaEmail()` | Saludo, descripción y referencia normativa |
+| Texto del email | `Code.gs` `_plantillaEmail()` + `Index.html` `plantillaEmailFrontend()` | Saludo, descripción y referencia normativa |
 | Nombre del sistema | `Index.html` título, splash, nav | "Registro de Visita" → nombre del nuevo documento |
+| Dominio restringido | `Index.html` (login handler) | Cambiar `@certimar.cl` por el dominio corporativo correspondiente |
 
-Lo **reutilizable sin cambios:** autenticación, Drive, Sheets, Firebase, generación de PDF, firma canvas, notificaciones sidebar, dark mode, dashboard con Charts, Histórico, Admin, responsive.
+Lo **reutilizable sin cambios:** autenticación, Drive, Sheets, Firebase, generación de PDF, firma canvas + modal expandido, Gmail API directa, notificaciones sidebar, dark mode, dashboard con Charts, Histórico, Admin, responsive.
