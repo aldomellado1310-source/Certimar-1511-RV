@@ -1272,7 +1272,9 @@ video{width:100%;border-radius:8px;background:black}
             </tr>
             <tr>
               <td class="label-cell">A/N Ensilaje</td>
-              <td colspan="3"><input type="text" id="r-artefactoNaval" class="doc-input" placeholder="—" aria-label="A/N Ensilaje"></td>
+              <td><input type="text" id="r-artefactoNaval" class="doc-input" placeholder="—" aria-label="A/N Ensilaje"></td>
+              <td class="label-cell">Jaulas Extracción simultánea</td>
+              <td><input type="number" min="0" step="1" id="r-jaulasExtraccionSimultanea" class="doc-input" placeholder="N°" oninput="checkChecklist()" aria-label="Jaulas de extracción simultánea"></td>
             </tr>
           </tbody>
         </table>
@@ -2136,6 +2138,7 @@ function buildDocData(datos, nroRegistro, urlCertificado, urlFoto) {
     jaulasAncho             : datos.jaulasAncho             || '',
     cantidadJaulas          : datos.cantidadJaulas          || '',
     cantidadJaulasSembradas : datos.cantidadJaulasSembradas || '',
+    jaulasExtraccionSimultanea : datos.jaulasExtraccionSimultanea || '',
     artefactoNaval   : datos.artefactoNaval  || '',
     latitud          : datos.latitud      || '',
     longitud         : datos.longitud     || '',
@@ -2503,7 +2506,7 @@ function resetFormulario() {
   set('r-fecha', hoy);
   set('r-nroRegistro', 'Se asignará al guardar');
   ['centroCultivo','nroCentro','acs','titular','ubicacion','fechaSiembra','tamanoPeces',
-   'jaulasLargo','jaulasAncho','cantidadJaulas','cantidadJaulasSembradas','artefactoNaval',
+   'jaulasLargo','jaulasAncho','cantidadJaulas','cantidadJaulasSembradas','jaulasExtraccionSimultanea','artefactoNaval',
    'latitud','longitud','norte','este','observaciones','nombreResponsable','emailResponsable',
    'sectorOtro'].forEach(function(id) {
     set('r-'+id,'');
@@ -2630,7 +2633,7 @@ function applyBorrador(b) {
   borradorSuspend = true;
   var d = b.datos;
   ['fecha','centroCultivo','nroCentro','acs','titular','ubicacion','fechaSiembra','tamanoPeces',
-   'jaulasLargo','jaulasAncho','cantidadJaulas','cantidadJaulasSembradas','artefactoNaval',
+   'jaulasLargo','jaulasAncho','cantidadJaulas','cantidadJaulasSembradas','jaulasExtraccionSimultanea','artefactoNaval',
    'latitud','longitud','norte','este','observaciones','nombreResponsable']
     .forEach(function(k){ set('r-'+k, d[k] || ''); });
   restoreRegionSector(d.region, d.sector);
@@ -2825,7 +2828,7 @@ var checkItems = [
   { id:'ck-fecha',      text:'¿Se completó la fecha de última siembra y tamaño peces?', auto:true },
   { id:'ck-norma',      text:'¿Se seleccionó al menos una norma aplicable?', auto:true },
   { id:'ck-area',       text:'¿Se seleccionó Región y Sector?', auto:true },
-  { id:'ck-jaulas',     text:'¿Se completó el tamaño de jaulas (largo y ancho) y la cantidad total/sembradas?', auto:true },
+  { id:'ck-jaulas',     text:'¿Se completó el tamaño de jaulas (largo y ancho), la cantidad total/sembradas y las jaulas de extracción simultánea?', auto:true },
   { id:'ck-obs',        text:'¿Se han registrado las observaciones y su tipo correspondiente?', auto:true },
   { id:'ck-responsable',text:'¿Se completó el nombre del responsable del centro?', auto:true },
   { id:'ck-firma',      text:'¿El responsable del centro ha firmado digitalmente?', auto:true },
@@ -2867,6 +2870,13 @@ function toggleTipoObs() {
   }
 }
 
+function esNumeroNoNegativo(v) {
+  var s = (v === null || v === undefined) ? '' : String(v).trim();
+  if (s === '') return false;
+  var n = Number(s);
+  return isFinite(n) && n >= 0;
+}
+
 function checkChecklist() {
   var checks = {
     'ck-nrocentro':   !!(get('r-nroCentro') || '').trim(),
@@ -2874,7 +2884,7 @@ function checkChecklist() {
     'ck-fecha':       !!get('r-fechaSiembra') && !!get('r-tamanoPeces'),
     'ck-norma':       ['r-cicE2','r-ca','r-vs','r-res1511','r-desinfeccion'].some(function(id){ return document.getElementById(id) && document.getElementById(id).checked; }),
     'ck-area':        !!get('r-region') && !!resolveSector(),
-    'ck-jaulas':      !!get('r-jaulasLargo') && !!get('r-jaulasAncho') && !!get('r-cantidadJaulas') && !!get('r-cantidadJaulasSembradas'),
+    'ck-jaulas':      !!get('r-jaulasLargo') && !!get('r-jaulasAncho') && !!get('r-cantidadJaulas') && !!get('r-cantidadJaulasSembradas') && esNumeroNoNegativo(get('r-jaulasExtraccionSimultanea')),
     'ck-obs':         !!get('r-observaciones') && (document.getElementById('r-obs-no').checked || !!getSelectedRadio('tipoObs')),
     'ck-responsable': !!get('r-nombreResponsable'),
     'ck-firma':       firmaClienteHasData,
@@ -3819,6 +3829,7 @@ function getDatos() {
     jaulasAncho             : get('r-jaulasAncho'),
     cantidadJaulas          : get('r-cantidadJaulas'),
     cantidadJaulasSembradas : get('r-cantidadJaulasSembradas'),
+    jaulasExtraccionSimultanea : get('r-jaulasExtraccionSimultanea'),
     artefactoNaval : get('r-artefactoNaval'),
     latitud        : get('r-latitud'),
     longitud       : get('r-longitud'),
@@ -4776,6 +4787,7 @@ function plantillaEmailFrontend(datos, urlCert) {
     ['Ancho jaula (m)',          e(datos.jaulasAncho)               || '—'],
     ['Cantidad jaulas',          e(datos.cantidadJaulas)            || '—'],
     ['Jaulas sembradas',         e(datos.cantidadJaulasSembradas)   || '—'],
+    ['Jaulas extracción simultánea', e(datos.jaulasExtraccionSimultanea) || '—'],
     ['A/N Ensilaje',             e(datos.artefactoNaval)            || '—'],
     ['Norma aplicable',          resoluciones],
     ['Latitud S',                e(datos.latitud)                   || '—'],
@@ -5572,6 +5584,7 @@ function cargarRegistroEnFormulario(r, modoLectura) {
   set('r-jaulasAncho',             r.jaulasAncho             || '');
   set('r-cantidadJaulas',          r.cantidadJaulas          || '');
   set('r-cantidadJaulasSembradas', r.cantidadJaulasSembradas || '');
+  set('r-jaulasExtraccionSimultanea', r.jaulasExtraccionSimultanea || '');
   set('r-artefactoNaval',          r.artefactoNaval          || '');
   set('r-latitud',           r.latitud           || '');
   set('r-longitud',          r.longitud          || '');
