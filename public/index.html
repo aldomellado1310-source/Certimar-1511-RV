@@ -2012,6 +2012,9 @@ var firmaExpandHasData   = false;
 var _firmaExpandHandlers = null; // keeps references for removeEventListener
 var cameraStream = null;
 var currentUser  = null;   // { email, name, isAdmin }
+// Acceso a la vista admin: SOLO estas cuentas. El resto de @certimar.cl entra como user/supervisor.
+// Debe mantenerse en sync con isAdmin() de firestore.rules.
+var ADMIN_EMAILS = ['apoyo-1511@certimar.cl', 'eflores@certimar.cl'];
 // Métricas: inicializa captura lo antes posible (handlers globales de error incluidos).
 try { Metrics.init(function() { return currentUser; }, initFirebase()); }
 catch (e) { console.warn('[metrics] init falló:', e); }
@@ -2357,7 +2360,7 @@ document.addEventListener('DOMContentLoaded', function() {
         currentUser = {
           email       : user.email,
           name        : name,
-          isAdmin     : rol === 'admin',
+          isAdmin     : ADMIN_EMAILS.indexOf((user.email || '').toLowerCase()) !== -1,
           isSupervisor: rol === 'supervisor'
         };
         try { Metrics.setUser(currentUser); Metrics.activity('login', { detail: { rol: rol } }); } catch (e) {}
@@ -3633,6 +3636,9 @@ async function handleSyncGoogle() {
 
 function buildResExt(res) {
   if (!res) return '';
+  // Registros de Firestore guardan 'resoluciones' como string ya formateado;
+  // el formulario lo pasa como objeto {cicE2, ca, ...}. Soportar ambos.
+  if (typeof res === 'string') return res;
   var arr = [];
   if (res.cicE2) arr.push('1821-CIC E2');
   if (res.ca)    arr.push('1821-CA');
@@ -5419,10 +5425,14 @@ function admReenviarMail(nro, email) {
   pushNotif('adm-mail','info','✉️ Reenviando correo…',[{ id:'m1', label:'Enviando a '+dest, state:'active' }]);
   var r = _adminAll.find(function(x){ return x.nroRegistro === nro; });
   if (!r) { updateNotifCard('adm-mail','error','❌ Registro no encontrado',''); return; }
-  var datos = { nroRegistro: r.nroRegistro, fecha: r.fecha, centroCultivo: r.centroCultivo,
-    nroCentro: r.nroCentro, acs: r.acs, titular: r.titular, nombreResponsable: r.nombreResponsable,
-    emailDestinatario: dest, observaciones: r.observaciones, tipoObservacion: r.tipoObservacion,
-    nombreCertificador: r.nombreCertificador || r.certNombre || '', rutCertificador: r.rutCertificador || '' };
+  // datos COMPLETOS desde el registro de Firestore: r ya trae todos los campos
+  // persistidos por buildDocData (ubicacion, region, jaulas, lat/long, etc.).
+  // Antes se pasaba solo un subconjunto y el resto salía vacío en el reenvío.
+  var datos = Object.assign({}, r, {
+    emailDestinatario : dest,
+    nombreCertificador: r.nombreCertificador || r.certNombre || '',
+    rutCertificador   : r.rutCertificador || ''
+  });
   (async function() {
     try {
       // Token de Gmail con el gesto del click activo, ANTES de bajar el PDF de Storage
