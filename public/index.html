@@ -3614,8 +3614,8 @@ async function handleSyncGoogle() {
       resoluciones: buildResExt(datos.resoluciones),
       observaciones: datos.observaciones, tipoObs: datos.tipoObservacion,
       responsable: datos.nombreResponsable, emailResp: emailDest,
-      urlCert: urlCertificado, estado: 'GUARDADO',
-      creadoPor: currentUser ? currentUser.email : ''
+      urlCert: urlCertificado, pdfStoragePath: pdfStoragePath,
+      estado: 'GUARDADO', creadoPor: currentUser ? currentUser.email : ''
     });
 
     lockForm(false);
@@ -3736,6 +3736,10 @@ function handleEnviarMail() {
       // (GIS necesita el click para abrir su popup; tras un fetch de red el gesto se pierde).
       await ensureGmailToken(currentUser && currentUser.email ? currentUser.email : null);
       var pdfB64    = await _getPdfB64ParaEnvio();
+      if (!pdfB64) {
+        toast('⚠️ No se pudo obtener el PDF — el correo se enviará sin adjunto', 'error');
+        console.warn('[handleEnviarMail] pdfB64 vacío: el correo irá sin adjunto PDF');
+      }
       var urlCert   = appState.savedData ? (appState.savedData.urlCert || appState.savedData.urlCertificado || '') : '';
       var htmlBody  = plantillaEmailFrontend(datos, urlCert);
       var pdfNombre = pdfB64
@@ -4176,6 +4180,7 @@ function cargarHistorico() {
       resoluciones: r.resExt||r.resoluciones||'', observaciones: r.observaciones,
       tipoObservacion: r.tipoObs, nombreResponsable: r.responsable,
       emailResponsable: r.emailResp, urlCertificado: r.urlCert,
+      pdfStoragePath: r.pdfStoragePath || '',
       estado: r.estado||'GUARDADO', creadoPor: r.creadoPor||''
     }; });
 
@@ -4968,10 +4973,30 @@ async function sendViaGmailAPI(raw) {
 async function _getPdfB64ParaEnvio() {
   if (appState.pdfB64) return appState.pdfB64;
   if (appState.pdfStoragePath) {
-    var url  = await firebase.storage().ref(appState.pdfStoragePath).getDownloadURL();
-    var resp = await fetch(url);
-    var buf  = await resp.arrayBuffer();
-    return pdfBase64ToDataUri(arrayBufferToBase64(buf));
+    try {
+      var url  = await firebase.storage().ref(appState.pdfStoragePath).getDownloadURL();
+      var resp = await fetch(url);
+      if (resp.ok) {
+        var buf = await resp.arrayBuffer();
+        return pdfBase64ToDataUri(arrayBufferToBase64(buf));
+      }
+    } catch(e) {
+      console.warn('[adjunto] pdfStoragePath fetch falló, intentando urlCertificado:', e);
+    }
+  }
+  // Fallback: intentar desde urlCertificado (registros sin pdfStoragePath o Storage no disponible)
+  var urlCert = appState.savedData &&
+    (appState.savedData.urlCertificado || appState.savedData.urlCert || '');
+  if (urlCert) {
+    try {
+      var resp2 = await fetch(urlCert);
+      if (resp2.ok) {
+        var buf2 = await resp2.arrayBuffer();
+        return pdfBase64ToDataUri(arrayBufferToBase64(buf2));
+      }
+    } catch(e2) {
+      console.warn('[adjunto] urlCertificado fetch falló:', e2);
+    }
   }
   return null;
 }
@@ -5011,6 +5036,10 @@ function handleCompletionEnviar() {
       // (GIS necesita el click para abrir su popup). Queda cacheado para el envío.
       await ensureGmailToken(currentUser && currentUser.email ? currentUser.email : null);
       var pdfB64    = await _getPdfB64ParaEnvio();
+      if (!pdfB64) {
+        toast('⚠️ No se pudo obtener el PDF — el correo se enviará sin adjunto', 'error');
+        console.warn('[handleCompletionEnviar] pdfB64 vacío: el correo irá sin adjunto PDF');
+      }
       var urlCert   = appState.savedData ? (appState.savedData.urlCert || appState.savedData.urlCertificado || '') : '';
       var htmlBody  = plantillaEmailFrontend(datos, urlCert);
       var pdfNombre = pdfB64
