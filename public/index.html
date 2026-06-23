@@ -25,6 +25,7 @@
 <script src="gmailAuth.js?v=20260606"></script>
 <script src="metricsLog.js?v=20260605"></script>
 <script src="pdfMail.js?v=20260606"></script>
+<script src="firmaCanvas.js?v=20260622"></script>
 <style>
 /* ===================== TEMA: VARIABLES CSS ===================== */
 :root {
@@ -1365,6 +1366,8 @@ video{width:100%;border-radius:8px;background:black}
               </div>
               <canvas id="firma-cliente" width="280" height="90" class="firma-canvas"></canvas>
               <button class="pdf-hide firma-expand-btn" style="position:absolute" onclick="openFirmaExpand()" title="Ampliar para firmar"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg></button>
+              <button class="pdf-hide firma-attach-btn" onclick="document.getElementById('firma-upload').click()" title="Adjuntar imagen de firma"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg></button>
+              <input type="file" id="firma-upload" accept="image/png,image/jpeg" style="display:none" onchange="handleFirmaUpload(event)">
               <button onclick="clearFirmaCliente()" class="pdf-hide" style="position:absolute;top:4px;right:4px;z-index:10;background:rgba(255,255,255,.85);border:1px solid #fecaca;color:#ef4444;padding:3px 7px;border-radius:5px;cursor:pointer;font-size:13px;font-weight:700;line-height:1" title="Borrar firma">✕</button>
             </div>
             <div class="firma-line"></div>
