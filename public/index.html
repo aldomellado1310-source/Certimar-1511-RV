@@ -2988,6 +2988,37 @@ function clearFirmaCliente() {
   checkChecklist();
 }
 
+function handleFirmaUpload(event) {
+  var file = event.target.files && event.target.files[0];
+  if (!file) return;
+  if (file.type !== 'image/png' && file.type !== 'image/jpeg') {
+    toast('Solo se permiten imágenes PNG o JPG', 'error');
+    event.target.value = '';
+    return;
+  }
+  var teniaFirma = firmaClienteHasData;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var img = new Image();
+    img.onload = function() {
+      var canvas = document.getElementById('firma-cliente');
+      var ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, 280, 90);
+      var f = firmaFitContain(img.width, img.height, 280, 90);
+      ctx.drawImage(img, f.dx, f.dy, f.dw, f.dh);
+      firmaClienteHasData = true;
+      canvas.style.pointerEvents = '';
+      document.getElementById('firma-placeholder').style.display = 'none';
+      checkChecklist();
+      scheduleBorrador();
+      toast(teniaFirma ? 'Firma reemplazada' : 'Firma adjuntada', 'success');
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+  event.target.value = '';
+}
+
 function initFirmaExpandListeners(canvas, ctx) {
   function getPos(e) {
     var rect = canvas.getBoundingClientRect();
