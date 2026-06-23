@@ -5895,6 +5895,11 @@ var _eliminarNro = null;
 function openModalEliminar(nro) {
   _eliminarNro = nro;
   document.getElementById('eliminar-nro').textContent = nro;
+  // Reset del botón: tras un borrado exitoso el modal se oculta sin restaurar el
+  // botón (queda "Eliminando…" deshabilitado). Lo dejamos fresco al reabrir.
+  var btn = document.getElementById('btn-confirmar-eliminar');
+  btn.disabled = false;
+  btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3,6 5,6 21,6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg> Eliminar';
   document.getElementById('modal-eliminar').classList.remove('hidden');
 }
 function closeModalEliminar() {
