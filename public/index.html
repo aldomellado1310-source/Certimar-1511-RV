@@ -3514,6 +3514,23 @@ async function handleSyncGoogle() {
     return;
   }
 
+  // 1b. Subir firma + foto y persistirlas en Firestore ANTES del PDF. Así, aunque
+  //     el PDF falle (paso 2), firma y foto quedan guardadas y el certificado se
+  //     puede regenerar luego sin perderlas.
+  var urlFoto = '';
+  var urlFirmaCliente = '';
+  try {
+    var ff = await subirFirmaYFoto(datos.nroRegistro);
+    urlFoto = ff.urlFoto;
+    urlFirmaCliente = ff.urlFirma;
+    var ffUpdate = {};
+    if (urlFoto)         ffUpdate.urlFoto         = urlFoto;
+    if (urlFirmaCliente) ffUpdate.urlFirmaCliente = urlFirmaCliente;
+    if (Object.keys(ffUpdate).length) {
+      await fbActualizarEstado(datos.nroRegistro, 'GUARDADO', ffUpdate);
+    }
+  } catch(eFF) { console.warn('Persistencia firma/foto (no fatal):', eFF); }
+
   // 2. Generar PDF con el N° de registro ya asignado en el form
   var pdfB64 = null;
   try {
@@ -3538,9 +3555,10 @@ async function handleSyncGoogle() {
   try {
     updateNotifStep('sync','step-drive','active');
 
-    // 3. Subir PDF + foto + firma a Firebase Storage
+    // 3. Subir el PDF/certificado a Storage. La firma y la foto ya se subieron en
+    //    el paso 1b (independiente del PDF), así que aquí solo va el PDF.
     var driveRes = await (async function() {
-      if (!pdfB64) return { urlCert: '', urlFoto: '', urlFirma: '', pdfStoragePath: '' };
+      if (!pdfB64) return { urlCert: '', pdfStoragePath: '' };
       try {
         var nombre = 'CertimarRV_' + datos.nroRegistro + '_' +
                      (datos.centroCultivo || '').replace(/\s+/g,'_') + '.pdf';
@@ -3548,40 +3566,14 @@ async function handleSyncGoogle() {
         var ref    = firebase.storage().ref(storagePath);
         await ref.put(appState.pdfArrayBuffer, { contentType: 'application/pdf' });
         var url = await ref.getDownloadURL();
-        var fotoUrl = '';
-        if (appState.fotoB64 && !appState.fotoB64.startsWith('data:application/pdf')) {
-          try {
-            var mt   = (appState.fotoB64.match(/^data:([^;]+);base64,/) || [])[1] || 'image/jpeg';
-            var rawF = appState.fotoB64.replace(/^data:[^;]+;base64,/, '');
-            var bytF = Uint8Array.from(atob(rawF), function(c){ return c.charCodeAt(0); });
-            var ext  = mt.split('/')[1] || 'jpg';
-            var refF = firebase.storage().ref('fotos/Foto_' + datos.nroRegistro + '.' + ext);
-            await refF.put(bytF.buffer, { contentType: mt });
-            fotoUrl = await refF.getDownloadURL();
-          } catch(eFoto) { console.warn('Foto upload error (no fatal):', eFoto); }
-        }
-        var firmaUrl = '';
-        if (firmaClienteHasData) {
-          try {
-            var firmaCanvas = document.getElementById('firma-cliente');
-            var firmaDataUrl = firmaCanvas.toDataURL('image/png');
-            var rawFirma = firmaDataUrl.replace(/^data:image\/png;base64,/, '');
-            var bytFirma = Uint8Array.from(atob(rawFirma), function(c){ return c.charCodeAt(0); });
-            var refFirma = firebase.storage().ref('firmas/Firma_' + datos.nroRegistro + '.png');
-            await refFirma.put(bytFirma.buffer, { contentType: 'image/png' });
-            firmaUrl = await refFirma.getDownloadURL();
-          } catch(eFirma) { console.warn('Firma upload error (no fatal):', eFirma); }
-        }
-        return { urlCert: url, urlFoto: fotoUrl, urlFirma: firmaUrl, pdfStoragePath: storagePath };
+        return { urlCert: url, pdfStoragePath: storagePath };
       } catch(eStorage) {
         console.error('Storage upload error:', eStorage);
-        return { urlCert: '', urlFoto: '', urlFirma: '', pdfStoragePath: '' };
+        return { urlCert: '', pdfStoragePath: '' };
       }
     })();
 
     var urlCertificado  = driveRes.urlCert;
-    var urlFoto         = driveRes.urlFoto;
-    var urlFirmaCliente = driveRes.urlFirma || '';
     var pdfStoragePath  = driveRes.pdfStoragePath || '';
     updateNotifStep('sync','step-drive', urlCertificado ? 'done' : 'warn');
     updateNotifStep('sync','step-update','active');
@@ -5837,6 +5829,38 @@ async function subirPDFAlStorage(pdfData, nroRegistro, centroCultivo) {
     : Uint8Array.from(atob(pdfDataUriToBase64(pdfData)), function(c){ return c.charCodeAt(0); }).buffer;
   await ref.put(buffer, { contentType: 'application/pdf' });
   return await ref.getDownloadURL();
+}
+
+// Sube la foto (appState.fotoB64) y la firma del cliente (canvas firma-cliente) a
+// Storage, de forma INDEPENDIENTE del PDF. Se llama antes de generar el PDF para
+// que firma y foto queden guardadas aunque el PDF falle (son necesarias para
+// regenerar el certificado después). Cada subida es no fatal.
+async function subirFirmaYFoto(nroRegistro) {
+  var urlFoto = '';
+  var urlFirma = '';
+  if (appState.fotoB64 && !appState.fotoB64.startsWith('data:application/pdf')) {
+    try {
+      var mt   = (appState.fotoB64.match(/^data:([^;]+);base64,/) || [])[1] || 'image/jpeg';
+      var rawF = appState.fotoB64.replace(/^data:[^;]+;base64,/, '');
+      var bytF = Uint8Array.from(atob(rawF), function(c){ return c.charCodeAt(0); });
+      var ext  = mt.split('/')[1] || 'jpg';
+      var refF = firebase.storage().ref('fotos/Foto_' + nroRegistro + '.' + ext);
+      await refF.put(bytF.buffer, { contentType: mt });
+      urlFoto = await refF.getDownloadURL();
+    } catch(eFoto) { console.warn('Foto upload error (no fatal):', eFoto); }
+  }
+  if (firmaClienteHasData) {
+    try {
+      var firmaCanvas  = document.getElementById('firma-cliente');
+      var firmaDataUrl = firmaCanvas.toDataURL('image/png');
+      var rawFirma = firmaDataUrl.replace(/^data:image\/png;base64,/, '');
+      var bytFirma = Uint8Array.from(atob(rawFirma), function(c){ return c.charCodeAt(0); });
+      var refFirma = firebase.storage().ref('firmas/Firma_' + nroRegistro + '.png');
+      await refFirma.put(bytFirma.buffer, { contentType: 'image/png' });
+      urlFirma = await refFirma.getDownloadURL();
+    } catch(eFirma) { console.warn('Firma upload error (no fatal):', eFirma); }
+  }
+  return { urlFoto: urlFoto, urlFirma: urlFirma };
 }
 
 function _lanzarRegenPDF(r) {
