@@ -788,7 +788,7 @@ video{width:100%;border-radius:8px;background:black}
 }
 </style>
 <script src="concesiones.js?v=20260522"></script>
-<script src="aquachile.js?v=20260522"></script>
+
 </head>
 <body>
 
@@ -3308,10 +3308,16 @@ function handleGuardar() {
 // =====================================================================
 //  DESCARGAR PDF
 // =====================================================================
-function loadScript(src) {
+function loadScript(src, timeoutMs) {
+  timeoutMs = timeoutMs || 15000;
   return new Promise(function(resolve, reject) {
     var s = document.createElement('script');
-    s.src = src; s.onload = resolve; s.onerror = reject;
+    var timer = setTimeout(function() {
+      reject(new Error('Timeout cargando ' + src));
+    }, timeoutMs);
+    s.src = src;
+    s.onload = function() { clearTimeout(timer); resolve(); };
+    s.onerror = function() { clearTimeout(timer); reject(new Error('Error cargando ' + src)); };
     document.head.appendChild(s);
   });
 }
@@ -3322,6 +3328,9 @@ async function cargarLibsPDF() {
     loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'),
     loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js')
   ]);
+  if (!window.jspdf || !window.html2canvas) {
+    throw new Error('Las librerías PDF no se inicializaron correctamente');
+  }
 }
 
 async function handleDescargarPDF() {
@@ -3351,6 +3360,7 @@ async function handleDescargarPDF() {
 async function generarPDF() {
   var _stopPdf = Metrics.time();
   var el = document.getElementById('registro-documento');
+  if (!el) throw new Error('Elemento registro-documento no encontrado');
   // Forzar modo claro para que el PDF siempre sea fondo blanco
   var root = document.documentElement;
   var prevTheme = root.getAttribute('data-theme');
@@ -3362,7 +3372,6 @@ async function generarPDF() {
   // Reemplazamos por divs estáticos con word-wrap antes de capturar
   // (se restauran en el finally).
   var replacements = [];
-  var textareaReplacements = [];
   try {
   el.querySelectorAll('input[type="text"], input[type="email"], input:not([type])').forEach(function(inp) {
     var cs = window.getComputedStyle(inp);
