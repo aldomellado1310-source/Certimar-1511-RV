@@ -3467,10 +3467,9 @@ async function generarPDF() {
     if (pdfHideEls) pdfHideEls.forEach(function(e){ e.style.display = ''; });
     if (prevTheme === 'dark') root.setAttribute('data-theme', 'dark');
     if (_spacer && _spacer.parentNode) _spacer.parentNode.removeChild(_spacer);
-    textareaReplacements.forEach(function(r) {
-      r.ta.value = r.saved;
-      if (r.div.parentNode) r.div.parentNode.removeChild(r.div);
-    });
+    // (textareas ya se restauran en el loop replacements de arriba; el bloque
+    //  textareaReplacements era código huérfano de un refactor y lanzaba
+    //  ReferenceError dentro del finally, anulando el PDF ya generado.)
     try { Metrics.perf('pdf_generate', _stopPdf()); } catch (e) {}
   }
 }
