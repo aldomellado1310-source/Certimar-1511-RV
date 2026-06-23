@@ -3446,8 +3446,8 @@ async function handleSyncGoogle() {
       resoluciones: buildResExt(datos.resoluciones),
       observaciones: datos.observaciones, tipoObs: datos.tipoObservacion,
       responsable: datos.nombreResponsable, emailResp: emailDest,
-      urlCert: urlCertificado, estado: 'GUARDADO',
-      creadoPor: currentUser ? currentUser.email : ''
+      urlCert: urlCertificado, pdfStoragePath: pdfStoragePath,
+      estado: 'GUARDADO', creadoPor: currentUser ? currentUser.email : ''
     });
 
     lockForm(false);
@@ -3565,6 +3565,10 @@ function handleEnviarMail() {
     try {
       updateNotifStep('mail-send','m1','active');
       var pdfB64    = await _getPdfB64ParaEnvio();
+      if (!pdfB64) {
+        toast('⚠️ No se pudo obtener el PDF — el correo se enviará sin adjunto', 'error');
+        console.warn('[handleEnviarMail] pdfB64 vacío: el correo irá sin adjunto PDF');
+      }
       var urlCert   = appState.savedData ? (appState.savedData.urlCert || appState.savedData.urlCertificado || '') : '';
       var htmlBody  = plantillaEmailFrontend(datos, urlCert);
       var pdfNombre = pdfB64
@@ -4001,6 +4005,7 @@ function cargarHistorico() {
       resoluciones: r.resExt||r.resoluciones||'', observaciones: r.observaciones,
       tipoObservacion: r.tipoObs, nombreResponsable: r.responsable,
       emailResponsable: r.emailResp, urlCertificado: r.urlCert,
+      pdfStoragePath: r.pdfStoragePath || '',
       estado: r.estado||'GUARDADO', creadoPor: r.creadoPor||''
     }; });
 
@@ -4778,10 +4783,30 @@ async function sendViaGmailAPI(raw) {
 async function _getPdfB64ParaEnvio() {
   if (appState.pdfB64) return appState.pdfB64;
   if (appState.pdfStoragePath) {
-    var url  = await firebase.storage().ref(appState.pdfStoragePath).getDownloadURL();
-    var resp = await fetch(url);
-    var buf  = await resp.arrayBuffer();
-    return 'data:application/pdf;base64,' + arrayBufferToBase64(buf);
+    try {
+      var url  = await firebase.storage().ref(appState.pdfStoragePath).getDownloadURL();
+      var resp = await fetch(url);
+      if (resp.ok) {
+        var buf = await resp.arrayBuffer();
+        return 'data:application/pdf;base64,' + arrayBufferToBase64(buf);
+      }
+    } catch(e) {
+      console.warn('[adjunto] pdfStoragePath fetch falló, intentando urlCertificado:', e);
+    }
+  }
+  // Fallback: intentar desde urlCertificado (registros sin pdfStoragePath o Storage no disponible)
+  var urlCert = appState.savedData &&
+    (appState.savedData.urlCertificado || appState.savedData.urlCert || '');
+  if (urlCert) {
+    try {
+      var resp2 = await fetch(urlCert);
+      if (resp2.ok) {
+        var buf2 = await resp2.arrayBuffer();
+        return 'data:application/pdf;base64,' + arrayBufferToBase64(buf2);
+      }
+    } catch(e2) {
+      console.warn('[adjunto] urlCertificado fetch falló:', e2);
+    }
   }
   return null;
 }
@@ -4818,6 +4843,10 @@ function handleCompletionEnviar() {
   (async function() {
     try {
       var pdfB64    = await _getPdfB64ParaEnvio();
+      if (!pdfB64) {
+        toast('⚠️ No se pudo obtener el PDF — el correo se enviará sin adjunto', 'error');
+        console.warn('[handleCompletionEnviar] pdfB64 vacío: el correo irá sin adjunto PDF');
+      }
       var urlCert   = appState.savedData ? (appState.savedData.urlCert || appState.savedData.urlCertificado || '') : '';
       var htmlBody  = plantillaEmailFrontend(datos, urlCert);
       var pdfNombre = pdfB64
