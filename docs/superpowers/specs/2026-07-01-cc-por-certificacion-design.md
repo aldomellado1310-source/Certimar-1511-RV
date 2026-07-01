@@ -37,16 +37,48 @@ conserva).
 
 ## Diseño técnico
 
-### Nueva función helper: `getResolucionCCs(resoluciones)`
+### Convención del proyecto para lógica pura testeable
 
-Se agrega junto a `buildResExt` (`public/index.html:3628`), reutilizando su
-misma normalización de entrada: `resoluciones` puede venir como objeto de
-formulario (`{cicE2, ca, vs, res1511, desinfeccion}`) o como string ya
-guardado en Firestore (`"1821-CIC E2, 1511"`).
+El proyecto ya separa lógica pura en archivos `public/*.js` dedicados
+(`gmailAuth.js`, `pdfMail.js`, `metricsLog.js`, `firmaCanvas.js`), cada uno
+con un guard al final para exportar a Node sin afectar el navegador:
 
 ```js
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = { nombreFuncion: nombreFuncion };
+}
+```
+
+y su correspondiente `test/<archivo>.test.js` que usa `node:assert` y se
+ejecuta con `node test/<archivo>.test.js` (sin runner ni framework). Esta
+feature sigue el mismo patrón en vez de dejar la lógica solo inline en
+`index.html`.
+
+### Nuevo archivo: `public/resolucionCC.js`
+
+Incluye una copia local de la normalización de `resoluciones` (mismo
+comportamiento que `buildResExt`, que sigue viviendo en `index.html` para
+sus otros usos) y la función `getResolucionCCs`:
+
+```js
+// Normaliza 'resoluciones' (objeto de checkboxes u string de Firestore)
+// a un string tipo "1821-CIC E2, 1511". Espejo de buildResExt() en index.html.
+function _resolucionesAString(res) {
+  if (!res) return '';
+  if (typeof res === 'string') return res;
+  var arr = [];
+  if (res.cicE2)        arr.push('1821-CIC E2');
+  if (res.ca)           arr.push('1821-CA');
+  if (res.vs)            arr.push('1821-VS');
+  if (res.res1511)       arr.push('1511');
+  if (res.desinfeccion)  arr.push('DESINFECCIÓN');
+  return arr.join(', ');
+}
+
+// Dado el estado de 'resoluciones' marcadas, retorna los correos de
+// copia (CC) que dependen del tipo de certificación seleccionada.
 function getResolucionCCs(resoluciones) {
-  var tokens = buildResExt(resoluciones)
+  var tokens = _resolucionesAString(resoluciones)
     .split(',')
     .map(function(s) { return s.trim(); })
     .filter(Boolean);
@@ -61,7 +93,23 @@ function getResolucionCCs(resoluciones) {
   }
   return emails;
 }
+
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = { getResolucionCCs: getResolucionCCs };
+}
 ```
+
+Se incluye en `index.html` junto a los demás scripts propios:
+
+```html
+<script src="resolucionCC.js?v=20260701"></script>
+```
+
+Nota: se duplica la normalización de `resoluciones` en vez de hacer que
+`buildResExt` (inline en `index.html`) dependa de `resolucionCC.js`, o
+viceversa, para no reordenar la carga de scripts existente ni tocar los
+demás usos de `buildResExt`. Es una función pequeña (5 líneas) y de bajo
+riesgo de divergencia; no amerita una abstracción compartida.
 
 ### Puntos de integración
 
@@ -103,9 +151,13 @@ lo que no aplica.
 
 ## Testing
 
-No hay suite de tests automatizados para `public/index.html` en este
-proyecto (es un archivo HTML/JS monolítico sin bundler). La verificación será
-manual: probar los 4 casos de la tabla de reglas en el formulario real
-(marcando distintas combinaciones de checkboxes y revisando el CC resultante
-antes de enviar, o inspeccionando el `raw` armado por `buildRawEmail` en
-consola).
+- **Automatizado:** `test/resolucionCC.test.js` (nuevo), siguiendo el patrón
+  de `test/gmailAuth.test.js`. Cubre con `assert` los 4 casos de la tabla de
+  reglas, tanto con `resoluciones` como objeto de checkboxes como con string
+  de Firestore. Se ejecuta con `node test/resolucionCC.test.js`.
+- **Manual:** los 3 puntos de integración (`handleEnviarMail`,
+  `handleCompletionEnviar`, `admReenviarMail`) no tienen automatización en
+  este proyecto (dependen del DOM, Firestore y Gmail API). Se verifican a
+  mano probando el formulario real: marcar distintas combinaciones de
+  checkboxes y revisar el CC resultante antes de enviar (o inspeccionar el
+  `raw` armado por `buildRawEmail` en consola).
