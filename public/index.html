@@ -26,6 +26,7 @@
 <script src="metricsLog.js?v=20260605"></script>
 <script src="pdfMail.js?v=20260606"></script>
 <script src="firmaCanvas.js?v=20260622"></script>
+<script src="resolucionCC.js?v=20260701"></script>
 <style>
 /* ===================== TEMA: VARIABLES CSS ===================== */
 :root {
@@ -2361,7 +2362,7 @@ document.addEventListener('DOMContentLoaded', function() {
           email       : user.email,
           name        : name,
           isAdmin     : ADMIN_EMAILS.indexOf((user.email || '').toLowerCase()) !== -1,
-          isSupervisor: rol === 'supervisor'
+          isSupervisor: rol === 'supervisor' || rol === 'admin'
         };
         try { Metrics.setUser(currentUser); Metrics.activity('login', { detail: { rol: rol } }); } catch (e) {}
         // El token de Gmail se obtiene en el primer envío (GIS necesita el gesto del click
@@ -3742,7 +3743,7 @@ function handleEnviarMail() {
       var pdfNombre = pdfB64
         ? 'CertimarRV_' + datos.nroRegistro + '_' + (datos.centroCultivo || '').replace(/[^a-zA-Z0-9]/g,'_') + '.pdf'
         : '';
-      var fixedCCs  = ['operaciones@certimar.cl', 'eflores@certimar.cl']
+      var fixedCCs  = ['eflores@certimar.cl'].concat(getResolucionCCs(datos.resoluciones))
         .filter(function(c) { return c !== emailDest; });
       var extraCC   = emailCC ? emailCC.split(',').map(function(x){ return x.trim(); }).filter(Boolean) : [];
       var allCC     = Array.from(new Set(fixedCCs.concat(extraCC))).join(', ');
@@ -5042,7 +5043,7 @@ function handleCompletionEnviar() {
       var pdfNombre = pdfB64
         ? 'CertimarRV_' + datos.nroRegistro + '_' + (datos.centroCultivo || '').replace(/[^a-zA-Z0-9]/g,'_') + '.pdf'
         : '';
-      var fixedCCs  = ['operaciones@certimar.cl', 'eflores@certimar.cl']
+      var fixedCCs  = ['eflores@certimar.cl'].concat(getResolucionCCs(datos.resoluciones))
         .filter(function(c) { return c !== email; });
       var extraCC   = datos.emailCC ? datos.emailCC.split(',').map(function(x){ return x.trim(); }).filter(Boolean) : [];
       var allCC     = Array.from(new Set(fixedCCs.concat(extraCC))).join(', ');
@@ -5450,7 +5451,7 @@ function admReenviarMail(nro, email) {
       var pdfNombre = pdfB64
         ? 'CertimarRV_' + datos.nroRegistro + '_' + (datos.centroCultivo || '').replace(/[^a-zA-Z0-9]/g,'_') + '.pdf'
         : '';
-      var fixedCCs  = ['operaciones@certimar.cl', 'eflores@certimar.cl']
+      var fixedCCs  = ['eflores@certimar.cl'].concat(getResolucionCCs(datos.resoluciones))
         .filter(function(c) { return c !== dest; });
       var allCC     = fixedCCs.join(', ');
       var raw = buildRawEmail({
